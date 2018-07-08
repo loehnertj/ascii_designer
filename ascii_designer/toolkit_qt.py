@@ -49,8 +49,10 @@ class ToolkitQt(ToolkitBase):
             usually fired after focus-lost or Return-press.
         '''
         testhandler = lambda widget=widget, *args: print("TESTHANDLER: ", widget, args)
-        if isinstance(widget, (qg.QAbstractButton,)):
+        if isinstance(widget, (qg.QPushButton, qg.QRadioButton)):
             widget.clicked.connect(lambda *args: function())
+        elif isinstance(widget, qg.QCheckBox):
+            widget.toggled.connect(lambda *args: function(widget.isChecked()))
         elif isinstance(widget, qg.QLineEdit):
             widget.editingFinished.connect(lambda: function(widget.text()))
         elif isinstance(widget, qg.QPlainTextEdit):
@@ -124,6 +126,10 @@ class ToolkitQt(ToolkitBase):
     
     def checkbox(self, id=None, text=None, checked=None):
         '''Checkbox'''
+        cb = qg.QCheckBox((text or '').strip(), parent=self.root)
+        cb.setChecked((checked=='x'))
+        return cb
+    
     def slider(self, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
     def external(self, id=None):

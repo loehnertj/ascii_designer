@@ -111,7 +111,6 @@ class Main(AutoFrame):
         print('option_a')
     def option_b(self):
         print('option_b')
-        
     def agree(self, checked):
         print('agree: %s'%checked)
     def slider(self, val):
