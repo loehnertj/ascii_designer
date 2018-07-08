@@ -82,6 +82,7 @@ IMultiline:      [ foo__ ]
  Checkbox:       [x] agree:I agree to the terms and conditions.
  Slider:         [ slider: 0 -+- 100 ]
  External:       *external_object
+ [ Quit ]
 '''
 
 
