@@ -62,6 +62,8 @@ class ToolkitQt(ToolkitBase):
                 widget.lineEdit().editingFinished.connect(lambda: function(widget.lineEdit().text()))
             else:
                 widget.currentIndexChanged.connect(lambda idx: function(widget.itemText(idx) if idx>=0 else None))
+        elif isinstance(widget, qg.QSlider):
+            widget.valueChanged.connect(function)
         
     def row_stretch(self, row, proportion):
         '''set the given row to stretch according to the proportion.'''
@@ -132,6 +134,12 @@ class ToolkitQt(ToolkitBase):
     
     def slider(self, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
+        s = qg.QSlider(Qt.Horizontal, parent=self.root)
+        s.setMinimum(int(min))
+        s.setMaximum(int(max))
+        s.setTickPosition(qg.QSlider.TicksBelow)
+        return s
+        
     def external(self, id=None):
         '''external reference'''
         return getattr(self._external_reference_provider, id)
