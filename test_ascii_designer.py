@@ -85,16 +85,33 @@ IMultiline:      [ foo__ ]
  [ Quit ]
 '''
 
+# Row/Column stretch is controlled by "-" in the column head and "I" in row head
+# Widget anchoring is controlled by presence of leading/trailing whitespace 
+# within the cell.
+demo_alignments = '''
+|              |     <->          |   <-->         |
+ [ fixed col  ] [  stretch 1x    ] [stretch 2x    ]
+                [ colspan stretch 3x              ]
+I               [ stretch h+v __ ]|[left]          |
+I               {[left, v 2x __ ] |  [center]      |
+I               {                           [right]|
+'''
 
 class Main(AutoFrame):
     menubar=menu
     toolbar=toolbar
-    frame_body = demo_all
+    frame_body = demo_alignments
         
     def frame_build(self, toolkit, body):
         # initialize something
-        self.external_object = toolkit.label(text="<External label>")
-        return super().frame_build(toolkit, body)
+        #self.external_object = toolkit.label(text="<External label>")
+        f= super().frame_build(toolkit, body)
+        from PyQt4.QtGui import QSizePolicy
+        # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
+        # set to Expanding to make the RowStretch work.
+        self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        return f
     
     def press_me(self):
         print('press_me was pressed')

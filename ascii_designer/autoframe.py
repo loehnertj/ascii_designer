@@ -32,12 +32,13 @@ class AutoFrame:
             if not grid_element.text.strip():
                 continue
             print(grid_element)
-            id, widget = toolkit.parse_widget_def(grid_element.text)
+            id, widget = toolkit.parse(grid_element.text)
             self.frame_controls[id] = widget
                 
             # place on the grid
             e = grid_element
             toolkit.place(widget, row=e.row, col=e.col, rowspan=e.rowspan, colspan=e.colspan)
+            toolkit.anchor(widget, left=not e.text.startswith(' '), right=not e.text.endswith(' '))
             # autowire
             if id in callables:
                 toolkit.connect(widget, getattr(self, id))
