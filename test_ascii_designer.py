@@ -133,25 +133,6 @@ class Main(AutoFrame):
         print('agree: %s'%checked)
     def slider(self, val):
         print('slider: %s'%val)
-              
-        
-class SaveAs(AutoFrame):
-    frame_body = '''
-       |          |   <->   | 
-        Pick a locaton to save to.
-       IFile name: [ __~~~~~~~~~~~~~~~~ ]
-                      [ OK ]|  [ Cancel ]
-    '''
-    
-    def cancel(self):
-        self.close()
-        
-    def ok(self):
-        # actually do something
-        self.close()
-        
-    def file_name(self, *args):
-        print(args)
         
 class EmptyFrame(AutoFrame):
     frame_body = ''
