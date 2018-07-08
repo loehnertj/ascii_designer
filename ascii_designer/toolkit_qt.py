@@ -49,7 +49,7 @@ class ToolkitQt(ToolkitBase):
             usually fired after focus-lost or Return-press.
         '''
         testhandler = lambda widget=widget, *args: print("TESTHANDLER: ", widget, args)
-        if isinstance(widget, qg.QPushButton):
+        if isinstance(widget, (qg.QAbstractButton,)):
             widget.clicked.connect(lambda *args: function())
         elif isinstance(widget, qg.QLineEdit):
             widget.editingFinished.connect(lambda: function(widget.text()))
@@ -118,6 +118,10 @@ class ToolkitQt(ToolkitBase):
         
     def option(self, id=None, text=None, checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
+        rb = qg.QRadioButton((text or '').strip(), parent=self.root)
+        rb.setChecked((checked=='x'))
+        return rb
+    
     def checkbox(self, id=None, text=None, checked=None):
         '''Checkbox'''
     def slider(self, id=None, min=None, max=None):

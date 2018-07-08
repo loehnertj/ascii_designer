@@ -77,8 +77,8 @@ IMultiline:      [ foo__ ]
  Dropdown:       [ Choose (Red,Green,Blue) v]
  Dropdown empty: [ v ]
  Combo:          [ Color_ (Red,Green,Blue) v]
- Option:         (x) Option A
-                 ( ) Option B
+ Option:         ( ) Option A
+                 (x) Option B
  Checkbox:       [x] agree:I agree to the terms and conditions.
  Slider:         [ slider: 0 -+- 100 ]
  External:       *external_object
@@ -107,9 +107,11 @@ class Main(AutoFrame):
         print('dropdown_empty: %r'%(val,))
     def color(self, val):
         print('color: "%s"'%val)
-    def option(self, id):
-        print('option: %s'%id)
-    option_a = option_b = option
+    def option_a(self):
+        print('option_a')
+    def option_b(self):
+        print('option_b')
+        
     def agree(self, checked):
         print('agree: %s'%checked)
     def slider(self, val):
