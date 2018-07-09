@@ -16,17 +16,6 @@ import sys
 import os
 import shlex
 
-sys.path.insert(0, os.path.abspath('../'))
-
-# from http://docs.readthedocs.io/en/latest/faq.html
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return MagicMock()
-
-MOCK_MODULES = ['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtNetwork']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
