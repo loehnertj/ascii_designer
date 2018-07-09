@@ -82,6 +82,7 @@ IMultiline:      [ foo__ ]
  Checkbox:       [x] agree:I agree to the terms and conditions.
  Slider:         [ slider: 0 -+- 100 ]
  External:       *external_object
+ [ Align Demo ]
  [ Quit ]
 '''
 
@@ -100,17 +101,12 @@ I               {                           [right]|
 class Main(AutoFrame):
     menubar=menu
     toolbar=toolbar
-    frame_body = demo_alignments
+    frame_body = demo_all
         
     def frame_build(self, toolkit, body):
         # initialize something
-        #self.external_object = toolkit.label(text="<External label>")
-        f= super().frame_build(toolkit, body)
-        from PyQt4.QtGui import QSizePolicy
-        # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
-        # set to Expanding to make the RowStretch work.
-        self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.external_object = toolkit.label(text="<External label>")
+        f = super().frame_build(toolkit, body)
         return f
     
     def press_me(self):
@@ -134,6 +130,22 @@ class Main(AutoFrame):
     def slider(self, val):
         print('slider: %s'%val)
         
+    def align_demo(self):
+        f = AlignmentDemo()
+        f.frame_show()
+        
+class AlignmentDemo(AutoFrame):
+    frame_body = demo_alignments
+        
+    def frame_build(self, toolkit, body):
+        f= super().frame_build(toolkit, body)
+        from PyQt4.QtGui import QSizePolicy
+        # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
+        # set to Expanding to make the RowStretch work.
+        self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        return f
+    
 class EmptyFrame(AutoFrame):
     frame_body = ''
     
