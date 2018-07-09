@@ -24,6 +24,7 @@ class ToolkitQt(ToolkitBase):
             self._root = qg.QWidget()
             self._layout = qg.QGridLayout()
             self._root.setLayout(self._layout)
+            self._root.setWindowTitle(self._title)
         return self._root
         
     def show(self, frame):
@@ -87,6 +88,11 @@ class ToolkitQt(ToolkitBase):
                                  
         
     # Widgets
+    def frame(self, title=''):
+        f = qg.QWidget()
+        if title:
+            f.setTitle(title)
+        return f
     
     def spacer(self):
         '''a vertical/horizontal spacer'''

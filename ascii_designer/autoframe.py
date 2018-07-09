@@ -8,7 +8,11 @@ def _callable_members(obj):
 
 class AutoFrame:
     def frame_show(self):
-        self.toolkit = get_toolkit(external_reference_provider=self)
+        try:
+            title = self.frame_title
+        except AttributeError:
+            title = self.__class__.__name__
+        self.toolkit = get_toolkit(external_reference_provider=self, title=title)
         root = self.frame_build(toolkit=self.toolkit, body=self.frame_body)
         self.toolkit.show(root)
         
