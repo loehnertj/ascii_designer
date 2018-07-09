@@ -5,6 +5,9 @@ import PyQt4.QtGui as qg
 
 from .toolkit import ToolkitBase
 
+_qtapp = qg.QApplication(sys.argv)
+_qt_running=False
+
 def _make_focusout(func):
     def _pte_focusOutEvent(event):
         if event.reason() != Qt.PopupFocusReason:
@@ -13,7 +16,6 @@ def _make_focusout(func):
         
 class ToolkitQt(ToolkitBase):
     def __init__(self, **kwargs):
-        self._app = qg.QApplication(sys.argv)
         super().__init__(**kwargs)
         
     # widget generators
@@ -30,7 +32,13 @@ class ToolkitQt(ToolkitBase):
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.'''
         frame.show()
-        self._app.exec_()
+        
+        # now this is really not pretty, but as it says above, do what is necessary.
+        global _qt_running
+        if not _qt_running:
+            _qt_running=True
+            _qtapp.exec_()
+            _qt_running=False
         
     def close(self, frame):
         '''close the frame'''
