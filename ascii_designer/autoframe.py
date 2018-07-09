@@ -7,6 +7,17 @@ def _callable_members(obj):
     yield from (name for name in dir(obj) if callable(getattr(obj, name)) )
 
 class AutoFrame:
+    '''
+    class name is converted to title.
+    Override with frame_title
+    body definition with frame_body
+    
+    to create external widgets or customize the autocreated ones, override frame_build
+    
+    get at the created controls using .frame_controls[key] or AutoFrame[key].
+    
+    close(), exit(), quit() provided for convenience
+    '''
     def frame_show(self):
         try:
             title = self.frame_title
