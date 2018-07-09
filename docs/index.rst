@@ -11,6 +11,33 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+`ascii_designer` package
+------------------------
+The ASCII designer package exposes the :any:`AutoFrame` class and the :any:`set_toolkit` function.
+
+`ascii_designer.autoframe` module
+---------------------------------
+.. automodule:: ascii_designer.autoframe
+    :members:
+    :undoc-members:
+    
+`ascii_designer.ascii_slice` module
+-----------------------------------
+.. automodule:: ascii_designer.ascii_slice
+    :members:
+    :undoc-members:
+    
+`ascii_designer.toolkit` module
+-------------------------------
+.. automodule:: ascii_designer.toolkit
+    :members:
+    :undoc-members:
+    
+`ascii_designer.toolkit_qt` module
+----------------------------------
+.. automodule:: ascii_designer.toolkit_qt
+    :members:
+    :undoc-members:
 
 
 Indices and tables
