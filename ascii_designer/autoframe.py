@@ -35,7 +35,6 @@ class AutoFrame:
         for grid_element in merged_cells(sliced_grid):
             if not grid_element.text.strip():
                 continue
-            print(grid_element)
             id, widget = toolkit.parse(grid_element.text)
             self.frame_controls[id] = widget
                 

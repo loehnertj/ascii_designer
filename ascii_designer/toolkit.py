@@ -85,9 +85,9 @@ class ToolkitBase:
         
         If nothing matched, return None, None.
         '''
-        text = text.strip().replace("~", ' ')
+        mangled_text = text.replace("~", ' ').strip()
         for name, regex, _ in self.grammar:
-            m = re.match(regex, text.strip())
+            m = re.match(regex, mangled_text)
             if m:
                 d = m.groupdict()
                 d['id'] = _auto_id(d['id'], d.get('text', ''), self._last_label_id)
@@ -97,7 +97,7 @@ class ToolkitBase:
                     d['id'] = 'label_'+d['id']
                 else:
                     self._last_label_id = ''
-                print(name, d)
+                print('%r --> %s %r'%(text, name, d))
                 widget = getattr(self, name)(**d)
                 if widget is None:
                     widget = self.label(text='<UNSUPPORTED>')
