@@ -16,6 +16,18 @@ import sys
 import os
 import shlex
 
+sys.path.insert(0, os.path.abspath('../'))
+
+# from http://docs.readthedocs.io/en/latest/faq.html
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return MagicMock()
+
+MOCK_MODULES = ['PyQt4', 'PyQt4.QtCore', 'PyQt4.QtNetwork']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -33,6 +45,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -78,7 +91,8 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+# This patterns also effect to html_static_path and html_extra_path
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -112,7 +126,7 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -192,11 +206,12 @@ html_static_path = ['_static']
 # Language to be used for generating the HTML full-text search index.
 # Sphinx supports the following languages:
 #   'da', 'de', 'en', 'es', 'fi', 'fr', 'hu', 'it', 'ja'
-#   'nl', 'no', 'pt', 'ro', 'ru', 'sv', 'tr'
+#   'nl', 'no', 'pt', 'ro', 'ru', 'sv', 'tr', 'zh'
 #html_search_language = 'en'
 
 # A dictionary with options for the search language support, empty by default.
-# Now only 'ja' uses this config value
+# 'ja' uses this config value.
+# 'zh' user can custom change `jieba` dictionary path.
 #html_search_options = {'type': 'default'}
 
 # The name of a javascript file (relative to the configuration directory) that
@@ -256,7 +271,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'asciidesigner', u'ASCII Designer Documentation',
+    (master_doc, 'quickrpc', u'quickrpc Documentation',
      [author], 1)
 ]
 
