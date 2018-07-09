@@ -16,6 +16,10 @@ import sys
 import os
 import shlex
 
+up = os.path.dirname
+
+sys.path.append(os.path.abspath(up(up(__file__))))
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
