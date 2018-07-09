@@ -12,6 +12,9 @@ class AutoFrame:
             title = self.frame_title
         except AttributeError:
             title = self.__class__.__name__
+            # insert space before each capital letter
+            title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
+            title = title.strip()
         self.toolkit = get_toolkit(external_reference_provider=self, title=title)
         root = self.frame_build(toolkit=self.toolkit, body=self.frame_body)
         self.toolkit.show(root)
