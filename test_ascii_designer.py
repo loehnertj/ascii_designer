@@ -86,6 +86,10 @@ class Main(AutoFrame):
     menubar=menu
     toolbar=toolbar
     frame_body = demo_all
+    
+    def __init__(self):
+        # attributes that are set to None will be data-bound to the widget of the same name.
+        self.foo = None
         
     def frame_build(self, body):
         # initialize something
@@ -102,8 +106,8 @@ class Main(AutoFrame):
         
     def write_here(self, text):
         print('write_here: "%s"'%text)
-    def foo(self, text):
-        print('foo: "%s"'%text)
+    #def foo(self, text):
+    #    print('foo: "%s"'%text)
     def choose(self, val):
         print('choose: "%s"'%val)
     def dropdown_empty(self, val):

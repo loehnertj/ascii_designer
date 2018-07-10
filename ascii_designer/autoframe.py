@@ -18,6 +18,7 @@ class AutoFrame:
     
     close(), exit(), quit() provided for convenience
     '''
+        
     def frame_show(self):
         '''Bring the frame on the screen.'''
         try:
@@ -28,6 +29,7 @@ class AutoFrame:
             title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
             title = title.strip()
         self.toolkit = get_toolkit(external_reference_provider=self, title=title)
+        self._bound_names = []
         self.frame_build(body=self.frame_body)
         self.toolkit.show(self.toolkit.root)
         
@@ -68,6 +70,12 @@ class AutoFrame:
             if id in callables:
                 toolkit.connect(widget, getattr(self, id))
                 print('connected handler for %s'%id)
+            elif getattr(self, id, True) is None:
+                print('bind attribute "%s"'%id)
+                self._bound_names.append(id)
+                # alternative: on __getattr__, pull value ?
+                toolkit.connect(widget, lambda val=True, widget=widget: self.toolkit.setval(widget, val))
+                # FIXME: initial update
     
     def __getitem__(self, key):
         return self.frame_controls[key]
