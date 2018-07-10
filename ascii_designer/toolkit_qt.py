@@ -79,7 +79,7 @@ class ToolkitQt(ToolkitBase):
             # FIXME: check the appropriate modified indicators for the wiget
             # if not modified, go through
             return
-        if isinstance(widget, qg.QPushbutton):
+        if isinstance(widget, qg.QPushButton):
             raise ValueError('Cannot set value of Push Button')
         elif isinstance(widget, qg.QCheckBox, qg.QRadioButton):
             widget.setChecked(value)
