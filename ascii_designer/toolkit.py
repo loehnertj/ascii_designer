@@ -129,7 +129,10 @@ class ToolkitBase:
         '''
         
     def show(self, frame):
-        '''do what is necessary to make frame appear onscreen.'''
+        '''do what is necessary to make frame appear onscreen.
+        
+        This should start the event loop if necessary.
+        '''
         
     def close(self, frame):
         '''close the frame'''
