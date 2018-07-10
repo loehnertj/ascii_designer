@@ -27,24 +27,31 @@ class AutoFrame:
             title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
             title = title.strip()
         self.toolkit = get_toolkit(external_reference_provider=self, title=title)
-        root = self.frame_build(toolkit=self.toolkit, body=self.frame_body)
-        self.toolkit.show(root)
+        self.frame_build(body=self.frame_body)
+        self.toolkit.show(self.toolkit.root)
         
-    def frame_build(self, toolkit, body):
+    def frame_build(self, body):
         self.frame_controls = {}
-        callables = set(_callable_members(self))
-        root = self.frame_controls[''] = toolkit.root
+        self.frame_controls[''] = self.toolkit.root
         sliced_grid = slice_grid(body)
         
         # init rows / columns
         for col, head in enumerate(sliced_grid.column_heads):
-            toolkit.col_stretch(col, head.count('-'))
+            self.toolkit.col_stretch(col, head.count('-'))
         for row, cells in enumerate(sliced_grid.body_lines):
             # first cell
             head = cells[0:1]
             # first char of first cell
             if head: head= head[0][0:1]
-            toolkit.row_stretch(row, 1 if head=='I' else 0)
+            self.toolkit.row_stretch(row, 1 if head=='I' else 0)
+        self.frame_add_widgets(sliced_grid)
+            
+    def frame_add_widgets(self, sliced_grid=None, body=None, offset_row=0, offset_col=0):
+        if not sliced_grid:
+            sliced_grid = slice_grid(body)
+        callables = set(_callable_members(self))
+        toolkit=self.toolkit
+        
         # create controls
         for grid_element in merged_cells(sliced_grid):
             if not grid_element.text.strip():
@@ -54,13 +61,12 @@ class AutoFrame:
                 
             # place on the grid
             e = grid_element
-            toolkit.place(widget, row=e.row, col=e.col, rowspan=e.rowspan, colspan=e.colspan)
+            toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
             toolkit.anchor(widget, left=not e.text.startswith(' '), right=not e.text.endswith(' '))
             # autowire
             if id in callables:
                 toolkit.connect(widget, getattr(self, id))
                 print('connected handler for %s'%id)
-        return root
     
     def __getitem__(self, key):
         return self.frame_controls[key]

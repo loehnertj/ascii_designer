@@ -53,11 +53,11 @@ I{
 '''
 
 demo_all = '''
-|               |                                              ~
+                |                                              ~
  Label:          This is a label
  Button:         [ Press me ]
- Text box:       [ Write here_ ]
-IMultiline:      [ foo__ ]
+ 
+ Multiline:      [ foo__ ]
  Dropdown:       [ Choose (Red,Green,Blue) v]
  Dropdown empty: [ v ]
  Combo:          [ Color_ (Red,Green,Blue) v]
@@ -87,14 +87,19 @@ class Main(AutoFrame):
     toolbar=toolbar
     frame_body = demo_all
         
-    def frame_build(self, toolkit, body):
+    def frame_build(self, body):
         # initialize something
-        self.external_object = toolkit.label(text="<External label>")
-        f = super().frame_build(toolkit, body)
-        return f
+        self.external_object = self.toolkit.label(text="<External label>")
+        super().frame_build(body)
     
     def press_me(self):
         print('press_me was pressed')
+        row_3 = '''
+                  |
+        Text box:  [ Write here_ ]
+        '''
+        self.frame_add_widgets(body=row_3, offset_row=2)
+        
     def write_here(self, text):
         print('write_here: "%s"'%text)
     def foo(self, text):
@@ -121,14 +126,13 @@ class Main(AutoFrame):
 class AlignmentDemo(AutoFrame):
     frame_body = demo_alignments
         
-    def frame_build(self, toolkit, body):
-        f= super().frame_build(toolkit, body)
+    def frame_build(self, body):
+        super().frame_build(body)
         from PyQt4.QtGui import QSizePolicy
         # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
         # set to Expanding to make the RowStretch work.
         self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        return f
     
 class EmptyFrame(AutoFrame):
     frame_body = ''
