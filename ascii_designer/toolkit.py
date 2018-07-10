@@ -127,6 +127,12 @@ class ToolkitBase:
          * value_changed(new_value) for value-type controls;
             usually fired after focus-lost or Return-press.
         '''
+    def setval(self, widget, value):
+        '''update the widget from given python-type value.
+        
+        value-setting must not interfere with, i.e. not happen when the user 
+        is editing the widget.
+        '''
         
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.

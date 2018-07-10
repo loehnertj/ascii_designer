@@ -73,6 +73,32 @@ class ToolkitQt(ToolkitBase):
                 widget.currentIndexChanged.connect(lambda idx: function(widget.itemText(idx) if idx>=0 else None))
         elif isinstance(widget, qg.QSlider):
             widget.valueChanged.connect(function)
+            
+    def setval(self, widget, value):
+        if widget.hasFocus():
+            # FIXME: check the appropriate modified indicators for the wiget
+            # if not modified, go through
+            return
+        if isinstance(widget, qg.QPushbutton):
+            raise ValueError('Cannot set value of Push Button')
+        elif isinstance(widget, qg.QCheckBox, qg.QRadioButton):
+            widget.setChecked(value)
+        elif isinstance(widget, qg.QLineEdit):
+            widget.setText(value)
+        elif isinstance(widget, qg.QPlainTextEdit):
+            widget.document().setText(value)
+        elif isinstance(widget, qg.QComboBox):
+            if widget.isEditable():
+                widget.lineEdit().setText(value)
+            else:
+                idx = widget.findText(value)
+                if idx<0:
+                   raise ValueError('Tried to set value "%s" that is not in the list.'%value)
+                widget.setCurrentIndex(idx)
+        elif isinstance(widget, qg.QSlider):
+            widget.setValue(value)
+        else:
+            raise TypeError('I do not know how to set the value of a %s'%(widget.__class__.__name__))
         
     def row_stretch(self, row, proportion):
         '''set the given row to stretch according to the proportion.'''
