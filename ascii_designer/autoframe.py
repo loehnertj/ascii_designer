@@ -19,6 +19,7 @@ class AutoFrame:
     close(), exit(), quit() provided for convenience
     '''
     def frame_show(self):
+        '''Bring the frame on the screen.'''
         try:
             title = self.frame_title
         except AttributeError:
