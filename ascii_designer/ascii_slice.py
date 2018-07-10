@@ -7,8 +7,25 @@ __all__ = [
     'SlicedGrid',
     'merged_cells',
     'MCell',
-    ]
+    ] 
 
+# for testing
+_overlapping_merge = '''
+    |   |   |   
+     abc {de fgh
+     {jk {lm nop
+     {rstuvw xyz
+    '''
+_adj_row_merge = '''
+    |    |   
+     {abc
+     {def
+      {ghi
+      {jkl
+     {mno
+     {pqr
+     '''
+     
 @attr.s
 class SlicedGrid:
     # text between (not including) | | splitters

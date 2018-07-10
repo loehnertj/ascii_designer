@@ -52,22 +52,6 @@ I{
  +----------------------------+
 '''
 
-overlapping_merge = '''
-    |   |   |   
-     abc {de fgh
-     {jk {lm nop
-     {rstuvw xyz
-    '''
-adj_row_merge = '''
-    |    |   
-     {abc
-     {def
-      {ghi
-      {jkl
-     {mno
-     {pqr
-     '''
-     
 demo_all = '''
 |               |                                              ~
  Label:          This is a label
