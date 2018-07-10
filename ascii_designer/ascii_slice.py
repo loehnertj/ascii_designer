@@ -1,4 +1,16 @@
- 
+'''
+Functions to slice up a fixed-column-width ASCII grid.
+
+:any:`slice_grid` splits up lines according to a header row with ``|`` separators.
+
+:any:`merged_cells` iterates over this grid and returns merge areas.
+
+Columns are merged if there is something different from ``|`` or space below 
+the separator in the header row.
+
+Rows are merged by prefixing the cells with ``{``. The symbols must be in the 
+same text column.
+'''
 import attr
 import textwrap
 
