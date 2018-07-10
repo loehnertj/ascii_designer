@@ -44,9 +44,13 @@ def slice_grid(grid_text):
     if not lines:
         return SlicedGrid()
     column_heads = lines.pop(0).split('|')
-    # first | is optional
     if not column_heads[0]:
+        # first | is there
         column_heads.pop(0)
+    else:
+        # no first |, add padding to first column
+        lines = [' '+line for line in lines]
+        
     widths = [len(part)+1 for part in column_heads]
     body_lines = []
     for line in lines:
