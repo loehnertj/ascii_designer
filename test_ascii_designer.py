@@ -110,10 +110,10 @@ class Main(AutoFrame):
         print('dropdown_empty: %r'%(val,))
     def color(self, val):
         print('color: "%s"'%val)
-    def option_a(self):
-        print('option_a')
-    def option_b(self):
-        print('option_b')
+    def option_a(self, checked=True):
+        print('option_a %s'%checked)
+    def option_b(self, checked=True):
+        print('option_b %s'%checked)
     def agree(self, checked):
         print('agree: %s'%checked)
     def slider(self, val):

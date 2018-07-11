@@ -5,6 +5,10 @@ import PyQt4.QtGui as qg
 
 from .toolkit import ToolkitBase
 
+__all__ = [
+    'ToolkitQt',
+]
+
 _qtapp = qg.QApplication(sys.argv)
 _qt_running=False
 
@@ -13,7 +17,7 @@ def _make_focusout(func):
         if event.reason() != Qt.PopupFocusReason:
             func()
     return _pte_focusOutEvent
-        
+
 class ToolkitQt(ToolkitBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -48,7 +52,6 @@ class ToolkitQt(ToolkitBase):
         '''place widget'''
         self._layout.addWidget(widget, row, col, rowspan, colspan)
         
-        
     def connect(self, widget, function):
         '''bind the widget's default event to function.
         
@@ -58,21 +61,41 @@ class ToolkitQt(ToolkitBase):
             usually fired after focus-lost or Return-press.
         '''
         testhandler = lambda widget=widget, *args: print("TESTHANDLER: ", widget, args)
-        if isinstance(widget, (qg.QPushButton, qg.QRadioButton)):
+        if isinstance(widget, qg.QPushButton):
             widget.clicked.connect(lambda *args: function())
-        elif isinstance(widget, qg.QCheckBox):
-            widget.toggled.connect(lambda *args: function(widget.isChecked()))
+            return
+        # other cases
+        handler = lambda *args, widget=widget: function(self.getval(widget))
+        if isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
+            widget.toggled.connect(handler)
         elif isinstance(widget, qg.QLineEdit):
-            widget.editingFinished.connect(lambda: function(widget.text()))
+            widget.editingFinished.connect(handler)
         elif isinstance(widget, qg.QPlainTextEdit):
-            widget.focusOutEvent = _make_focusout(lambda: function(widget.toPlainText()))
+            widget.focusOutEvent = _make_focusout(handler)
         elif isinstance(widget, qg.QComboBox):
             if widget.isEditable():
-                widget.lineEdit().editingFinished.connect(lambda: function(widget.lineEdit().text()))
+                widget.lineEdit().editingFinished.connect(handler)
             else:
-                widget.currentIndexChanged.connect(lambda idx: function(widget.itemText(idx) if idx>=0 else None))
+                widget.currentIndexChanged.connect(handler)
         elif isinstance(widget, qg.QSlider):
-            widget.valueChanged.connect(function)
+            widget.valueChanged.connect(handler)
+        else:
+            raise TypeError('I do not know how to connect a %s'%(widget.__class__.__name__))
+            
+    def getval(self, widget):
+        cls = widget.__class__
+        if cls is qg.QPushButton: raise TypeError('A button has no value')
+        if cls is qg.QRadioButton: return widget.isChecked()
+        if cls is qg.QCheckBox: return widget.isChecked()
+        if cls is qg.QLineEdit: return widget.text(),
+        if cls is qg.QPlainTextEdit: return widget.toPlainText()
+        if cls is qg.QSlider: return widget.value()
+        if cls is qg.QComboBox:
+            if widget.isEditable():
+                return widget.lineEdit().text()
+            else:
+                idx = widget.currentIndex()
+                return widget.itemText(idx) if idx >= 0 else None
             
     def setval(self, widget, value):
         if widget.hasFocus():
