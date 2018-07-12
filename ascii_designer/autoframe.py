@@ -3,8 +3,16 @@ from .ascii_slice import slice_grid, merged_cells
 from .toolkit import get_toolkit
 
 
+__all__ = [
+    'AutoFrame',
+    'BoundValue',
+    ]
+
 def _callable_members(obj):
     yield from (name for name in dir(obj) if callable(getattr(obj, name)) )
+    
+class BoundValue:
+    pass
 
 class AutoFrame:
     '''
@@ -29,7 +37,7 @@ class AutoFrame:
             title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
             title = title.strip()
         self.toolkit = get_toolkit(external_reference_provider=self, title=title)
-        self._bound_names = []
+        self._bound_names = {}
         self.frame_build(body=self.frame_body)
         self.toolkit.show(self.toolkit.root)
         
@@ -67,15 +75,30 @@ class AutoFrame:
             toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
             toolkit.anchor(widget, left=not e.text.startswith(' '), right=not e.text.endswith(' '))
             # autowire
-            if id in callables:
+            # FIXME: bindings can never removed
+            if getattr(self, id, None) is BoundValue:
+                print('bind attribute "%s"'%id)
+                self._bound_names[id] = widget
+                delattr(self, id)
+            elif id in callables:
                 toolkit.connect(widget, getattr(self, id))
                 print('connected handler for %s'%id)
-            elif getattr(self, id, True) is None:
-                print('bind attribute "%s"'%id)
-                self._bound_names.append(id)
-                # alternative: on __getattr__, pull value ?
-                toolkit.connect(widget, lambda val=True, widget=widget: self.toolkit.setval(widget, val))
-                # FIXME: initial update
+                
+    def __setattr__(self, name, val):
+        bn = getattr(self, '_bound_names', {})
+        if name in bn:
+            self.toolkit.setval(bn[name], val)
+        else:
+            super().__setattr__(name, val)
+    
+    def __getattr__(self, name):
+        if name == '_bound_names': return super().__getattr__(name)
+        bn = getattr(self, '_bound_names', {})
+        if name in bn:
+            ctl = bn[name]
+            return self.toolkit.getval(ctl)
+        else:
+            return super().__getattr__(name)
     
     def __getitem__(self, key):
         return self.frame_controls[key]

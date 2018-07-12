@@ -1,5 +1,5 @@
 #import tkinter as tk
-from ascii_designer import AutoFrame, set_toolkit
+from ascii_designer import AutoFrame, set_toolkit, BoundValue
 
 set_toolkit('qt')
 
@@ -88,8 +88,8 @@ class Main(AutoFrame):
     frame_body = demo_all
     
     def __init__(self):
-        # attributes that are set to None will be data-bound to the widget of the same name.
-        self.foo = None
+        # attributes that are set to BoundValue will be data-bound to the widget of the same name.
+        self.foo = BoundValue
         
     def frame_build(self, body):
         # initialize something
@@ -110,10 +110,13 @@ class Main(AutoFrame):
     #    print('foo: "%s"'%text)
     def choose(self, val):
         print('choose: "%s"'%val)
+        self.foo = val
+        
     def dropdown_empty(self, val):
         print('dropdown_empty: %r'%(val,))
     def color(self, val):
         print('color: "%s"'%val)
+        print('foo: "%s"'%self.foo)
     def option_a(self, checked=True):
         print('option_a %s'%checked)
     def option_b(self, checked=True):

@@ -104,12 +104,12 @@ class ToolkitQt(ToolkitBase):
             return
         if isinstance(widget, qg.QPushButton):
             raise ValueError('Cannot set value of Push Button')
-        elif isinstance(widget, qg.QCheckBox, qg.QRadioButton):
+        elif isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
             widget.setChecked(value)
         elif isinstance(widget, qg.QLineEdit):
             widget.setText(value)
         elif isinstance(widget, qg.QPlainTextEdit):
-            widget.document().setText(value)
+            widget.document().setPlainText(value)
         elif isinstance(widget, qg.QComboBox):
             if widget.isEditable():
                 widget.lineEdit().setText(value)
