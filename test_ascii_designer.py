@@ -66,7 +66,7 @@ demo_all = '''
  Checkbox:       [x] agree:I agree to the terms and conditions.
  Slider:         [ slider: 0 -+- 100 ]
  External:       *external_object
- [ Align Demo ]
+ [ Align Demo ]  [ Bound ctl demo ]
  [ Quit ]
 '''
 
@@ -89,7 +89,7 @@ class Main(AutoFrame):
     
     def __init__(self):
         # attributes that are set to BoundValue will be data-bound to the widget of the same name.
-        self.foo = BoundValue
+        pass
         
     def frame_build(self, body):
         # initialize something
@@ -106,11 +106,10 @@ class Main(AutoFrame):
         
     def write_here(self, text):
         print('write_here: "%s"'%text)
-    #def foo(self, text):
-    #    print('foo: "%s"'%text)
+    def foo(self, text):
+        print('foo: "%s"'%text)
     def choose(self, val):
         print('choose: "%s"'%val)
-        self.foo = val
         
     def dropdown_empty(self, val):
         print('dropdown_empty: %r'%(val,))
@@ -130,6 +129,10 @@ class Main(AutoFrame):
         f = AlignmentDemo()
         f.frame_show()
         
+    def bound_ctl_demo(self):
+        f = BoundCtlDemo()
+        f.frame_show()
+        
 class AlignmentDemo(AutoFrame):
     frame_body = demo_alignments
         
@@ -140,6 +143,39 @@ class AlignmentDemo(AutoFrame):
         # set to Expanding to make the RowStretch work.
         self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+class BoundCtlDemo(AutoFrame):
+    frame_body = '''
+                   |                                              ~
+    Textbox:        [ _ ]
+    Multiline:      [ __ ]
+    Dropdown:       [ Choose (Red,Green,Blue) v]
+    Combo:          [ Color_ (Red,Green,Blue) v]
+    Option:         ( ) Option A
+                    (x) Option B
+    Checkbox:       [x] agree:I agree to the terms and conditions.
+    Slider:         [ slider: 0 -+- 100 ]
+    [Get all]       [Set all]
+    '''
+    
+    bind_names = 'textbox multiline choose color option_a option_b agree slider'.split(' ')
+    
+    def __init__(self):
+        for name in self.bind_names:
+            setattr(self, name, BoundValue)
+        
+    def set_all(self):
+        self.textbox = 'text'
+        self.multiline = 'more\ntext'
+        self.choose = 'Green'
+        self.color = 'Shade of grey'
+        self.option_b = True
+        self.agree = False
+        self.slider = 50
+        
+    def get_all(self):
+        for name in self.bind_names:
+            print('%s: %s'%(name, getattr(self, name)))
     
 class EmptyFrame(AutoFrame):
     frame_body = ''
