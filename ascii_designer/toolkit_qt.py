@@ -87,7 +87,7 @@ class ToolkitQt(ToolkitBase):
         if cls is qg.QPushButton: raise TypeError('A button has no value')
         if cls is qg.QRadioButton: return widget.isChecked()
         if cls is qg.QCheckBox: return widget.isChecked()
-        if cls is qg.QLineEdit: return widget.text(),
+        if cls is qg.QLineEdit: return widget.text()
         if cls is qg.QPlainTextEdit: return widget.toPlainText()
         if cls is qg.QSlider: return widget.value()
         if cls is qg.QComboBox:
