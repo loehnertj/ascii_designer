@@ -25,6 +25,10 @@ class AutoFrame:
     get at the created controls using .frame_controls[key] or AutoFrame[key].
     
     close(), exit(), quit() provided for convenience
+    
+    functions with same name as a control are autobound to the default handler (click or changed)
+    
+    attributes set to BoundValue are autobound to the control value (get/set).
     '''
         
     def frame_show(self):
