@@ -32,6 +32,14 @@ class ToolkitQt(ToolkitBase):
             self._root.setLayout(self._layout)
             self._root.setWindowTitle(self._title)
         return self._root
+    
+    @root.setter
+    def root(self, val):
+        '''sets layout and title'''
+        self._root = val
+        self._layout = qg.QGridLayout()
+        self._root.setLayout(self._layout)
+        self._root.setWindowTitle(self._title)
         
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.'''
