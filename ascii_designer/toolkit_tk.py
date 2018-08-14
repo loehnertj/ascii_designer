@@ -3,7 +3,31 @@
 import tkinter as tk
 from .toolkit import ToolkitBase
 
+__all__ = [
+    'ToolkitTk',
+]
+
 class ToolkitTk(ToolkitBase):
+    # widget generators
+    @property
+    def root(self):
+        '''return the root widget'''
+        if not self._root:
+            self._root = tk.Tk()
+        return self._root
+        
+    @root.setter
+    def root(self, val):
+        self._root = val
+        
+    def show(self, frame):
+        '''do what is necessary to make frame appear onscreen.'''
+        frame.mainloop()
+        
+    def close(self, frame):
+        '''close the frame'''
+        frame.destroy()
+        
     def place(self, widget, row=0, col=0, rowspan=1, colspan=1):
         '''place widget'''
         widget.grid(row=row,rowspan=rowspan, column=col, columnspan=colspan)
@@ -23,14 +47,14 @@ class ToolkitTk(ToolkitBase):
             widget.bind('<FocusOut>', lambda ev: function(widget.get()))
         elif isinstance(widget, tk.OptionMenu):
             widget.config(command=function)
-        
-    def show(self, frame):
-        '''do what is necessary to make frame appear onscreen.'''
-        frame.mainloop()
-        
-    def close(self, frame):
-        '''close the frame'''
-        frame.destroy()
+            
+    def getval(self, widget):
+        # FIXME
+        pass
+    
+    def setval(self, widget, value):
+        # FIXME
+        pass
         
     def row_stretch(self, row, proportion):
         '''set the given row to stretch according to the proportion.'''
@@ -47,14 +71,6 @@ class ToolkitTk(ToolkitBase):
         if top: sticky += 'n'
         if bottom: sticky += 's'
         widget.grid(sticky=sticky)
-        
-    # widget generators
-    @property
-    def root(self):
-        '''return the root widget'''
-        if not self._root:
-            self._root = tk.Tk()
-        return self._root
         
     def spacer(self):
         '''a vertical/horizontal spacer'''
