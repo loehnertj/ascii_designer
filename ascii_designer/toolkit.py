@@ -19,6 +19,7 @@ def set_toolkit(toolkit_name):
     
 def get_toolkit(external_reference_provider=None, title=''):
     if _TOOLKIT_NAME == 'tk':
+        from .toolkit_tk import ToolkitTk
         return ToolkitTk(external_reference_provider=external_reference_provider, title=title)
     elif _TOOLKIT_NAME == 'qt':
         from .toolkit_qt import ToolkitQt
