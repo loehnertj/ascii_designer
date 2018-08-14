@@ -1,7 +1,11 @@
 #import tkinter as tk
+import sys
 from ascii_designer import AutoFrame, set_toolkit, BoundValue
 
-set_toolkit('qt')
+TK = 'qt'
+if sys.argv[1:]:
+    TK = sys.argv[1]
+set_toolkit(TK)
 
 menu = '''
     File
@@ -138,11 +142,12 @@ class AlignmentDemo(AutoFrame):
         
     def frame_build(self, body):
         super().frame_build(body)
-        from PyQt4.QtGui import QSizePolicy
-        # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
-        # set to Expanding to make the RowStretch work.
-        self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        if TK=='qt':
+            from PyQt4.QtGui import QSizePolicy
+            # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
+            # set to Expanding to make the RowStretch work.
+            self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
 class BoundCtlDemo(AutoFrame):
     frame_body = '''
