@@ -45,8 +45,6 @@ class ToolkitTk(ToolkitBase):
         elif isinstance(widget, tk.Entry):
             widget.bind('<Return>', lambda ev:function(widget.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.get()))
-        elif isinstance(widget, tk.OptionMenu):
-            widget.config(command=function)
             
     def getval(self, widget):
         # FIXME
