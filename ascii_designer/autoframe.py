@@ -80,10 +80,13 @@ class AutoFrame:
             toolkit.anchor(widget, left=not e.text.startswith(' '), right=not e.text.endswith(' '))
             # autowire
             # FIXME: bindings can never removed
-            if getattr(self, id, None) is BoundValue:
+            if getattr(self, id, BoundValue) is BoundValue:
                 print('bind attribute "%s"'%id)
                 self._bound_names[id] = widget
-                delattr(self, id)
+                try:
+                    delattr(self, id)
+                except AttributeError:
+                    pass
             elif id in callables:
                 toolkit.connect(widget, getattr(self, id))
                 print('connected handler for %s'%id)
