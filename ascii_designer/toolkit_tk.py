@@ -1,6 +1,7 @@
 '''This is a construction site...''' 
 
 import tkinter as tk
+from tkinter.scrolledtext import ScrolledText
 from tkinter import font
 from tkinter import ttk
 from .toolkit import ToolkitBase
@@ -13,14 +14,25 @@ __all__ = [
 ]
 
 class ToolkitTk(ToolkitBase):
+    '''
+    Builds Tk widgets.
+    
+    Returns the raw Tk widget (no wrapper).
+
+    For each widget, a Tk Variable is generated. It is stored in 
+    ``<widget>.variable`` (attached as additional property).
+    
+    If you create Radio buttons, they will all share the same variable.
+    
+    The multiline widget is a tkinter.scrolledtext.ScrolledText and has no 
+    variable.
+    
+    The ComboBox / Dropdown box is taken from ttk.
+    '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        r = self.root
-        s = ttk.Style()
-        # set tkinter widget fonts
-        #s.configure('', font=self._sane_font)
-        
-        self._radiobutton_var = tk.StringVar()
+        self._root = None
+        self._radiobutton_var = None
         
     # widget generators
     @property
@@ -32,16 +44,16 @@ class ToolkitTk(ToolkitBase):
             self._root.option_add('*Font', self._sane_font)
         return self._root
         
+    @root.setter
+    def root(self, val):
+        self._root = val
+        
     @property
     def _sane_font(self):
         if not hasattr(self, '_sane_font_cached'):
             self._sane_font_cached = font.Font(family='Helvetica', size=12)
         return self._sane_font_cached
     
-    @root.setter
-    def root(self, val):
-        self._root = val
-        
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.'''
         frame.mainloop()
@@ -64,17 +76,27 @@ class ToolkitTk(ToolkitBase):
         '''
         if isinstance(widget, tk.Button):
             widget.config(command=function)
+        elif isinstance(widget, ScrolledText):
+            widget.bind('<Return>', lambda ev:function(widget.get(1., 'end')))
+            widget.bind('<FocusOut>', lambda ev: function(widget.get(1., 'end')))
         elif isinstance(widget, tk.Entry):
-            widget.bind('<Return>', lambda ev:function(widget.get()))
-            widget.bind('<FocusOut>', lambda ev: function(widget.get()))
+            widget.bind('<Return>', lambda ev:function(widget.variable.get()))
+            widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
+        else:
+            widget.variable.trace('w', lambda *args: function(widget.variable.get()))
             
     def getval(self, widget):
-        # FIXME
-        pass
+        if isinstance(widget, ScrolledText):
+            return widget.get(1., 'end')
+        else:
+            return widget.variable.get()
     
     def setval(self, widget, value):
-        # FIXME
-        pass
+        if isinstance(widget, ScrolledText):
+            widget.delete(1., 'end')
+            widget.insert('end', value)
+        else:
+            widget.variable.set(value)
         
     def row_stretch(self, row, proportion):
         '''set the given row to stretch according to the proportion.'''
@@ -95,62 +117,87 @@ class ToolkitTk(ToolkitBase):
     def spacer(self):
         '''a vertical/horizontal spacer'''
         
-    def label(self, id=None, label_id=None, text=None):
+    def label(self, id=None, label_id=None, text=''):
         '''label'''
-        return tk.Label(self.root, name=id, text=(text or '').strip())
+        var = tk.StringVar(self.root, text)
+        l = tk.Label(self.root, name=id, textvariable=var)
+        l.variable = var
+        return l
         
-    def button(self, id=None, text=None):
+    def button(self, id=None, text=''):
         '''button'''
-        return tk.Button(self.root, name=id, text=(text or '').strip())
+        var = tk.StringVar(self.root, text)
+        b = tk.Button(self.root, name=id, textvariable = var)
+        b.variable = var
+        return b
     
-    def textbox(self, id=None, text=None):
+    def textbox(self, id=None, text=''):
         '''single-line text entry box'''
-        return tk.Entry(self.root, name=id, text=(text or '').strip())
+        var = tk.StringVar(self.root, text)
+        e = tk.Entry(self.root, name=id, textvariable=var)
+        e.variable = var
+        return e
     
-    def multiline(self, id=None, text=None):
-        '''not supported'''
+    def multiline(self, id=None, text=''):
+        t = ScrolledText(self.root, name=id, height=3)
+        t.insert('end', text)
+        return t
         
-    def dropdown(self, id=None, text=None, values=None):
+    def dropdown(self, id=None, text='', values=None):
         return self._dropdown(id, text, values, False)
     
-    def combo(self, id=None, text=None, values=None):
+    def combo(self, id=None, text='', values=None):
         return self._dropdown(id, text, values, True)
     
-    def _dropdown(self, id=None, text=None, values=None, editable=False):
+    def _dropdown(self, id=None, text='', values=None, editable=False):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
-        tv = tk.StringVar()
-        tv.set((text or '').strip())
-        cbo = ttk.Combobox(self.root, name=id, values=choices, textvariable=tv, state='normal' if editable else 'readonly')
+        var = tk.StringVar(self.root, text)
+        cbo = ttk.Combobox(self.root, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
+        cbo.variable = var
         return cbo
     
-    def option(self, id=None, text=None, checked=None):
+    def option(self, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
+        if not self._radiobutton_var:
+            self._radiobutton_var = tk.StringVar(self._root, id)
         rb = tk.Radiobutton(self.root,
-                  text=(text or '').strip(),
+                  text=text,
                   variable=self._radiobutton_var, 
                   name=id,
                   value=id,
         )
-        if checked:
+        if checked.strip():
             self._radiobutton_var.set(id)
+        rb.variable = self._radiobutton_var
+        rb._id = id
         return rb
     
-    def checkbox(self, id=None, text=None, checked=None):
+    def checkbox(self, id=None, text='', checked=None):
         '''Checkbox'''
-        v = tk.IntVar()
+        var = tk.BooleanVar(self._root, bool(checked.strip()))
         cb = tk.Checkbutton(
             self.root,
             text=(text or '').strip(),
             name=id,
-            variable=v
+            variable=var, onvalue=True, offvalue=False
             )
-        if checked:
-            v.set(1)
+        cb.variable = var
         return cb
+    
     def slider(self, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        return tk.Scale(self.root, name=id, from_=min, to=max, orient=tk.HORIZONTAL)
+        var = tk.IntVar(self.root, min)
+        s = tk.Scale(
+            self.root,
+            name=id,
+            from_=min,
+            to=max,
+            orient=tk.HORIZONTAL,
+            variable=var
+        )
+        s.variable = var
+        return s
     
     def external(self, id=None):
         '''external reference'''
