@@ -57,7 +57,7 @@ I{
 '''
 
 demo_all = '''
-                |                                              ~
+                |      <->                                        ~
  Label:          This is a label
  Button:         [ Press me ]
  
@@ -151,16 +151,17 @@ class AlignmentDemo(AutoFrame):
         
 class BoundCtlDemo(AutoFrame):
     frame_body = '''
-                   |                                              ~
-    Textbox:        [ _ ]
-    Multiline:      [ __ ]
-    Dropdown:       [ Choose (Red,Green,Blue) v]
-    Combo:          [ Color_ (Red,Green,Blue) v]
-    Option:         ( ) Option A
-                    (x) Option B
-    Checkbox:       [x] agree:I agree to the terms and conditions.
-    Slider:         [ slider: 0 -+- 100 ]
-    [Get all]       [Set all]
+    |               |  <->                                            ~
+     Textbox:        [ _ ]
+     Multiline:      [ __ ]
+     Dropdown:       [ Choose (Red,Green,Blue) v]
+     Combo:          [ Color_ (Red,Green,Blue) v]
+     Option:         ( ) Option A
+                     (x) Option B
+     Checkbox:       [x] agree:I agree to the terms and conditions.
+     Slider:         [ slider: 0 -+- 100 ]
+    I
+     [Get all]       [Set all]
     '''
     
     bind_names = 'textbox multiline choose color option_a option_b agree slider'.split(' ')
