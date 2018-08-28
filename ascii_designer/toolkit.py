@@ -103,6 +103,8 @@ class ToolkitBase:
                     d['id'] = 'label_'+d['id']
                 else:
                     self._last_label_id = ''
+                if 'text' in d:
+                    d['text'] = (d['text'] or '').strip()
                 print('%r --> %s %r'%(text, name, d))
                 widget = getattr(self, name)(**d)
                 if widget is None:
@@ -133,6 +135,10 @@ class ToolkitBase:
          * value_changed(new_value) for value-type controls;
             usually fired after focus-lost or Return-press.
         '''
+    def getval(self, widget):
+        '''get python-type value from widget.
+        '''
+        
     def setval(self, widget, value):
         '''update the widget from given python-type value.
         
@@ -152,21 +158,21 @@ class ToolkitBase:
     # widget generators
     def spacer(self):
         '''a vertical/horizontal spacer'''
-    def label(self, id=None, label_id=None, text=None):
+    def label(self, id=None, label_id=None, text=''):
         '''label'''
-    def button(self, id=None, text=None):
+    def button(self, id=None, text=''):
         '''button'''
-    def textbox(self, id=None, text=None):
+    def textbox(self, id=None, text=''):
         '''single-line text entry box'''
-    def multiline(self, id=None, text=None):
+    def multiline(self, id=None, text=''):
         '''multiline text entry box'''
-    def dropdown(self, id=None, text=None, values=None):
+    def dropdown(self, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
-    def combo(self, id=None, text=None, values=None):
+    def combo(self, id=None, text='', values=None):
         '''combo box; values is the raw string between the parens. Free-text allowed.'''
-    def option(self, id=None, text=None, checked=None):
+    def option(self, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-    def checkbox(self, id=None, text=None, checked=None):
+    def checkbox(self, id=None, text='', checked=None):
         '''Checkbox'''
     def slider(self, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
