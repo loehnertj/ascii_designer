@@ -75,6 +75,7 @@ class ToolkitQt(ToolkitBase):
         # other cases
         handler = lambda *args, widget=widget: function(self.getval(widget))
         if isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
+            # FIXME: For radiobutton, give the selected ID as value
             widget.toggled.connect(handler)
         elif isinstance(widget, qg.QLineEdit):
             widget.editingFinished.connect(handler)
@@ -93,6 +94,7 @@ class ToolkitQt(ToolkitBase):
     def getval(self, widget):
         cls = widget.__class__
         if cls is qg.QPushButton: raise TypeError('A button has no value')
+        # FIXME: for Radio Button, return checked ID
         if cls is qg.QRadioButton: return widget.isChecked()
         if cls is qg.QCheckBox: return widget.isChecked()
         if cls is qg.QLineEdit: return widget.text()
@@ -162,44 +164,44 @@ class ToolkitQt(ToolkitBase):
     def spacer(self):
         '''a vertical/horizontal spacer'''
         
-    def label(self, id=None, label_id=None, text=None):
+    def label(self, id=None, label_id=None, text=''):
         '''label'''
-        return qg.QLabel(parent=self.root, text=(text or '').strip())
+        return qg.QLabel(parent=self.root, text=text)
         
-    def button(self, id=None, text=None):
+    def button(self, id=None, text=''):
         '''button'''
-        return qg.QPushButton(parent=self.root, text=(text or '').strip())
+        return qg.QPushButton(parent=self.root, text='')
     
-    def textbox(self, id=None, text=None):
+    def textbox(self, id=None, text=''):
         '''single-line text entry box'''
-        return qg.QLineEdit((text or '').strip(), parent=self.root)
+        return qg.QLineEdit(text, parent=self.root)
     
-    def multiline(self, id=None, text=None):
+    def multiline(self, id=None, text=''):
         '''multi-line text entry box'''
-        return qg.QPlainTextEdit((text or '').strip(), parent=self.root)
+        return qg.QPlainTextEdit(text, parent=self.root)
     
-    def dropdown(self, id=None, text=None, values=None):
+    def dropdown(self, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
         w = qg.QComboBox(self.root)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         w.addItems(choices)
         return w
     
-    def combo(self, id=None, text=None, values=None):
+    def combo(self, id=None, text='', values=None):
         '''not supported'''
         w = self.dropdown(id=id, text=text, values=values)
         w.setEditable(True)
         return w
         
-    def option(self, id=None, text=None, checked=None):
+    def option(self, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-        rb = qg.QRadioButton((text or '').strip(), parent=self.root)
+        rb = qg.QRadioButton(text, parent=self.root)
         rb.setChecked((checked=='x'))
         return rb
     
-    def checkbox(self, id=None, text=None, checked=None):
+    def checkbox(self, id=None, text='', checked=None):
         '''Checkbox'''
-        cb = qg.QCheckBox((text or '').strip(), parent=self.root)
+        cb = qg.QCheckBox(text, parent=self.root)
         cb.setChecked((checked=='x'))
         return cb
     
