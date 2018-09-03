@@ -22,7 +22,7 @@ class AutoFrame:
     
     to create external widgets or customize the autocreated ones, override frame_build
     
-    get at the created controls using .frame_controls[key] or AutoFrame[key].
+    get at the created controls using AutoFrame[key].
     
     close(), exit(), quit() provided for convenience
     
@@ -30,9 +30,17 @@ class AutoFrame:
     
     attributes set to BoundValue are autobound to the control value (get/set).
     '''
+    def __init__(self):
+        # make getattr + setattr work first
+        self.__dict__['_bound_names'] = {}
+        self._frame_controls = {}
+        self._toolkit = None
         
-    def frame_show(self):
-        '''Bring the frame on the screen.'''
+    @property
+    def toolkit(self):
+        '''instantiates the toolkit on first use.'''
+        if self._toolkit:
+            return self._toolkit
         try:
             title = self.frame_title
         except AttributeError:
@@ -40,14 +48,17 @@ class AutoFrame:
             # insert space before each capital letter
             title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
             title = title.strip()
-        self.toolkit = get_toolkit(external_reference_provider=self, title=title)
-        self._bound_names = {}
-        self.frame_build(body=self.frame_body)
+        self._toolkit = get_toolkit(external_reference_provider=self, title=title)
+        return self._toolkit
+        
+    def frame_show(self):
+        '''Bring the frame on the screen.'''
+        if not self._frame_controls:
+            self.frame_build(body=self.frame_body)
         self.toolkit.show(self.toolkit.root)
         
     def frame_build(self, body):
-        self.frame_controls = {}
-        self.frame_controls[''] = self.toolkit.root
+        self._frame_controls[''] = self.toolkit.root
         sliced_grid = slice_grid(body)
         
         # init rows / columns
@@ -72,7 +83,7 @@ class AutoFrame:
             if not grid_element.text.strip():
                 continue
             id, widget = toolkit.parse(grid_element.text)
-            self.frame_controls[id] = widget
+            self._frame_controls[id] = widget
                 
             # place on the grid
             e = grid_element
@@ -99,16 +110,17 @@ class AutoFrame:
             super().__setattr__(name, val)
     
     def __getattr__(self, name):
-        if name == '_bound_names': return super().__getattr__(name)
-        bn = getattr(self, '_bound_names', {})
+        if '_bound_names' not in self.__dict__:
+            raise RuntimeError('You forgot to call super().__init__!')
+        bn = self._bound_names
         if name in bn:
             ctl = bn[name]
             return self.toolkit.getval(ctl)
         else:
-            return super().__getattr__(name)
+            raise AttributeError('Attribute %s is not defined'%(name,))
     
     def __getitem__(self, key):
-        return self.frame_controls[key]
+        return self._frame_controls[key]
     
     def close(self):
         self.toolkit.close(self[''])
