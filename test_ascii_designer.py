@@ -92,6 +92,7 @@ class Main(AutoFrame):
     frame_body = demo_all
     
     def __init__(self):
+        super().__init__()
         # attributes that are set to BoundValue will be data-bound to the widget of the same name.
         pass
         
@@ -167,6 +168,7 @@ class BoundCtlDemo(AutoFrame):
     bind_names = 'textbox multiline choose color option_a option_b agree slider'.split(' ')
     
     def __init__(self):
+        super().__init__()
         for name in self.bind_names:
             setattr(self, name, BoundValue)
         
