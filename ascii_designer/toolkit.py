@@ -67,15 +67,8 @@ class ToolkitBase:
         self._root = None
         self._title = title
         
-    @property
     def root(self):
-        '''set / return the root widget'''
-    
-    @root.setter
-    def root(self, val):
-        '''set new root widget'''
-        
-        
+        '''make a root (window) widget'''
         
     def parse(self, parent, text):
         '''Returns the widget id and widget generated from the textual definition.

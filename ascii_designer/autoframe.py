@@ -46,7 +46,7 @@ class AutoFrame:
     def frame_show(self):
         '''Bring the frame on the screen.'''
         if not self._frame_controls:
-            self._frame_controls[''] = self.toolkit.root
+            self._frame_controls[''] = self.toolkit.root()
             self.frame_build(self[''], body=self.frame_body)
         self.toolkit.show(self[''])
         

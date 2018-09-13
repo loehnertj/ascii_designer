@@ -31,24 +31,17 @@ class ToolkitTk(ToolkitBase):
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._root = None
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
         # Find a better way of grouping (by parent maybe?)
         self._radiobutton_var = None
         
     # widget generators
-    @property
     def root(self):
-        '''return the root widget'''
-        if not self._root:
-            self._root = tk.Tk()
-            self._root.tk.call('tk', 'scaling', 2.0)
-            self._root.option_add('*Font', self._sane_font)
-        return self._root
-        
-    @root.setter
-    def root(self, val):
-        self._root = val
+        '''make a root (window) widget'''
+        root = tk.Tk()
+        root.tk.call('tk', 'scaling', 2.0)
+        root.option_add('*Font', self._sane_font)
+        return root
         
     @property
     def _sane_font(self):

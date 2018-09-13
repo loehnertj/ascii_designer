@@ -23,20 +23,12 @@ class ToolkitQt(ToolkitBase):
         super().__init__(**kwargs)
         
     # widget generators
-    @property
     def root(self):
-        '''return the root widget'''
-        if not self._root:
-            self._root = qg.QWidget()
-            self._root.setLayout(qg.QGridLayout())
-            self._root.setWindowTitle(self._title)
-        return self._root
-    
-    @root.setter
-    def root(self, val):
-        '''sets layout and title'''
-        self._root = val
-        self._root.setWindowTitle(self._title)
+        '''make a root (window) widget'''
+        root = qg.QWidget()
+        root.setLayout(qg.QGridLayout())
+        root.setWindowTitle(self._title)
+        return root
         
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.'''
