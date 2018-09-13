@@ -28,8 +28,7 @@ class ToolkitQt(ToolkitBase):
         '''return the root widget'''
         if not self._root:
             self._root = qg.QWidget()
-            self._layout = qg.QGridLayout()
-            self._root.setLayout(self._layout)
+            self._root.setLayout(qg.QGridLayout())
             self._root.setWindowTitle(self._title)
         return self._root
     
@@ -37,8 +36,6 @@ class ToolkitQt(ToolkitBase):
     def root(self, val):
         '''sets layout and title'''
         self._root = val
-        self._layout = qg.QGridLayout()
-        self._root.setLayout(self._layout)
         self._root.setWindowTitle(self._title)
         
     def show(self, frame):
@@ -58,7 +55,7 @@ class ToolkitQt(ToolkitBase):
         
     def place(self, widget, row=0, col=0, rowspan=1, colspan=1):
         '''place widget'''
-        self._layout.addWidget(widget, row, col, rowspan, colspan)
+        widget.parent().layout().addWidget(widget, row, col, rowspan, colspan)
         
     def connect(self, widget, function):
         '''bind the widget's default event to function.
@@ -93,7 +90,7 @@ class ToolkitQt(ToolkitBase):
             
     def getval(self, widget):
         cls = widget.__class__
-        if cls is qg.QPushButton: raise TypeError('A button has no value')
+        if cls is qg.QPushButton: return widget.text()
         # FIXME: for Radio Button, return checked ID
         if cls is qg.QRadioButton: return widget.isChecked()
         if cls is qg.QCheckBox: return widget.isChecked()
@@ -113,7 +110,7 @@ class ToolkitQt(ToolkitBase):
             # if not modified, go through
             return
         if isinstance(widget, qg.QPushButton):
-            raise ValueError('Cannot set value of Push Button')
+            widget.setText(value)
         elif isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
             widget.setChecked(value)
         elif isinstance(widget, qg.QLineEdit):
@@ -133,13 +130,13 @@ class ToolkitQt(ToolkitBase):
         else:
             raise TypeError('I do not know how to set the value of a %s'%(widget.__class__.__name__))
         
-    def row_stretch(self, row, proportion):
+    def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''
-        self._layout.setRowStretch(row, proportion)
+        container.layout().setRowStretch(row, proportion)
         
-    def col_stretch(self, col, proportion):
+    def col_stretch(self, container, col, proportion):
         '''set the given col to stretch according to the proportion.'''
-        self._layout.setColumnStretch(col, proportion)
+        container.layout().setColumnStretch(col, proportion)
         
     def anchor(self, widget, left=True, right=True, top=True, bottom=True):
         '''anchor the widget. Depending on the anchors, widget will be left-, 
@@ -151,7 +148,7 @@ class ToolkitQt(ToolkitBase):
             (False, True): Qt.AlignRight,
             (True, True): Qt.Alignment()
             }[(left, right)]
-        self._layout.setAlignment(widget, align)
+        widget.parent().layout().setAlignment(widget, align)
                                  
         
     # Widgets
@@ -161,59 +158,59 @@ class ToolkitQt(ToolkitBase):
             f.setTitle(title)
         return f
     
-    def spacer(self):
+    def spacer(self, parent):
         '''a vertical/horizontal spacer'''
         
-    def label(self, id=None, label_id=None, text=''):
+    def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
-        return qg.QLabel(parent=self.root, text=text)
+        return qg.QLabel(parent=parent, text=text)
         
-    def button(self, id=None, text=''):
+    def button(self, parent, id=None, text=''):
         '''button'''
-        return qg.QPushButton(parent=self.root, text='')
+        return qg.QPushButton(parent=parent, text=text)
     
-    def textbox(self, id=None, text=''):
+    def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
-        return qg.QLineEdit(text, parent=self.root)
+        return qg.QLineEdit(text, parent=parent)
     
-    def multiline(self, id=None, text=''):
+    def multiline(self, parent, id=None, text=''):
         '''multi-line text entry box'''
-        return qg.QPlainTextEdit(text, parent=self.root)
+        return qg.QPlainTextEdit(text, parent=parent)
     
-    def dropdown(self, id=None, text='', values=None):
+    def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
-        w = qg.QComboBox(self.root)
+        w = qg.QComboBox(parent)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         w.addItems(choices)
         return w
     
-    def combo(self, id=None, text='', values=None):
+    def combo(self, parent, id=None, text='', values=None):
         '''not supported'''
-        w = self.dropdown(id=id, text=text, values=values)
+        w = self.dropdown(parent, id=id, text=text, values=values)
         w.setEditable(True)
         return w
         
-    def option(self, id=None, text='', checked=None):
+    def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-        rb = qg.QRadioButton(text, parent=self.root)
+        rb = qg.QRadioButton(text, parent=parent)
         rb.setChecked((checked=='x'))
         return rb
     
-    def checkbox(self, id=None, text='', checked=None):
+    def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
-        cb = qg.QCheckBox(text, parent=self.root)
+        cb = qg.QCheckBox(text, parent=parent)
         cb.setChecked((checked=='x'))
         return cb
     
-    def slider(self, id=None, min=None, max=None):
+    def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        s = qg.QSlider(Qt.Horizontal, parent=self.root)
+        s = qg.QSlider(Qt.Horizontal, parent=parent)
         s.setMinimum(int(min))
         s.setMaximum(int(max))
         s.setTickPosition(qg.QSlider.TicksBelow)
         return s
         
-    def external(self, id=None):
-        '''external reference'''
+    def external(self, parent, id=None):
+        '''external reference. parent is ignored.'''
         return getattr(self._external_reference_provider, id)
     

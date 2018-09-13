@@ -77,7 +77,7 @@ class ToolkitBase:
         
         
         
-    def parse(self, text):
+    def parse(self, parent, text):
         '''Returns the widget id and widget generated from the textual definition.
         
         Autogenerates id:
@@ -106,17 +106,17 @@ class ToolkitBase:
                 if 'text' in d:
                     d['text'] = (d['text'] or '').strip()
                 print('%r --> %s %r'%(text, name, d))
-                widget = getattr(self, name)(**d)
+                widget = getattr(self, name)(parent, **d)
                 if widget is None:
-                    widget = self.label(text='<UNSUPPORTED>')
+                    widget = self.label(parent, text='<UNSUPPORTED>')
                     #raise ValueError('This toolkit does not support %s widget type.'%name)
                 return d['id'], widget
         raise ValueError('Could not convert widget: %r'%(text,))
     
-    def row_stretch(self, row, proportion):
+    def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''
         
-    def col_stretch(self, col, proportion):
+    def col_stretch(self, container, col, proportion):
         '''set the given col to stretch according to the proportion.'''
         
     def anchor(self, widget, left=True, right=True, top=True, bottom=True):
@@ -156,27 +156,27 @@ class ToolkitBase:
         '''close the frame'''
         
     # widget generators
-    def spacer(self):
+    def spacer(self, parent):
         '''a vertical/horizontal spacer'''
-    def label(self, id=None, label_id=None, text=''):
+    def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
-    def button(self, id=None, text=''):
+    def button(self, parent, id=None, text=''):
         '''button'''
-    def textbox(self, id=None, text=''):
+    def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
-    def multiline(self, id=None, text=''):
+    def multiline(self, parent, id=None, text=''):
         '''multiline text entry box'''
-    def dropdown(self, id=None, text='', values=None):
+    def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
-    def combo(self, id=None, text='', values=None):
+    def combo(self, parent, id=None, text='', values=None):
         '''combo box; values is the raw string between the parens. Free-text allowed.'''
-    def option(self, id=None, text='', checked=None):
+    def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-    def checkbox(self, id=None, text='', checked=None):
+    def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
-    def slider(self, id=None, min=None, max=None):
+    def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-    def external(self, id=None):
-        '''external reference'''
+    def external(self, parent, id=None):
+        '''external reference. Parent is ignored.'''
         return getattr(self._external_reference_provider, id)
     

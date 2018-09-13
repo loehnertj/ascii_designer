@@ -32,6 +32,8 @@ class ToolkitTk(ToolkitBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._root = None
+        # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
+        # Find a better way of grouping (by parent maybe?)
         self._radiobutton_var = None
         
     # widget generators
@@ -98,13 +100,13 @@ class ToolkitTk(ToolkitBase):
         else:
             widget.variable.set(value)
         
-    def row_stretch(self, row, proportion):
+    def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''
-        self.root.grid_rowconfigure(row, weight=proportion)
+        container.grid_rowconfigure(row, weight=proportion)
         
-    def col_stretch(self, col, proportion):
+    def col_stretch(self, container, col, proportion):
         '''set the given col to stretch according to the proportion.'''
-        self.root.grid_columnconfigure(col, weight=proportion)
+        container.grid_columnconfigure(col, weight=proportion)
         
     def anchor(self, widget, left=True, right=True, top=True, bottom=True):
         sticky = ''
@@ -114,54 +116,54 @@ class ToolkitTk(ToolkitBase):
         if bottom: sticky += 's'
         widget.grid(sticky=sticky)
         
-    def spacer(self):
+    def spacer(self, parent):
         '''a vertical/horizontal spacer'''
         
-    def label(self, id=None, label_id=None, text=''):
+    def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
-        var = tk.StringVar(self.root, text)
-        l = tk.Label(self.root, name=id, textvariable=var)
+        var = tk.StringVar(parent, text)
+        l = tk.Label(parent, name=id, textvariable=var)
         l.variable = var
         return l
         
-    def button(self, id=None, text=''):
+    def button(self, parent, id=None, text=''):
         '''button'''
-        var = tk.StringVar(self.root, text)
-        b = tk.Button(self.root, name=id, textvariable = var)
+        var = tk.StringVar(parent, text)
+        b = tk.Button(parent, name=id, textvariable = var)
         b.variable = var
         return b
     
-    def textbox(self, id=None, text=''):
+    def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
-        var = tk.StringVar(self.root, text)
-        e = tk.Entry(self.root, name=id, textvariable=var)
+        var = tk.StringVar(parent, text)
+        e = tk.Entry(parent, name=id, textvariable=var)
         e.variable = var
         return e
     
-    def multiline(self, id=None, text=''):
-        t = ScrolledText(self.root, name=id, height=3)
+    def multiline(self, parent, id=None, text=''):
+        t = ScrolledText(parent, name=id, height=3)
         t.insert('end', text)
         return t
         
-    def dropdown(self, id=None, text='', values=None):
-        return self._dropdown(id, text, values, False)
+    def dropdown(self, parent, id=None, text='', values=None):
+        return self._dropdown(parent, id, text, values, False)
     
-    def combo(self, id=None, text='', values=None):
-        return self._dropdown(id, text, values, True)
+    def combo(self, parent, id=None, text='', values=None):
+        return self._dropdown(parent, id, text, values, True)
     
-    def _dropdown(self, id=None, text='', values=None, editable=False):
+    def _dropdown(self, parent, id=None, text='', values=None, editable=False):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
-        var = tk.StringVar(self.root, text)
-        cbo = ttk.Combobox(self.root, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
+        var = tk.StringVar(parent, text)
+        cbo = ttk.Combobox(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
         cbo.variable = var
         return cbo
     
-    def option(self, id=None, text='', checked=None):
+    def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
         if not self._radiobutton_var:
-            self._radiobutton_var = tk.StringVar(self._root, id)
-        rb = tk.Radiobutton(self.root,
+            self._radiobutton_var = tk.StringVar(parent, id)
+        rb = tk.Radiobutton(parent,
                   text=text,
                   variable=self._radiobutton_var, 
                   name=id,
@@ -173,11 +175,11 @@ class ToolkitTk(ToolkitBase):
         rb._id = id
         return rb
     
-    def checkbox(self, id=None, text='', checked=None):
+    def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
-        var = tk.BooleanVar(self._root, bool(checked.strip()))
+        var = tk.BooleanVar(parent, bool(checked.strip()))
         cb = tk.Checkbutton(
-            self.root,
+            parent,
             text=(text or '').strip(),
             name=id,
             variable=var, onvalue=True, offvalue=False
@@ -185,11 +187,11 @@ class ToolkitTk(ToolkitBase):
         cb.variable = var
         return cb
     
-    def slider(self, id=None, min=None, max=None):
+    def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        var = tk.IntVar(self.root, min)
+        var = tk.IntVar(parent, min)
         s = tk.Scale(
-            self.root,
+            parent,
             name=id,
             from_=min,
             to=max,
@@ -199,7 +201,7 @@ class ToolkitTk(ToolkitBase):
         s.variable = var
         return s
     
-    def external(self, id=None):
-        '''external reference'''
+    def external(self, parent, id=None):
+        '''external reference. parent is ignored.'''
         return getattr(self._external_reference_provider, id)
     

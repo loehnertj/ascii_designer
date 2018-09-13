@@ -93,7 +93,7 @@ class Main(AutoFrame):
     
     def frame_build(self, body):
         # initialize something
-        self.external_object = self.toolkit.label(text="<External label>")
+        self.external_object = self.toolkit.label(self.toolkit.root, text="<External label>")
         super().frame_build(body)
     
     def press_me(self):
