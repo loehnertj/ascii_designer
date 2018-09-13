@@ -7,9 +7,6 @@ __all__ = [
     'AutoFrame',
     ]
 
-def _callable_members(obj):
-    yield from (name for name in dir(obj) if callable(getattr(obj, name)) )
-    
 class AutoFrame:
     '''
     class name is converted to title.
@@ -70,7 +67,6 @@ class AutoFrame:
     def frame_add_widgets(self, sliced_grid=None, body=None, offset_row=0, offset_col=0):
         if not sliced_grid:
             sliced_grid = slice_grid(body)
-        callables = set(_callable_members(self))
         toolkit=self.toolkit
         
         # create controls
