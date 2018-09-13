@@ -33,20 +33,21 @@ class AutoFrame:
         '''instantiates the toolkit on first use.'''
         if self._toolkit:
             return self._toolkit
-        try:
-            title = self.frame_title
-        except AttributeError:
-            title = self.__class__.__name__
-            # insert space before each capital letter
-            title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
-            title = title.strip()
-        self._toolkit = get_toolkit(external_reference_provider=self, title=title)
+        self._toolkit = get_toolkit(external_reference_provider=self)
         return self._toolkit
+    
+    @property
+    def frame_title(self):
+        title = self.__class__.__name__
+        # insert space before each capital letter
+        title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
+        title = title.strip()
+        return title
         
     def frame_show(self):
         '''Bring the frame on the screen.'''
         if not self._frame_controls:
-            self._frame_controls[''] = self.toolkit.root()
+            self._frame_controls[''] = self.toolkit.root(title=self.frame_title)
             self.frame_build(self[''], body=self.frame_body)
         self.toolkit.show(self[''])
         

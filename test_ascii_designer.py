@@ -90,6 +90,7 @@ class Main(AutoFrame):
     menubar=menu
     toolbar=toolbar
     frame_body = demo_all
+    frame_title = 'Ascii Designer Demo'
     
     def frame_build(self, parent, body):
         # initialize something

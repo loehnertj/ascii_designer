@@ -23,11 +23,11 @@ class ToolkitQt(ToolkitBase):
         super().__init__(**kwargs)
         
     # widget generators
-    def root(self):
+    def root(self, title='Window'):
         '''make a root (window) widget'''
         root = qg.QWidget()
         root.setLayout(qg.QGridLayout())
-        root.setWindowTitle(self._title)
+        root.setWindowTitle(title)
         return root
         
     def show(self, frame):

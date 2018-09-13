@@ -36,11 +36,12 @@ class ToolkitTk(ToolkitBase):
         self._radiobutton_var = None
         
     # widget generators
-    def root(self):
+    def root(self, title='Window'):
         '''make a root (window) widget'''
         root = tk.Tk()
         root.tk.call('tk', 'scaling', 2.0)
         root.option_add('*Font', self._sane_font)
+        root.title(title)
         return root
         
     @property
