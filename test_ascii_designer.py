@@ -1,6 +1,6 @@
 #import tkinter as tk
 import sys
-from ascii_designer import AutoFrame, set_toolkit, BoundValue
+from ascii_designer import AutoFrame, set_toolkit
 
 TK = 'qt'
 if sys.argv[1:]:
@@ -91,11 +91,6 @@ class Main(AutoFrame):
     toolbar=toolbar
     frame_body = demo_all
     
-    def __init__(self):
-        super().__init__()
-        # attributes that are set to BoundValue will be data-bound to the widget of the same name.
-        pass
-        
     def frame_build(self, body):
         # initialize something
         self.external_object = self.toolkit.label(text="<External label>")
@@ -167,17 +162,12 @@ class BoundCtlDemo(AutoFrame):
     
     bind_names = 'textbox multiline choose color option_a option_b agree slider'.split(' ')
     
-    def __init__(self):
-        super().__init__()
-        for name in self.bind_names:
-            setattr(self, name, BoundValue)
-        
     def set_all(self):
         self.textbox = 'text'
         self.multiline = 'more\ntext'
         self.choose = 'Green'
         self.color = 'Shade of grey'
-        self.option_b = True
+        self.option_b = True # FIXME for tk toolkit, must set 'option_b'
         self.agree = False
         self.slider = 50
         

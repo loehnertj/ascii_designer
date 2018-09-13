@@ -5,15 +5,11 @@ from .toolkit import get_toolkit
 
 __all__ = [
     'AutoFrame',
-    'BoundValue',
     ]
 
 def _callable_members(obj):
     yield from (name for name in dir(obj) if callable(getattr(obj, name)) )
     
-class BoundValue:
-    pass
-
 class AutoFrame:
     '''
     class name is converted to title.
@@ -28,12 +24,11 @@ class AutoFrame:
     
     functions with same name as a control are autobound to the default handler (click or changed)
     
-    attributes set to BoundValue are autobound to the control value (get/set).
+    attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
     '''
     def __init__(self):
         # make getattr + setattr work first
-        self.__dict__['_bound_names'] = {}
-        self._frame_controls = {}
+        self.__dict__['_frame_controls'] = {}
         self._toolkit = None
         
     @property
@@ -68,7 +63,7 @@ class AutoFrame:
             # first cell
             head = cells[0:1]
             # first char of first cell
-            if head: head= head[0][0:1]
+            if head: head = head[0][0:1]
             self.toolkit.row_stretch(row, 1 if head=='I' else 0)
         self.frame_add_widgets(sliced_grid)
             
@@ -90,37 +85,34 @@ class AutoFrame:
             toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
             toolkit.anchor(widget, left=not e.text.startswith(' '), right=not e.text.endswith(' '))
             # autowire
-            # FIXME: bindings can never removed
-            if getattr(self, id, BoundValue) is BoundValue:
-                print('bind attribute "%s"'%id)
-                self._bound_names[id] = widget
-                try:
-                    delattr(self, id)
-                except AttributeError:
-                    pass
-            elif id in callables:
+            try:
+                attr = getattr(self, id)
+            except AttributeError:
+                attr = None # not callable
+            if callable(attr):
                 toolkit.connect(widget, getattr(self, id))
                 print('connected handler for %s'%id)
                 
     def __setattr__(self, name, val):
-        bn = getattr(self, '_bound_names', {})
-        if name in bn:
-            self.toolkit.setval(bn[name], val)
+        if name in self:
+            self.toolkit.setval(self[name], val)
         else:
             super().__setattr__(name, val)
     
     def __getattr__(self, name):
-        if '_bound_names' not in self.__dict__:
+        if '_frame_controls' not in self.__dict__:
             raise RuntimeError('You forgot to call super().__init__!')
-        bn = self._bound_names
-        if name in bn:
-            ctl = bn[name]
-            return self.toolkit.getval(ctl)
+        if name in self:
+            # use toolkit to extract value from the widget
+            return self.toolkit.getval(self[name])
         else:
             raise AttributeError('Attribute %s is not defined'%(name,))
     
     def __getitem__(self, key):
         return self._frame_controls[key]
+    
+    def __contains__(self, key):
+        return key in self._frame_controls
     
     def close(self):
         self.toolkit.close(self[''])

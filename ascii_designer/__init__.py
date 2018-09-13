@@ -1,8 +1,7 @@
-from .autoframe import AutoFrame, BoundValue
+from .autoframe import AutoFrame
 from .toolkit import set_toolkit
 
 __all__ = [
     'AutoFrame',
-    'BoundValue',
     'set_toolkit',
     ]
