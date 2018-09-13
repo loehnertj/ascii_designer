@@ -91,10 +91,10 @@ class Main(AutoFrame):
     toolbar=toolbar
     frame_body = demo_all
     
-    def frame_build(self, body):
+    def frame_build(self, parent, body):
         # initialize something
-        self.external_object = self.toolkit.label(self.toolkit.root, text="<External label>")
-        super().frame_build(body)
+        self.external_object = self.toolkit.label(parent, text="<External label>")
+        super().frame_build(parent, body)
     
     def press_me(self):
         print('press_me was pressed')
@@ -102,7 +102,7 @@ class Main(AutoFrame):
                   |
         Text box:  [ Write here_ ]
         '''
-        self.frame_add_widgets(body=row_3, offset_row=2)
+        self.frame_add_widgets(self[''], body=row_3, offset_row=2)
         
     def write_here(self, text):
         print('write_here: "%s"'%text)
@@ -136,8 +136,8 @@ class Main(AutoFrame):
 class AlignmentDemo(AutoFrame):
     frame_body = demo_alignments
         
-    def frame_build(self, body):
-        super().frame_build(body)
+    def frame_build(self, parent, body):
+        super().frame_build(parent, body)
         if TK=='qt':
             from PyQt4.QtGui import QSizePolicy
             # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be

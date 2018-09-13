@@ -46,30 +46,28 @@ class AutoFrame:
     def frame_show(self):
         '''Bring the frame on the screen.'''
         if not self._frame_controls:
-            self.frame_build(body=self.frame_body)
-        self.toolkit.show(self.toolkit.root)
+            self._frame_controls[''] = self.toolkit.root
+            self.frame_build(self[''], body=self.frame_body)
+        self.toolkit.show(self[''])
         
-    def frame_build(self, body):
-        self._frame_controls[''] = self.toolkit.root
+    def frame_build(self, parent, body):
         sliced_grid = slice_grid(body)
         
         # init rows / columns
-        container = self.toolkit.root
         for col, head in enumerate(sliced_grid.column_heads):
-            self.toolkit.col_stretch(container, col, head.count('-'))
+            self.toolkit.col_stretch(parent, col, head.count('-'))
         for row, cells in enumerate(sliced_grid.body_lines):
             # first cell
             head = cells[0:1]
             # first char of first cell
             if head: head = head[0][0:1]
-            self.toolkit.row_stretch(container, row, 1 if head=='I' else 0)
-        self.frame_add_widgets(sliced_grid)
+            self.toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
+        self.frame_add_widgets(parent, sliced_grid)
             
-    def frame_add_widgets(self, sliced_grid=None, body=None, offset_row=0, offset_col=0):
+    def frame_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0):
         if not sliced_grid:
             sliced_grid = slice_grid(body)
         toolkit=self.toolkit
-        parent = self.toolkit.root
         
         # create controls
         for grid_element in merged_cells(sliced_grid):
