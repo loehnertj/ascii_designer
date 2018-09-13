@@ -2,7 +2,7 @@
 import sys
 from ascii_designer import AutoFrame, set_toolkit
 
-TK = 'qt'
+TK = 'tk'
 if sys.argv[1:]:
     TK = sys.argv[1]
 set_toolkit(TK)
