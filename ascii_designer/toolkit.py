@@ -54,8 +54,9 @@ class ToolkitBase:
         ('slider', r'\[\s*(?P<id>[a-zA-Z0-9_]+)\s*\:\s*(?P<min>\d+)\s*\-\+\-\s*(?P<max>\d+)\s*\]', '[id: 0 -+- 100]'),
         ('multiline',r'\[%s__\s*\]'%_re_maybe_id_text, '"[Text__]"'),
         ('textbox',r'\[%s_\s*\]'%_re_maybe_id_text, '"[Text_]"'),
-        ('combo',r'\[%s_\s*(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text_]"'),
-        ('dropdown',r'\[%s(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text_]"'),
+        ('treelist',r'\[\s*=%s(?:\((?P<columns>.*?)\))?\s*\]'%_re_maybe_id_text, '"[= Text]" or [= Text (column1, column2, ..)]'),
+        ('combo',r'\[%s_\s*(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text_ v]" or "[Text_ (val1, val2, ...) v]'),
+        ('dropdown',r'\[%s(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text v]" or "[Text (val1, val2, ...) v]'),
         ('button', r'\[%s\]'%_re_maybe_id_text, '"[Text]"'),
         ('label', r'(?P<id>)(?:\.)?(?P<text>.+?)$', '"Text" or ".Text"'),
         ]
@@ -156,6 +157,8 @@ class ToolkitBase:
         '''single-line text entry box'''
     def multiline(self, parent, id=None, text=''):
         '''multiline text entry box'''
+    def treelist(self, parent, id=None, text='', columns=None):
+        '''treeview (also usable as plain list)'''
     def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
     def combo(self, parent, id=None, text='', values=None):
