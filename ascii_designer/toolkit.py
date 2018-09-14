@@ -1,11 +1,13 @@
 import re
 import itertools as it
+from collections.abc import MutableSequence
 
 
 __all__ = [
     'set_toolkit',
     'get_toolkit',
     'ToolkitBase',
+    'NodelistBase',
     ]
 
 _TOOLKIT_NAME  = 'qt'
@@ -173,3 +175,82 @@ class ToolkitBase:
         '''external reference. Parent is ignored.'''
         return getattr(self._external_reference_provider, id)
     
+    
+class NodelistBase(MutableSequence):
+    '''
+    Base class for treelist values.
+    
+    Behaves mostly like a list, except that:
+     * it maintains a list of expected attributes (columns)
+     * all inserted items are automatically converted to a Node object.
+     
+    The node list is usually attached to an actual treeview, but can become 
+    detached if the tree "value" is replaced but a reference to the old list is 
+    retained. In the same way, individual nodes can become detached when popped 
+    out of the list.
+     
+    Subclasses should implement the display update logic on modification.
+    '''
+    def __init__(self, keys, iterable=None):
+        self.keys = keys
+        self.attached = True
+        if iterable:
+            self._nodes = [self._node_from(item) for item in iterable]
+        else:
+            self._nodes = []
+        
+    def __getitem__(self, idx):
+        return self._nodes[idx]
+        
+    def __len__(self):
+        return len(self._nodes)
+    
+    def __setitem__(self, idx, item):
+        self._nodes[idx] = self._node_from(item)
+        
+    def __delitem__(self, idx):
+        self._nodes[idx].detach()
+        del self._nodes[idx]
+        
+    def insert(self, idx, item):
+        node = self._node_from(item)
+        self._nodes.insert(idx, node)
+        
+    # FIXME: Specification how the list is attached to/detached from the tree.
+    
+    def _node_from(self, item):
+        return Node(self, item)
+    
+class Node:
+    def __init__(self, nodelist, obj, attached=None):
+        self.values = {}
+        for key in nodelist.keys:
+            try:
+                self.values[key] = obj[key]
+            except (AttributeError, KeyError):
+                self.values[key] = getattr(obj, key)
+        self.attached = nodelist.attached if attached is None else attached
+        
+    def detach(self):
+        self.attached = False
+        
+    def __repr__(self):
+        return 'Node(%r, attached=%r)'%(self.values, self.attached,)
+        
+def test_nodelist():
+    n = NodelistBase('name rank'.split(), 
+        [
+            {'name':1, 'rank':2},
+            {'name':3, 'rank':4}
+        ]
+    )
+    print(n._nodes)
+    x = n.pop(0)
+    print(n._nodes)
+    print('popped:', x)
+    x2 = {'name':5, 'rank':6}
+    n += [x2]
+    print(n._nodes)
+    
+if __name__=='__main__':
+    test_nodelist()
