@@ -7,6 +7,7 @@ if sys.argv[1:]:
     TK = sys.argv[1]
 set_toolkit(TK)
 
+# maybe later
 menu = '''
     File
         Open
@@ -17,12 +18,14 @@ menu = '''
         About...
 '''
 
+# maybe later
 toolbar = '''
  [ Open ]
  [ Save ]
  [ Save as... ]
 '''
 
+# sketches to get a feeling of how it could be done
 panel1 = '''
 |                       | <---------------------------->
  [ Button 1 ]            [ Textbox_ ]
