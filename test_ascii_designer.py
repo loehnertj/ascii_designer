@@ -59,24 +59,6 @@ I{
  +----------------------------+
 '''
 
-demo_all = '''
-                |      <->                                        ~
- Label:          This is a label
- Button:         [ Press me ]
- 
- Multiline:      [ foo__ ]
- Dropdown:       [ Choose (Red,Green,Blue) v]
- Dropdown empty: [ v ]
- Combo:          [ Color_ (Red,Green,Blue) v]
- Option:         ( ) Option A
-                 (x) Option B
- Checkbox:       [x] agree:I agree to the terms and conditions.
- Slider:         [ slider: 0 -+- 100 ]
- External:       *external_object
- [ Align Demo ]  [ Bound ctl demo ]
- [ Quit ]
-'''
-
 # Row/Column stretch is controlled by "-" in the column head and "I" in row head
 # Widget anchoring is controlled by presence of leading/trailing whitespace 
 # within the cell.
@@ -90,11 +72,48 @@ I               {                           [right]|
 '''
 
 class Main(AutoFrame):
+    frame_title = 'Ascii Designer Demo Menu'
+    frame_body = '''
+    |    <->                     |
+     - ASCII Designer Demo Menu -
+     [Autoconnect               ]
+     [Bound values              ]
+     [Tree view                 ]
+     [Alignment                 ]
+    I
+       [Close]                   |
+    '''
+    def autoconnect(self):
+        AutoconnectDemo().frame_show()
+        
+    def bound_values(self):
+        BoundCtlDemo().frame_show()
+        
+    def tree_view(self):
+        TreeDemo().frame_show()
+        
+    def alignment(self):
+        AlignmentDemo().frame_show()
+        
+
+class AutoconnectDemo(AutoFrame):
     menubar=menu
     toolbar=toolbar
-    frame_body = demo_all
-    frame_title = 'Ascii Designer Demo'
-    
+    frame_body = '''
+                       |      <->                                        ~
+        Label:          This is a label
+        Button:         [ Press me ]
+        
+        Multiline:      [ foo__ ]
+        Dropdown:       [ Choose (Red,Green,Blue) v]
+        Dropdown empty: [ v ]
+        Combo:          [ Color_ (Red,Green,Blue) v]
+        Option:         ( ) Option A
+                        (x) Option B
+        Checkbox:       [x] agree:I agree to the terms and conditions.
+        Slider:         [ slider: 0 -+- 100 ]
+        External:       *external_object
+        '''
     def frame_build(self, parent, body):
         # initialize something
         self.external_object = self.toolkit.label(parent, text="<External label>")
@@ -129,13 +148,6 @@ class Main(AutoFrame):
     def slider(self, val):
         print('slider: %s'%val)
         
-    def align_demo(self):
-        f = AlignmentDemo()
-        f.frame_show()
-        
-    def bound_ctl_demo(self):
-        f = BoundCtlDemo()
-        f.frame_show()
         
 class AlignmentDemo(AutoFrame):
     frame_body = demo_alignments
@@ -178,6 +190,17 @@ class BoundCtlDemo(AutoFrame):
     def get_all(self):
         for name in self.bind_names:
             print('%s: %s'%(name, getattr(self, name)))
+            
+class TreeDemo(AutoFrame):
+    frame_body='''
+    | <-> |
+    I[ = ] [= Tree1]
+    I      [= Tree2 (Name, Points, Rank) ]
+    '''
+    def frame_build(self, parent, body):
+        super().frame_build(parent, body)
+        print(list(self._frame_controls.keys()))
+        
     
 class EmptyFrame(AutoFrame):
     frame_body = ''
