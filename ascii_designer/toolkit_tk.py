@@ -138,6 +138,29 @@ class ToolkitTk(ToolkitBase):
         t = ScrolledText(parent, name=id, height=3)
         t.insert('end', text)
         return t
+    
+    def treelist(self, parent, id=None, text='', columns=None):
+        '''treeview (also usable as plain list)
+        
+        Implementation note: Uses a ttk.TreeView, and wraps it into a frame
+        together with a vertical scrollbar. For correct placement, the
+        .place, .grid, .pack methods of the returned tv are replaced by that of 
+        the frame.
+        
+        Returns the treeview widget (within the frame).
+        '''
+        frame = tk.Frame(parent)
+        tv = ttk.Treeview(frame)
+        scb = tk.Scrollbar(frame)
+        scb.pack(side='right', fill='y')
+        tv.pack(expand=1, fill='both')
+        scb.config(command=tv.yview)
+        tv.config(yscrollcommand=scb.set)
+        # patch layout methods
+        tv.pack = frame.pack
+        tv.place = frame.place
+        tv.grid = frame.grid
+        return tv
         
     def dropdown(self, parent, id=None, text='', values=None):
         return self._dropdown(parent, id, text, values, False)

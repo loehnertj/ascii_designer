@@ -193,9 +193,9 @@ class BoundCtlDemo(AutoFrame):
             
 class TreeDemo(AutoFrame):
     frame_body='''
-    | <-> |
-    I[ = ] [= Tree1]
-    I      [= Tree2 (Name, Points, Rank) ]
+    | |              <->
+    |  abcd
+    Ix [= Players (Name, Points, Rank)]
     '''
     def frame_build(self, parent, body):
         super().frame_build(parent, body)
