@@ -40,7 +40,7 @@ def _auto_id(id, text=None, last_label_id=''):
     if not id:
         id = last_label_id
     if not id:
-        id = 'x'+next(_unique_id_dispenser)
+        id = 'x'+str(next(_unique_id_dispenser))
     return id
 
 _re_maybe_id_text = r'(?:\s*(?P<id>[a-zA-Z0-9_]+)\s*\:)?\s*(?P<text>.+?)?\s*'
