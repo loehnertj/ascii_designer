@@ -80,7 +80,8 @@ class AutoFrame:
             # place on the grid
             e = grid_element
             toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
-            toolkit.anchor(widget, left=not e.text.startswith(' '), right=not e.text.endswith(' '))
+            text = e.text.replace('~',' ')
+            toolkit.anchor(widget, left=not text.startswith(' '), right=not text.endswith(' '))
             # autowire
             try:
                 attr = getattr(self, id)
@@ -88,7 +89,6 @@ class AutoFrame:
                 attr = None # not callable
             if callable(attr):
                 toolkit.connect(widget, getattr(self, id))
-                print('connected handler for %s'%id)
                 
     def __setattr__(self, name, val):
         if name in self:
