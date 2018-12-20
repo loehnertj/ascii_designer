@@ -269,6 +269,7 @@ class NodelistVariable:
     
 class NodelistTk(NodelistBase):
     def __init__(self, keys, treeview=None, iterable=None):
+        self.attached = False
         super().__init__(keys, iterable=iterable)
         self.treeview = treeview
         self.attached = (treeview is not None)
@@ -306,3 +307,14 @@ class NodelistTk(NodelistBase):
         for column in self.keys:
             if column == '': continue
             tv.set(iid, column, str(item[column]))
+            
+    def _on_node_setkey(self, node, key, val):
+        if not self.attached:
+            return
+        tv = self.treeview
+        idx = self._nodes.index(node)
+        iid = str(idx)
+        if key=='':
+            tv.item(iid, text=str(val))
+        else:
+            tv.set(iid, key, str(val))
