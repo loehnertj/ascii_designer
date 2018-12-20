@@ -232,6 +232,7 @@ class NodelistBase(MutableSequence):
 class Node(dict):
     def __init__(self, nodelist, obj, attached=None):
         self.text = ''
+        self.ref = obj
         for key in nodelist.keys:
             if key=='':
                 self.text = str(obj)
