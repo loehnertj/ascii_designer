@@ -50,6 +50,11 @@ class ToolkitTk(ToolkitBase):
         root = tk.Tk()
         root.tk.call('tk', 'scaling', 2.0)
         root.option_add('*Font', self._sane_font)
+        # XXX does not work when opening another frame
+        style = ttk.Style()
+        style.configure(".", font=self._sane_font)
+        style.configure("Treeview.Heading", font=('Helvetica', 12, 'bold'))
+        style.configure("Treeview", rowheight=30)
         root.title(title)
         return root
         
