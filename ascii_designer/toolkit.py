@@ -8,6 +8,7 @@ __all__ = [
     'get_toolkit',
     'ToolkitBase',
     'NodelistBase',
+    'auto_id',
     ]
 
 _TOOLKIT_NAME  = 'qt'
@@ -29,7 +30,7 @@ def get_toolkit(external_reference_provider=None):
 
 _unique_id_dispenser = it.count()
 _re_whitelist = re.compile(r'[a-zA-Z0-9_]')
-def _auto_id(id, text=None, last_label_id=''):
+def auto_id(id, text=None, last_label_id=''):
     '''for missing id, calculate one from text.'''
     if id:
         return id.casefold()
@@ -89,7 +90,7 @@ class ToolkitBase:
             m = re.match(regex, mangled_text)
             if m:
                 d = m.groupdict()
-                d['id'] = _auto_id(d['id'], d.get('text', ''), self._last_label_id)
+                d['id'] = auto_id(d['id'], d.get('text', ''), self._last_label_id)
                 # Special treatment for label
                 if name == 'label':
                     self._last_label_id = d['id']
