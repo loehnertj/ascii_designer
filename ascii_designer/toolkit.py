@@ -207,6 +207,7 @@ class NodelistBase(MutableSequence):
         return len(self._nodes)
     
     def __setitem__(self, idx, item):
+        self._nodes[idx].detach()
         self._nodes[idx] = self._node_from(item)
         
     def __delitem__(self, idx):
@@ -223,14 +224,19 @@ class NodelistBase(MutableSequence):
             if idx > N: idx = N
         self._nodes.insert(idx, node)
         return idx, node
-        
-    # FIXME: Specification how the list is attached to/detached from the tree.
+    
+    def _on_node_setkey(self, node, key, value):
+        # callback when a node value (key) is changed.
+        # subclass should update view.
+        pass
     
     def _node_from(self, item):
         return Node(self, item)
     
 class Node(dict):
     def __init__(self, nodelist, obj, attached=None):
+        # initially set to 'no nodelist' to disable callbacks
+        self.nodelist = None
         self.text = ''
         self.ref = obj
         for key in nodelist.keys:
@@ -241,10 +247,21 @@ class Node(dict):
                     self[key] = obj[key]
                 except (AttributeError, KeyError, TypeError):
                     self[key] = getattr(obj, key)
-        self.attached = nodelist.attached if attached is None else attached
+        self.nodelist = nodelist
         
     def detach(self):
-        self.attached = False
+        self.nodelist = None
+        
+    def __setitem__(self, key, val):
+        super().__setitem__(key, val)
+        if self.nodelist:
+            self.nodelist._on_node_setkey(self, key, val)
+            
+    def __setattr__(self, key, val):
+        super().__setattr__(key, val)
+        if key == 'text':
+            if self.nodelist:
+                self.nodelist._on_node_setkey(self, key, val)
         
     def __repr__(self):
         return 'Node(%r, attached=%r)'%(self.values, self.attached,)
