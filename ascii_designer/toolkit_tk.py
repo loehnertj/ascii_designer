@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import font
 from tkinter import ttk
-from .toolkit import ToolkitBase
+from .toolkit import ToolkitBase, NodelistBase
 
 #ttk = tk
 
@@ -149,8 +149,14 @@ class ToolkitTk(ToolkitBase):
         
         Returns the treeview widget (within the frame).
         '''
+        columns = columns or ''
+        columns = [txt.strip() for txt in columns.split(',')]
+        keys = [name.lower() for name in columns]
+        
         frame = tk.Frame(parent)
-        tv = ttk.Treeview(frame)
+        tv = ttk.Treeview(frame, columns=[k for k in keys if k])
+        for key, heading in zip(keys, columns):
+            tv.heading(key or '#0', text=heading)
         scb = tk.Scrollbar(frame)
         scb.pack(side='right', fill='y')
         tv.pack(expand=1, fill='both')
@@ -160,6 +166,13 @@ class ToolkitTk(ToolkitBase):
         tv.pack = frame.pack
         tv.place = frame.place
         tv.grid = frame.grid
+        
+        nodelist = NodelistVariable(NodelistTk(keys, tv))
+        tv.variable = nodelist
+        # configure tree view
+        if '' not in columns:
+            # hide first column
+            tv['show'] = 'headings'
         return tv
         
     def dropdown(self, parent, id=None, text='', values=None):
@@ -222,3 +235,55 @@ class ToolkitTk(ToolkitBase):
         '''external reference. parent is ignored.'''
         return getattr(self._external_reference_provider, id)
     
+class NodelistVariable:
+    def __init__(self, nodelist):
+        self._nl = nodelist
+        
+    def get(self):
+        return self._nl
+        
+    def set(self, val):
+        old_nl = self._nl
+        old_nl.attached = False
+        self._nl = NodelistTk(old_nl.keys, old_nl.treeview, val)
+        
+    
+class NodelistTk(NodelistBase):
+    def __init__(self, keys, treeview=None, iterable=None):
+        super().__init__(keys, iterable=iterable)
+        self.treeview = treeview
+        self.attached = (treeview is not None)
+        for idx, node in enumerate(self._nodes):
+            self._treeinsert(idx, node)
+        
+    def __setitem__(self, idx, item):
+        super().__setitem__(idx, item)
+        if not self.attached: 
+            return
+        item = self._nodes[idx]
+        self._update_item(idx, item)
+        
+    def __delitem__(self, idx):
+        super().__delitem__(idx)
+        if not self.attached: 
+            return
+        
+    def insert(self, idx, item):
+        # returns actual idx (within list range) and inserted item.
+        idx, item = super().insert(idx, item)
+        if not self.attached: 
+            return
+        self._treeinsert(idx, item)
+        
+    def _treeinsert(self, idx, item):
+        item = self._nodes[idx]
+        self.treeview.insert('', idx, iid=str(idx), text=item.text)
+        self._update_item(idx, item)
+        
+    def _update_item(self, idx, item):
+        tv = self.treeview
+        iid = str(idx)
+        tv.item(iid, text=item.text)
+        for column in self.keys:
+            if column == '': continue
+            tv.set(iid, column, str(item[column]))

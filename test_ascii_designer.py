@@ -191,15 +191,26 @@ class BoundCtlDemo(AutoFrame):
         for name in self.bind_names:
             print('%s: %s'%(name, getattr(self, name)))
             
+from collections import namedtuple
+RankRow = namedtuple('RankRow', 'name points rank')
+            
 class TreeDemo(AutoFrame):
     frame_body='''
     | |              <->
     |  abcd
-    Ix [= Players (Name, Points, Rank)]
+    Ix [= Players (,Name, Points, Rank)]
     '''
     def frame_build(self, parent, body):
         super().frame_build(parent, body)
         print(list(self._frame_controls.keys()))
+        self.players = [
+            RankRow('CaptainJack', 9010, 1),
+            RankRow('MasterOfDisaster', 3010, 2),
+            RankRow('LittleDuck', 12, 3),
+        ]
+        self.players[1]['name'] = 'Changed Name'
+        self.players[2] = RankRow('BigDuck', 24, 3)
+        self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
         
     
 class EmptyFrame(AutoFrame):
