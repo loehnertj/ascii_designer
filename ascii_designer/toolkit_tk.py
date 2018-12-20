@@ -151,12 +151,12 @@ class ToolkitTk(ToolkitBase):
         '''
         columns = columns or ''
         columns = [txt.strip() for txt in columns.split(',')]
+        has_first_column = ['' in columns]
         keys = [name.lower() for name in columns]
         
+        # setup scrollable container
         frame = tk.Frame(parent)
         tv = ttk.Treeview(frame, columns=[k for k in keys if k])
-        for key, heading in zip(keys, columns):
-            tv.heading(key or '#0', text=heading)
         scb = tk.Scrollbar(frame)
         scb.pack(side='right', fill='y')
         tv.pack(expand=1, fill='both')
@@ -167,12 +167,20 @@ class ToolkitTk(ToolkitBase):
         tv.place = frame.place
         tv.grid = frame.grid
         
-        nodelist = NodelistVariable(NodelistTk(keys, tv))
-        tv.variable = nodelist
         # configure tree view
-        if '' not in columns:
+        if has_first_column:
+            tv.heading('#0', text=text)
+        else:
             # hide first column
             tv['show'] = 'headings'
+        for key, heading in zip(keys, columns):
+            if not key:
+                continue
+            tv.heading(key, text=heading)
+        
+        # set up variable
+        nodelist = NodelistVariable(NodelistTk(keys, tv))
+        tv.variable = nodelist
         return tv
         
     def dropdown(self, parent, id=None, text='', values=None):
