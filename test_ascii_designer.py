@@ -196,13 +196,14 @@ RankRow = namedtuple('RankRow', 'name points rank')
             
 class TreeDemo(AutoFrame):
     frame_body='''
-    | |              <->
-    |  abcd
-    Ix [= Players (,Name, Points, Rank)]
+    |             |              <->
+    |Simple List   List with named columns
+    I[= Shopping ] [= Players (,Name, Points, Rank)]
     '''
     def frame_build(self, parent, body):
         super().frame_build(parent, body)
         print(list(self._frame_controls.keys()))
+        self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
         self.players = [
             RankRow('CaptainJack', 9010, 1),
             RankRow('MasterOfDisaster', 3010, 2),
