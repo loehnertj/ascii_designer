@@ -229,14 +229,17 @@ class NodelistBase(MutableSequence):
     def _node_from(self, item):
         return Node(self, item)
     
-class Node:
+class Node(dict):
     def __init__(self, nodelist, obj, attached=None):
-        self.values = {}
+        self.text = ''
         for key in nodelist.keys:
-            try:
-                self.values[key] = obj[key]
-            except (AttributeError, KeyError):
-                self.values[key] = getattr(obj, key)
+            if key=='':
+                self.text = str(obj)
+            else:
+                try:
+                    self[key] = obj[key]
+                except (AttributeError, KeyError, TypeError):
+                    self[key] = getattr(obj, key)
         self.attached = nodelist.attached if attached is None else attached
         
     def detach(self):
