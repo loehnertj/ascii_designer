@@ -215,7 +215,14 @@ class NodelistBase(MutableSequence):
         
     def insert(self, idx, item):
         node = self._node_from(item)
+        N = len(self._nodes)
+        if idx<0:
+            idx += N
+            if idx<0: idx = 0
+        else:
+            if idx > N: idx = N
         self._nodes.insert(idx, node)
+        return idx, node
         
     # FIXME: Specification how the list is attached to/detached from the tree.
     
