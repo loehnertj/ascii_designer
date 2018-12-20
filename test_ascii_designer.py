@@ -196,8 +196,8 @@ RankRow = namedtuple('RankRow', 'name points rank')
             
 class TreeDemo(AutoFrame):
     frame_body='''
-    |             |              <->
-    |Simple List   List with named columns
+    |             |              <->                |
+    |Simple List   List with named columns~
     I[= Shopping ] [= Players (,Name, Points, Rank)]
     '''
     def frame_build(self, parent, body):
@@ -212,6 +212,9 @@ class TreeDemo(AutoFrame):
         self.players[1]['name'] = 'Changed Name'
         self.players[2] = RankRow('BigDuck', 24, 3)
         self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
+        
+    def shopping(self, item):
+        print('Buy: ', item)
         
     
 class EmptyFrame(AutoFrame):
