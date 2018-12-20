@@ -13,6 +13,15 @@ __all__ = [
     'ToolkitTk',
 ]
 
+def _on_tv_select(ev, function, widget):
+    f = widget.focus()
+    if not f:
+        return
+    idx = int(widget.focus())
+    # get the node at idx and return its ref property (the original object)
+    obj = widget.variable.get()[idx].ref
+    function(obj)
+
 class ToolkitTk(ToolkitBase):
     '''
     Builds Tk widgets.
@@ -78,6 +87,8 @@ class ToolkitTk(ToolkitBase):
         elif isinstance(widget, tk.Entry):
             widget.bind('<Return>', lambda ev:function(widget.variable.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
+        elif isinstance(widget, ttk.Treeview):
+            widget.bind('<<TreeviewSelect>>', lambda ev: _on_tv_select(ev, function, widget))
         else:
             widget.variable.trace('w', lambda *args: function(widget.variable.get()))
             
