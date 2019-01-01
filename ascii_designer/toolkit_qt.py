@@ -201,8 +201,4 @@ class ToolkitQt(ToolkitBase):
         s.setMaximum(int(max))
         s.setTickPosition(qg.QSlider.TicksBelow)
         return s
-        
-    def external(self, parent, id=None):
-        '''external reference. parent is ignored.'''
-        return getattr(self._external_reference_provider, id)
     

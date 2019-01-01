@@ -20,13 +20,13 @@ def set_toolkit(toolkit_name):
     global _TOOLKIT_NAME
     _TOOLKIT_NAME = toolkit_name
     
-def get_toolkit(external_reference_provider=None):
+def get_toolkit():
     if _TOOLKIT_NAME == 'tk':
         from .toolkit_tk import ToolkitTk
-        return ToolkitTk(external_reference_provider=external_reference_provider)
+        return ToolkitTk()
     elif _TOOLKIT_NAME == 'qt':
         from .toolkit_qt import ToolkitQt
-        return ToolkitQt(external_reference_provider=external_reference_provider)
+        return ToolkitQt()
 
 _unique_id_dispenser = it.count()
 _re_whitelist = re.compile(r'[a-zA-Z0-9_]')
@@ -64,14 +64,13 @@ class ToolkitBase:
         ('label', r'(?P<id>)(?:\.)?(?P<text>.+?)$', '"Text" or ".Text"'),
         ]
     
-    def __init__(self, external_reference_provider):
-        self._external_reference_provider = external_reference_provider
+    def __init__(self):
         self._last_label_id = ''
         
     def root(self, title='Window'):
         '''make a root (window) widget'''
         
-    def parse(self, parent, text):
+    def parse(self, parent, text, externals=None):
         '''Returns the widget id and widget generated from the textual definition.
         
         Autogenerates id:
@@ -97,6 +96,9 @@ class ToolkitBase:
                     d['id'] = 'label_'+d['id']
                 else:
                     self._last_label_id = ''
+                # externals: inject reference provider
+                if name == 'external':
+                    d['externals'] = externals
                 if 'text' in d:
                     d['text'] = (d['text'] or '').strip()
                 print('%r --> %s %r'%(text, name, d))
@@ -172,9 +174,9 @@ class ToolkitBase:
         '''Checkbox'''
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-    def external(self, parent, id=None):
+    def external(self, parent, id=None, externals=None):
         '''external reference. Parent is ignored.'''
-        return getattr(self._external_reference_provider, id)
+        return getattr(externals, id)
     
     
 class NodelistBase(MutableSequence):

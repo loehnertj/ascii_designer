@@ -255,10 +255,6 @@ class ToolkitTk(ToolkitBase):
         s.variable = var
         return s
     
-    def external(self, parent, id=None):
-        '''external reference. parent is ignored.'''
-        return getattr(self._external_reference_provider, id)
-    
 class NodelistVariable:
     def __init__(self, nodelist):
         self._nl = nodelist

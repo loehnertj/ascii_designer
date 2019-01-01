@@ -7,6 +7,42 @@ __all__ = [
     'AutoFrame',
     ]
 
+def _convert_title(classname):
+    # insert space before each capital letter
+    title = ''.join(map(lambda x: x if x.islower() else " "+x, classname))
+    title = title.strip()
+    return title
+
+class FrameMachinery:
+    def __init__(self):
+        self.toolkit = get_toolkit()
+        self.controls = {}
+            
+    def add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
+        if not sliced_grid:
+            sliced_grid = slice_grid(body)
+        toolkit=self.toolkit
+        
+        # create controls
+        for grid_element in merged_cells(sliced_grid):
+            if not grid_element.text.strip():
+                continue
+            id, widget = toolkit.parse(parent, grid_element.text, externals=autoframe)
+            self.controls[id] = widget
+                
+            # place on the grid
+            e = grid_element
+            toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
+            text = e.text.replace('~',' ')
+            toolkit.anchor(widget, left=not text.startswith(' '), right=not text.endswith(' '))
+            # autowire
+            try:
+                attr = getattr(autoframe, id)
+            except AttributeError:
+                attr = None # not callable
+            if callable(attr):
+                toolkit.connect(widget, getattr(autoframe, id))
+                
 class AutoFrame:
     '''
     class name is converted to title.
@@ -24,95 +60,58 @@ class AutoFrame:
     attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
     '''
     def __init__(self):
-        # make getattr + setattr work first
-        self.__dict__['_frame_controls'] = {}
-        self._toolkit = None
+        self.__dict__['F'] = FrameMachinery()
+        try:
+            title = self.TITLE
+        except AttributeError:
+            title = _convert_title(self.__class__.__name__)
+        self.F.title = title
         
-    @property
-    def toolkit(self):
-        '''instantiates the toolkit on first use.'''
-        if self._toolkit:
-            return self._toolkit
-        self._toolkit = get_toolkit(external_reference_provider=self)
-        return self._toolkit
-    
-    @property
-    def frame_title(self):
-        title = self.__class__.__name__
-        # insert space before each capital letter
-        title = ''.join(map(lambda x: x if x.islower() else " "+x, title))
-        title = title.strip()
-        return title
-        
-    def frame_show(self):
+    def show(self, buildfunc=None):
         '''Bring the frame on the screen.'''
-        if not self._frame_controls:
-            self._frame_controls[''] = self.toolkit.root(title=self.frame_title)
-            self.frame_build(self[''], body=self.frame_body)
-        self.toolkit.show(self[''])
+        if not self.F.controls:
+            root = self.F.controls[''] = self.F.toolkit.root(title=self.F.title)
+            self.build(root, self.BODY)
+        self.F.toolkit.show(root)
         
-    def frame_build(self, parent, body):
+    def build(self, parent, body=None, autoframe=None):
+        body = body or self.BODY
         sliced_grid = slice_grid(body)
         
         # init rows / columns
         for col, head in enumerate(sliced_grid.column_heads):
-            self.toolkit.col_stretch(parent, col, head.count('-'))
+            self.F.toolkit.col_stretch(parent, col, head.count('-'))
         for row, cells in enumerate(sliced_grid.body_lines):
             # first cell
             head = cells[0:1]
             # first char of first cell
             if head: head = head[0][0:1]
-            self.toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
-        self.frame_add_widgets(parent, sliced_grid)
-            
-    def frame_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0):
-        if not sliced_grid:
-            sliced_grid = slice_grid(body)
-        toolkit=self.toolkit
+            self.F.toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
+        self.F.add_widgets(parent, sliced_grid, autoframe=self)
         
-        # create controls
-        for grid_element in merged_cells(sliced_grid):
-            if not grid_element.text.strip():
-                continue
-            id, widget = toolkit.parse(parent, grid_element.text)
-            self._frame_controls[id] = widget
-                
-            # place on the grid
-            e = grid_element
-            toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
-            text = e.text.replace('~',' ')
-            toolkit.anchor(widget, left=not text.startswith(' '), right=not text.endswith(' '))
-            # autowire
-            try:
-                attr = getattr(self, id)
-            except AttributeError:
-                attr = None # not callable
-            if callable(attr):
-                toolkit.connect(widget, getattr(self, id))
-                
     def __setattr__(self, name, val):
         if name in self:
-            self.toolkit.setval(self[name], val)
+            self.F.toolkit.setval(self[name], val)
         else:
             super().__setattr__(name, val)
     
     def __getattr__(self, name):
-        if '_frame_controls' not in self.__dict__:
+        if 'F' not in self.__dict__:
             raise RuntimeError('You forgot to call super().__init__!')
-        if name in self:
+        if name in self.F.controls:
             # use toolkit to extract value from the widget
-            return self.toolkit.getval(self[name])
+            return self.F.toolkit.getval(self[name])
         else:
             raise AttributeError('Attribute %s is not defined'%(name,))
     
     def __getitem__(self, key):
-        return self._frame_controls[key]
+        return self.F.controls[key]
     
     def __contains__(self, key):
-        return key in self._frame_controls
+        return key in self.F.controls
     
     def close(self):
-        self.toolkit.close(self[''])
+        self.F.toolkit.close(self[''])
     
     def quit(self):
         return self.close()
