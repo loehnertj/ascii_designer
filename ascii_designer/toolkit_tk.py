@@ -21,6 +21,11 @@ def _on_tv_select(ev, function, widget):
     # get the node at idx and return its ref property (the original object)
     obj = widget.variable.get()[idx].ref
     function(obj)
+    
+_master_window = None
+def start_mainloop_if_necessary(widget):
+    if isinstance(widget, tk.Tk):
+        widget.mainloop()
 
 class ToolkitTk(ToolkitBase):
     '''
@@ -47,7 +52,12 @@ class ToolkitTk(ToolkitBase):
     # widget generators
     def root(self, title='Window'):
         '''make a root (window) widget'''
-        root = tk.Tk()
+        print('make root: '+title)
+        global _master_window
+        if _master_window is None:
+            _master_window = root = tk.Tk()
+        else:
+            root = tk.Toplevel()
         root.tk.call('tk', 'scaling', 2.0)
         root.option_add('*Font', self._sane_font)
         # XXX does not work when opening another frame
@@ -66,7 +76,7 @@ class ToolkitTk(ToolkitBase):
     
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.'''
-        frame.mainloop()
+        start_mainloop_if_necessary(frame)
         
     def close(self, frame):
         '''close the frame'''
