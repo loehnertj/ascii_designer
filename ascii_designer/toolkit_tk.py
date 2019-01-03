@@ -177,7 +177,7 @@ class ToolkitTk(ToolkitBase):
         '''
         columns = columns or ''
         columns = [txt.strip() for txt in columns.split(',')]
-        has_first_column = ['' in columns]
+        has_first_column = ('' in columns)
         keys = [name.lower() for name in columns]
         
         # setup scrollable container
