@@ -67,14 +67,14 @@ class AutoFrame:
             title = _convert_title(self.__class__.__name__)
         self.F.title = title
         
-    def show(self, buildfunc=None):
+    def show(self):
         '''Bring the frame on the screen.'''
         if not self.F.controls:
             root = self.F.controls[''] = self.F.toolkit.root(title=self.F.title)
             self.build(root, self.BODY)
         self.F.toolkit.show(root)
         
-    def build(self, parent, body=None, autoframe=None):
+    def build(self, parent, body=None):
         body = body or self.BODY
         sliced_grid = slice_grid(body)
         
