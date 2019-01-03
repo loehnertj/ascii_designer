@@ -46,7 +46,7 @@ def auto_id(id, text=None, last_label_id=''):
         id = 'x'+str(next(_unique_id_dispenser))
     return id
 
-_re_maybe_id_text = r'(?:\s*(?P<id>[a-zA-Z0-9_]+)\s*\:)?\s*(?P<text>.+?)?\s*'
+_re_maybe_id_text = r'(?:\s*(?P<id>[a-zA-Z0-9_]+)\s*\:)?\s*(?P<text>[^(]+?)?\s*'
 
 class ToolkitBase:
     # (name, regex, human-readable explanation)
