@@ -13,36 +13,6 @@ def _convert_title(classname):
     title = title.strip()
     return title
 
-class FrameMachinery:
-    def __init__(self):
-        self.toolkit = get_toolkit()
-        self.controls = {}
-            
-    def add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
-        if not sliced_grid:
-            sliced_grid = slice_grid(body)
-        toolkit=self.toolkit
-        
-        # create controls
-        for grid_element in merged_cells(sliced_grid):
-            if not grid_element.text.strip():
-                continue
-            id, widget = toolkit.parse(parent, grid_element.text, externals=autoframe)
-            self.controls[id] = widget
-                
-            # place on the grid
-            e = grid_element
-            toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
-            text = e.text.replace('~',' ')
-            toolkit.anchor(widget, left=not text.startswith(' '), right=not text.endswith(' '))
-            # autowire
-            try:
-                attr = getattr(autoframe, id)
-            except AttributeError:
-                attr = None # not callable
-            if callable(attr):
-                toolkit.connect(widget, getattr(autoframe, id))
-                
 class AutoFrame:
     '''
     class name is converted to title.
@@ -60,58 +30,85 @@ class AutoFrame:
     attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
     '''
     def __init__(self):
-        self.__dict__['F'] = FrameMachinery()
+        self.__dict__['f_controls'] = {}
+        self.__dict__['f_toolkit'] = get_toolkit()
         try:
-            title = self.TITLE
+            title = self.f_title
         except AttributeError:
-            title = _convert_title(self.__class__.__name__)
-        self.F.title = title
+            self.f_title = _convert_title(self.__class__.__name__)
         
-    def show(self):
+    def f_show(self):
         '''Bring the frame on the screen.'''
-        if not self.F.controls:
-            root = self.F.controls[''] = self.F.toolkit.root(title=self.F.title)
-            self.build(root, self.BODY)
-        self.F.toolkit.show(root)
+        if not self.f_controls:
+            root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title)
+            self.f_build(root, self.f_body)
+        self.f_toolkit.show(root)
         
-    def build(self, parent, body=None):
-        body = body or self.BODY
+    def f_build(self, parent, body=None):
+        body = body or self.f_body
         sliced_grid = slice_grid(body)
         
         # init rows / columns
         for col, head in enumerate(sliced_grid.column_heads):
-            self.F.toolkit.col_stretch(parent, col, head.count('-'))
+            self.f_toolkit.col_stretch(parent, col, head.count('-'))
         for row, cells in enumerate(sliced_grid.body_lines):
             # first cell
             head = cells[0:1]
             # first char of first cell
             if head: head = head[0][0:1]
-            self.F.toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
-        self.F.add_widgets(parent, sliced_grid, autoframe=self)
+            self.f_toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
+        self.f_add_widgets(parent, sliced_grid, autoframe=self)
+        
+    def f_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
+        if not sliced_grid:
+            sliced_grid = slice_grid(body)
+        toolkit = self.f_toolkit
+        autoframe = autoframe or self
+        
+        # create controls
+        for grid_element in merged_cells(sliced_grid):
+            if not grid_element.text.strip():
+                continue
+            id, widget = toolkit.parse(parent, grid_element.text, externals=autoframe)
+            self.f_controls[id] = widget
+                
+            # place on the grid
+            e = grid_element
+            toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
+            text = e.text.replace('~',' ')
+            toolkit.anchor(widget, left=not text.startswith(' '), right=not text.endswith(' '))
+            # autowire
+            try:
+                attr = getattr(autoframe, id)
+            except AttributeError:
+                attr = None # not callable
+            if callable(attr):
+                toolkit.connect(widget, getattr(autoframe, id))
+                
         
     def __setattr__(self, name, val):
         if name in self:
-            self.F.toolkit.setval(self[name], val)
+            self.f_toolkit.setval(self[name], val)
         else:
             super().__setattr__(name, val)
     
     def __getattr__(self, name):
-        if 'F' not in self.__dict__:
+        if 'f_controls' not in self.__dict__:
             raise RuntimeError('You forgot to call super().__init__!')
-        if name in self.F.controls:
+        if name in self.f_controls:
             # use toolkit to extract value from the widget
-            return self.F.toolkit.getval(self[name])
+            return self.f_toolkit.getval(self[name])
         else:
             raise AttributeError('Attribute %s is not defined'%(name,))
     
     def __getitem__(self, key):
-        return self.F.controls[key]
+        return self.f_controls[key]
     
     def __contains__(self, key):
-        return key in self.F.controls
+        return key in self.f_controls
     
     def close(self):
-        self.F.toolkit.close(self[''])
+        self.f_toolkit.close(self[''])
     
     def quit(self):
         return self.close()

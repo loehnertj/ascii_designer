@@ -72,8 +72,8 @@ I               {                           [right]|
 '''
 
 class Main(AutoFrame):
-    TITLE = 'Ascii Designer Demo Menu'
-    BODY = '''
+    f_title = 'Ascii Designer Demo Menu'
+    f_body = '''
     |    <->                     |
      - ASCII Designer Demo Menu -
      [Autoconnect               ]
@@ -84,22 +84,22 @@ class Main(AutoFrame):
        [Close]                   |
     '''
     def autoconnect(self):
-        AutoconnectDemo().show()
+        AutoconnectDemo().f_show()
         
     def bound_values(self):
-        BoundCtlDemo().show()
+        BoundCtlDemo().f_show()
         
     def tree_view(self):
-        TreeDemo().show()
+        TreeDemo().f_show()
         
     def alignment(self):
-        AlignmentDemo().show()
+        AlignmentDemo().f_show()
         
 
 class AutoconnectDemo(AutoFrame):
-    MENU=menu
-    TOOLBAR=toolbar
-    BODY = '''
+    f_menu=menu
+    f_toolbar=toolbar
+    f_body = '''
                        |      <->                                        ~
         Label:          This is a label
         Button:         [ Press me ]
@@ -114,10 +114,10 @@ class AutoconnectDemo(AutoFrame):
         Slider:         [ slider: 0 -+- 100 ]
         External:       *external_object
         '''
-    def build(self, parent, body):
+    def f_build(self, parent, body):
         # initialize something
-        self.external_object = self.F.toolkit.label(parent, text="<External label>")
-        super().build(parent, body)
+        self.external_object = self.f_toolkit.label(parent, text="<External label>")
+        super().f_build(parent, body)
     
     def press_me(self):
         print('press_me was pressed')
@@ -125,7 +125,7 @@ class AutoconnectDemo(AutoFrame):
                   |
         Text box:  [ Write here_ ]
         '''
-        self.F.add_widgets(self[''], body=row_3, offset_row=2)
+        self.f_add_widgets(self[''], body=row_3, offset_row=2)
         
     def write_here(self, text):
         print('write_here: "%s"'%text)
@@ -150,10 +150,10 @@ class AutoconnectDemo(AutoFrame):
         
         
 class AlignmentDemo(AutoFrame):
-    BODY = demo_alignments
+    f_body = demo_alignments
         
-    def build(self, parent, body):
-        super().build(parent, body)
+    def f_build(self, parent, body):
+        super().f_build(parent, body)
         if TK=='qt':
             from PyQt4.QtGui import QSizePolicy
             # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
@@ -162,7 +162,7 @@ class AlignmentDemo(AutoFrame):
             self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
 class BoundCtlDemo(AutoFrame):
-    BODY = '''
+    f_body = '''
     |               |  <->                                            ~
      Textbox:        [ _ ]
      Multiline:      [ __ ]
@@ -195,14 +195,14 @@ from collections import namedtuple
 RankRow = namedtuple('RankRow', 'name points rank')
             
 class TreeDemo(AutoFrame):
-    BODY = '''
+    f_body = '''
     |             |              <->                |
     |Simple List   List with named columns~
     I[= Shopping ] [= Players (,Name, Points, Rank)]
     '''
-    def build(self, parent, body):
-        super().build(parent, body)
-        print(list(self.F.controls.keys()))
+    def f_build(self, parent, body):
+        super().f_build(parent, body)
+        print(list(self.f_controls.keys()))
         self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
         self.players = [
             RankRow('CaptainJack', 9010, 1),
@@ -218,9 +218,9 @@ class TreeDemo(AutoFrame):
         
     
 class EmptyFrame(AutoFrame):
-    BODY = ''
+    f_body = ''
     
     
 if __name__ == '__main__':
     frm = Main()
-    frm.show()
+    frm.f_show()
