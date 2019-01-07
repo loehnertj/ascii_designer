@@ -36,6 +36,12 @@ Contents:
     :members:
     :undoc-members:
     
+`ascii_designer.toolkit_tk` module
+----------------------------------
+.. automodule:: ascii_designer.toolkit_tk
+    :members:
+    :undoc-members:
+    
 `ascii_designer.toolkit_qt` module
 ----------------------------------
 .. automodule:: ascii_designer.toolkit_qt
