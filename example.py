@@ -4,7 +4,7 @@
 from ascii_designer import AutoFrame
 
 class TextTransformer(AutoFrame):
-    frame_body='''
+    f_body='''
                             |              |
         Text to transform:   [ Text_      ]
         
@@ -32,5 +32,5 @@ class TextTransformer(AutoFrame):
         self.close()
         
 if __name__ == '__main__':
-    TextTransformer().frame_show()
+    TextTransformer().f_show()
 
