@@ -67,8 +67,8 @@ class ToolkitBase:
     def __init__(self):
         self._last_label_id = ''
         
-    def root(self, title='Window'):
-        '''make a root (window) widget'''
+    def root(self, title='Window', on_close=None):
+        '''make a root (window) widget. Optionally you can give a close handler.'''
         
     def parse(self, parent, text, externals=None):
         '''Returns the widget id and widget generated from the textual definition.

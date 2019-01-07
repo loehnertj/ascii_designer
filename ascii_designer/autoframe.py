@@ -40,7 +40,7 @@ class AutoFrame:
     def f_show(self):
         '''Bring the frame on the screen.'''
         if not self.f_controls:
-            root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title)
+            root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title, on_close=self.close)
             self.f_build(root, self.f_body)
         self.f_toolkit.show(root)
         
@@ -108,6 +108,11 @@ class AutoFrame:
         return key in self.f_controls
     
     def close(self):
+        '''Close the window. 
+        
+        This is also called when the window is closed using the x button. Be 
+        sure to call ``super().close()`` or your window won't close.
+        '''
         self.f_toolkit.close(self[''])
     
     def quit(self):

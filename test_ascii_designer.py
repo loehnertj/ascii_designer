@@ -118,6 +118,10 @@ class AutoconnectDemo(AutoFrame):
         # initialize something
         self.external_object = self.f_toolkit.label(parent, text="<External label>")
         super().f_build(parent, body)
+        
+    def close(self):
+        print('you cannot close me')
+        # super().close()
     
     def press_me(self):
         print('press_me was pressed')

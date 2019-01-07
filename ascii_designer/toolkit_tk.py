@@ -50,7 +50,7 @@ class ToolkitTk(ToolkitBase):
         self._radiobutton_var = None
         
     # widget generators
-    def root(self, title='Window'):
+    def root(self, title='Window', on_close=None):
         '''make a root (window) widget'''
         print('make root: '+title)
         global _master_window
@@ -66,6 +66,8 @@ class ToolkitTk(ToolkitBase):
         style.configure("Treeview.Heading", font=('Helvetica', 12, 'bold'))
         style.configure("Treeview", rowheight=30)
         root.title(title)
+        if on_close:
+            root.protocol('WM_DELETE_WINDOW', on_close)
         return root
         
     @property
