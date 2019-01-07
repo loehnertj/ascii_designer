@@ -1,3 +1,12 @@
+'''
+ToolkitQt-specific notes:
+
+ * Alignment / Stretch not 100% reliable so far, if using row/col-span.
+ * Tree / List widget not available so far
+ * closing of form with X button cannot be stopped in the default handler. If 
+    you need to do this, replace (root).closeEvent function.
+
+'''
 import sys
 import PyQt4 as qt
 from PyQt4.QtCore import Qt
@@ -23,11 +32,13 @@ class ToolkitQt(ToolkitBase):
         super().__init__(**kwargs)
         
     # widget generators
-    def root(self, title='Window'):
+    def root(self, title='Window', on_close=None):
         '''make a root (window) widget'''
         root = qg.QWidget()
         root.setLayout(qg.QGridLayout())
         root.setWindowTitle(title)
+        if on_close:
+            root.closeEvent = lambda ev: on_close()
         return root
         
     def show(self, frame):
