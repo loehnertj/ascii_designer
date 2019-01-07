@@ -68,7 +68,6 @@ class ToolkitQt(ToolkitBase):
          * value_changed(new_value) for value-type controls;
             usually fired after focus-lost or Return-press.
         '''
-        testhandler = lambda widget=widget, *args: print("TESTHANDLER: ", widget, args)
         if isinstance(widget, qg.QPushButton):
             widget.clicked.connect(lambda *args: function())
             return

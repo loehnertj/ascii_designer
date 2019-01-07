@@ -1,7 +1,9 @@
+import logging
 import re
 import itertools as it
 from collections.abc import MutableSequence
 
+L = lambda: logging.getLogger(__name__)
 
 __all__ = [
     'set_toolkit',
@@ -101,7 +103,7 @@ class ToolkitBase:
                     d['externals'] = externals
                 if 'text' in d:
                     d['text'] = (d['text'] or '').strip()
-                print('%r --> %s %r'%(text, name, d))
+                L().debug('%r --> %s %r', text, name, d)
                 widget = getattr(self, name)(parent, **d)
                 if widget is None:
                     widget = self.label(parent, text='<UNSUPPORTED>')
@@ -275,13 +277,13 @@ def test_nodelist():
             {'name':3, 'rank':4}
         ]
     )
-    print(n._nodes)
+    L().info(n._nodes)
     x = n.pop(0)
-    print(n._nodes)
-    print('popped:', x)
+    L().info(n._nodes)
+    L().info('popped:', x)
     x2 = {'name':5, 'rank':6}
     n += [x2]
-    print(n._nodes)
+    L().info(n._nodes)
     
 if __name__=='__main__':
     test_nodelist()

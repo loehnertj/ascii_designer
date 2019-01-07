@@ -52,7 +52,6 @@ class ToolkitTk(ToolkitBase):
     # widget generators
     def root(self, title='Window', on_close=None):
         '''make a root (window) widget'''
-        print('make root: '+title)
         global _master_window
         if _master_window is None:
             _master_window = root = tk.Tk()
