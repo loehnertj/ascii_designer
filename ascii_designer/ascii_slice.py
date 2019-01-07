@@ -104,17 +104,18 @@ def merged_cells(sliced_grid):
     '''Generator: takes the sliced grid, and returns merged cells one by one.
     
     Cells are merged by the following logic:
-    - If the first character of a (stripped) cell is '{', cells of the following 
-      row(s) are merged while they also start with '{' in the same column.
-    - Then, columns are merged on any of the following conditions (in any of the 
-      merged rows):
-        a. following (column's) cell starts neither with space nor with '|'.
+     
+      * If the first character of a (stripped) cell is '{', cells of the following 
+        row(s) are merged while they also start with '{' in the same column.
+      * Then, columns are merged if the following (column's) cell starts neither 
+        with space nor with '|'.
     
     Yields MCell instances with:
-        * row, col: cell position (int, 0-based)
-        * rowspan, colspan: spanned rows/cols, at least 1
-        * text: merged area text, as sliced out from the text editor; not 
-            including the leading '{'; "ragged" linebreaks retained.
+    
+      * row, col: cell position (int, 0-based)
+      * rowspan, colspan: spanned rows/cols, at least 1
+      * text: merged area text, as sliced out from the text editor; not 
+        including the leading '{'; "ragged" linebreaks retained.
             
     Iteration order is row-wise.
     

@@ -76,13 +76,15 @@ class ToolkitBase:
         '''Returns the widget id and widget generated from the textual definition.
         
         Autogenerates id:
-        - If given, use it
-        - else, try to use text (extract all a-z0-9_ chars)
-        - else, use 'x123' with 123 being a globally unique number
+        
+          - If given, use it
+          - else, try to use text (extract all ``a-z0-9_`` chars)
+          - else, use 'x123' with 123 being a globally unique number
         
         For label type, id handling is special:
-            - The label's id will be "label_" + id
-            - The id will be remembered and used on the next widget, if it has no id.
+        
+          - The label's id will be ``"label_"`` + id
+          - The id will be remembered and used on the next widget, if it has no id.
         
         If nothing matched, return None, None.
         '''

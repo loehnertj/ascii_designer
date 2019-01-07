@@ -13,7 +13,10 @@ Contents:
 
 `ascii_designer` package
 ------------------------
-The ASCII designer package exposes the :any:`AutoFrame` class and the :any:`set_toolkit` function.
+
+.. automodule:: ascii_designer
+    :members:
+    :undoc-members:
 
 `ascii_designer.autoframe` module
 ---------------------------------

@@ -53,8 +53,8 @@ You can find this very code in ``example.py``. Go ahead and try it!
 Some comments, incidentally highlighting the features of this library:
 
   * As you probably guessed, all the magic happens in ``AutoFrame``. The 
-    ``frame_show`` call triggers rendering of the form. (Most) reserved attributes 
-    are prepended with ``frame_`` to get out of your way when subclassing.
+    ``f_show`` call triggers rendering of the form. All the reserved attributes 
+    are prepended with ``f_`` to get out of your way when subclassing.
   * There is a **well-defined syntax** for how to get the usual widget types. In the 
     example you can find labels (plain text), a text box, radio buttons and normal 
     buttons.
@@ -75,12 +75,14 @@ Some comments, incidentally highlighting the features of this library:
     there for your convenience.
   * Otherwise, you can retrieve and set the widget's value by using its id like
     a class **attribute**.
-  * ``frame_show()`` captures all the usual boilerplate and simply f***ing shows 
+  * ``f_show()`` captures all the usual boilerplate and simply f***ing shows 
     the frame. It can be used for both the toplevel and additional frames.
-  * Also note how the class name automatically turned into the window title. Override by setting ``.frame_title``.
+  * Also note how the class name automatically turned into the window title. 
+    Override by setting ``.f_title``.
   * The created widgets are **"raw", native widgets**. You can configure the toolkit 
     to use. Currently there is a Qt and a Tkinter implementation. The native 
-    widget can accessed using ``form["widget_id"]``. 
+    widget can accessed using ``form["widget_id"]`` (or 
+    ``form.f_controls["widget_id"]``). 
     
 The general philosophy is to not paint everything over with wrappers. Instead, 
 the library focuses on specific tasks - building the layout, event-/value 
