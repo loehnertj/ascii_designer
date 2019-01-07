@@ -1,3 +1,6 @@
+'''This is part example collection, part regression test.
+'''
+
 #import tkinter as tk
 import sys
 from ascii_designer import AutoFrame, set_toolkit
@@ -7,7 +10,7 @@ if sys.argv[1:]:
     TK = sys.argv[1]
 set_toolkit(TK)
 
-# maybe later
+# Idea for later
 menu = '''
     File
         Open
@@ -18,58 +21,13 @@ menu = '''
         About...
 '''
 
-# maybe later
+# Idea for later
 toolbar = '''
  [ Open ]
  [ Save ]
  [ Save as... ]
 '''
 
-# sketches to get a feeling of how it could be done
-panel1 = '''
-|                       | <---------------------------->
- [ Button 1 ]            [ Textbox_ ]
- [ Button 2 ]            [ Dropdown (val1, val2, val3) v]
-
- Static text:            [ _ ]
- Label as ID:            [ v ]
-I *external_object -----------------------------------
- 
- [            Button with column span                  ]
-                        |
-I{ [ Multiline Text __ ]
-I{
- 
- {      *rowcolspan_object
- {
- 
- [ Save As ... ]
- [ okbtn: OK ]
- [ slider: 0 -+- 100 ]  |
- 
- [ ] Checkbox 1            [ ] cb2 : Checkbox 2
- ( ) Option 1
- (x) Option 2
- ( ) Option 3
- .O grim fate!
-
-
-=+- boxcaption -|-------------+
- | [ Button 3]    [ Button 4 ] 
- +----------------------------+
-'''
-
-# Row/Column stretch is controlled by "-" in the column head and "I" in row head
-# Widget anchoring is controlled by presence of leading/trailing whitespace 
-# within the cell.
-demo_alignments = '''
-|              |     <->          |   <-->         |
- [ fixed col  ] [  stretch 1x    ] [stretch 2x    ]
-                [ colspan stretch 3x              ]
-I               [ stretch h+v __ ]|[left]          |
-I               {[left, v 2x __ ] |  [center]      |
-I               {                           [right]|
-'''
 
 class Main(AutoFrame):
     f_title = 'Ascii Designer Demo Menu'
@@ -97,8 +55,6 @@ class Main(AutoFrame):
         
 
 class AutoconnectDemo(AutoFrame):
-    f_menu=menu
-    f_toolbar=toolbar
     f_body = '''
                        |      <->                                        ~
         Label:          This is a label
@@ -154,7 +110,18 @@ class AutoconnectDemo(AutoFrame):
         
         
 class AlignmentDemo(AutoFrame):
-    f_body = demo_alignments
+    '''Row/Column stretch is controlled by "-" in the column head and "I" in row head
+    Widget anchoring is controlled by presence of leading/trailing whitespace 
+    within the cell.
+    '''
+    f_body = '''
+    |              |     <->          |   <-->         |
+    [ fixed col  ] [  stretch 1x    ] [stretch 2x    ]
+                    [ colspan stretch 3x              ]
+    I               [ stretch h+v __ ]|[left]          |
+    I               {[left, v 2x __ ] |  [center]      |
+    I               {                           [right]|
+    '''
         
     def f_build(self, parent, body):
         super().f_build(parent, body)
