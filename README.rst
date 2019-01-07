@@ -18,7 +18,7 @@ Did you ever design a form by scribbling something like this in your editor::
     from ascii_designer import AutoFrame
 
     class TextTransformer(AutoFrame):
-        frame_body='''
+        f_body='''
                                 |    <->       |
             Text to transform:   [ Text_      ]
             
@@ -46,7 +46,7 @@ Did you ever design a form by scribbling something like this in your editor::
             self.close()
             
     if __name__ == '__main__':
-        TextTransformer().frame_show()
+        TextTransformer().f_show()
 
 You can find this very code in ``example.py``. Go ahead and try it!
 
