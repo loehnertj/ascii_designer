@@ -20,6 +20,16 @@ up = os.path.dirname
 
 sys.path.append(os.path.abspath(up(up(__file__))))
 
+# Mock out PyQt4 for toolkit_qt.py.
+class FakeModule: pass
+qt = sys.modules['PyQt4'] = FakeModule()
+qc = sys.modules['PyQt4.QtCore'] = FakeModule()
+qg = sys.modules['PyQt4.QtGui'] = FakeModule()
+qt.QtCore = qc
+qt.QtGui = qg
+qc.Qt = None
+qg.QApplication = lambda *args, **kwargs: None
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
