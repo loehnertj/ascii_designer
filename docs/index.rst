@@ -10,6 +10,11 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   
+Source Code
+-----------
+
+Please proceed to https://github.com/loehnertj/ascii_designer
 
 `ascii_designer` package
 ------------------------

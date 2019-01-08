@@ -92,11 +92,11 @@ binding - and lets you do everything else with the API you know and (maybe) love
 INSTALLATION
 ------------
 
-Requirements: Python >= 3, (currently) Pyqt4.
+Requirements: Python >= 3, ``attrs``. Obviously, to use the Qt toolkit you need ``Pyqt4``.
 
 Then::
 
-    pip install https://github.com/loehnertj/asciidesigner/archive/master.zip
+    pip install https://github.com/loehnertj/ascii_designer/archive/master.zip
     
 Or, download / clone and use ``python setup.py install``.
     
@@ -104,7 +104,7 @@ Or, download / clone and use ``python setup.py install``.
 DOCUMENTATION
 -------------
 
-Please proceed to http://asciidesigner.readthedocs.io/en/latest/index.html
+Please proceed to http://ascii_designer.readthedocs.io/en/latest/index.html
     
 TODO
 ----
