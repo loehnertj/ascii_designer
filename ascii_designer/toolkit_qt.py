@@ -183,8 +183,10 @@ class ToolkitQt(ToolkitBase):
             self.col_stretch(f, 0, 1)
             inner = qg.QWidget(f)
             self.place(inner, 0, 0)
+            inner.setLayout(qg.QGridLayout())
         else:
             f = qg.QWidget(parent)
+            f.setLayout(qg.QGridLayout())
         return f
         
     def label(self, parent, id=None, label_id=None, text=''):
