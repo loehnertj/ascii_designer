@@ -35,6 +35,7 @@ class Main(AutoFrame):
     |    <->                     |
      - ASCII Designer Demo Menu -
      [Autoconnect               ]
+     [Boxes and embedding       ]
      [Bound values              ]
      [Tree view                 ]
      [Alignment                 ]
@@ -43,6 +44,9 @@ class Main(AutoFrame):
     '''
     def autoconnect(self):
         AutoconnectDemo().f_show()
+        
+    def boxes_and_embedding(self):
+        BoxesDemo().f_show()
         
     def bound_values(self):
         BoundCtlDemo().f_show()
@@ -68,16 +72,11 @@ class AutoconnectDemo(AutoFrame):
                         (x) Option B
         Checkbox:       [x] agree:I agree to the terms and conditions.
         Slider:         [ slider: 0 -+- 100 ]
-        External:       *external_object
         '''
-    def f_build(self, parent, body):
-        # initialize something
-        self.external_object = self.f_toolkit.label(parent, text="<External label>")
-        super().f_build(parent, body)
         
     def close(self):
-        print('you cannot close me')
-        # super().close()
+        print('Closing now.')
+        super().close()
     
     def press_me(self):
         print('press_me was pressed')
@@ -107,6 +106,27 @@ class AutoconnectDemo(AutoFrame):
         print('agree: %s'%checked)
     def slider(self, val):
         print('slider: %s'%val)
+        
+        
+class BoxesDemo(AutoFrame):
+    f_body = '''
+        |               |  <->
+         Use the source code to understand what is demonstrated here.
+         Box:            <box>
+        IGroup box:      <groupbox: Test >
+    '''
+    
+    def f_build(self, parent, body):
+        super().f_build(parent, body)
+        # Replace placeholder with a label
+        if TK == 'tk':
+            bm = self.box.master
+            gbm = self.groupbox.master
+        elif TK == 'qt':
+            bm = self.box.parent()
+            gbm = self.groupbox.parent()
+        self.box = self.f_toolkit.button(parent=bm, text="this replaces box")
+        self.groupbox = self.f_toolkit.button(parent=gbm, text='this fills groupbox')
         
         
 class AlignmentDemo(AutoFrame):

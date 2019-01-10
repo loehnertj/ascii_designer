@@ -15,19 +15,19 @@ def _convert_title(classname):
 
 class AutoFrame:
     '''
-    class name is converted to title.
-    Override with frame_title
-    body definition with frame_body
+    class name is converted to title. Override with f_title.
     
-    to create external widgets or customize the autocreated ones, override frame_build
+    Body definition with f_body.
     
-    get at the created controls using AutoFrame[key].
+    To create own widgets or customize the autocreated ones, override :any:`f_build`.
     
-    close(), exit(), quit() provided for convenience
+    Get at the created controls using AutoFrame[key].
     
-    functions with same name as a control are autobound to the default handler (click or changed)
+    close(), exit(), quit() provided for convenience.
     
-    attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
+    Functions with same name as a control are autobound to the default handler (click or changed).
+    
+    Attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
     '''
     def __init__(self):
         self.__dict__['f_controls'] = {}
@@ -69,7 +69,7 @@ class AutoFrame:
         for grid_element in merged_cells(sliced_grid):
             if not grid_element.text.strip():
                 continue
-            id, widget = toolkit.parse(parent, grid_element.text, externals=autoframe)
+            id, widget = toolkit.parse(parent, grid_element.text)
             self.f_controls[id] = widget
                 
             # place on the grid

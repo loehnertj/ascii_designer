@@ -92,6 +92,10 @@ class ToolkitQt(ToolkitBase):
             
     def getval(self, widget):
         cls = widget.__class__
+        if cls is qg.QWidget: return widget
+        if cls is qg.QGroupBox: 
+            # child 0 is the layout, 1 the subwidget
+            return widget.children()[1]
         if cls is qg.QPushButton: return widget.text()
         # FIXME: for Radio Button, return checked ID
         if cls is qg.QRadioButton: return widget.isChecked()
@@ -111,7 +115,24 @@ class ToolkitQt(ToolkitBase):
             # FIXME: check the appropriate modified indicators for the wiget
             # if not modified, go through
             return
-        if isinstance(widget, qg.QPushButton):
+        if type(widget) in (qg.QWidget, qg.QGroupBox):
+            if type(widget) is qg.QGroupBox:
+                # child 0 is the layout, 1 the subwidget
+                widget = widget.children()[1]
+            # Replace the frame with the given value
+            if value.parent() is not widget.parent():
+                raise ValueError('Replacement widget must have the same parent')
+            # copy grid info
+            layout = widget.parent().layout()
+            idx = layout.indexOf(widget)
+            row, col, rowspan, colspan = layout.getItemPosition(idx)
+            # remove frame
+            widget.deleteLater()
+            # place new widget
+            self.place(value, row, col, rowspan, colspan)
+            # FIXME: I could not figure out how to query the orignal widget's alignment.
+            self.anchor(value, True,True,True,True)
+        elif isinstance(widget, qg.QPushButton):
             widget.setText(value)
         elif isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
             widget.setChecked(value)
@@ -154,14 +175,17 @@ class ToolkitQt(ToolkitBase):
                                  
         
     # Widgets
-    def frame(self, title=''):
-        f = qg.QWidget()
-        if title:
-            f.setTitle(title)
+    def box(self, parent, id=None, text='', given_id=''):
+        if given_id and text:
+            f = qg.QGroupBox(parent=parent, title=text)
+            f.setLayout(qg.QGridLayout())
+            self.row_stretch(f, 0, 1)
+            self.col_stretch(f, 0, 1)
+            inner = qg.QWidget(f)
+            self.place(inner, 0, 0)
+        else:
+            f = qg.QWidget(parent)
         return f
-    
-    def spacer(self, parent):
-        '''a vertical/horizontal spacer'''
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''

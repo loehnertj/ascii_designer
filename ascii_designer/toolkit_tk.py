@@ -42,6 +42,11 @@ class ToolkitTk(ToolkitBase):
     variable.
     
     The ComboBox / Dropdown box is taken from ttk.
+    
+    Box variable (placeholder): If you replace the box by setting its virtual 
+    attribute, the replacement widget must have the same master as the box: in 
+    case of normal box the frame root, in case of group box the group box. 
+    Recommendation: ``new_widget = tk.Something(master=autoframe.the_box.master)``
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -95,7 +100,9 @@ class ToolkitTk(ToolkitBase):
          * value_changed(new_value) for value-type controls;
             usually fired after focus-lost or Return-press.
         '''
-        if isinstance(widget, tk.Button):
+        if type(widget) is tk.Frame:
+            raise TypeError('Cannot assign a handler to a box.')
+        elif isinstance(widget, tk.Button):
             widget.config(command=function)
         elif isinstance(widget, ScrolledText):
             widget.bind('<Return>', lambda ev:function(widget.get(1., 'end')))
@@ -109,13 +116,31 @@ class ToolkitTk(ToolkitBase):
             widget.variable.trace('w', lambda *args: function(widget.variable.get()))
             
     def getval(self, widget):
-        if isinstance(widget, ScrolledText):
+        if type(widget) is tk.Frame:
+            return widget
+        elif isinstance(widget, tk.LabelFrame):
+            return widget.winfo_children()[0]
+        elif isinstance(widget, ScrolledText):
             return widget.get(1., 'end')
         else:
             return widget.variable.get()
     
     def setval(self, widget, value):
-        if isinstance(widget, ScrolledText):
+        if type(widget) in (tk.Frame, tk.LabelFrame):
+            if type(widget) is tk.LabelFrame:
+                widget = widget.winfo_children()[0]
+            # Replace the frame with the given value
+            if value.master is not widget.master:
+                raise ValueError('Replacement widget must have the same master')
+            # copy grid info
+            grid_info = widget.grid_info()
+            grid_info.pop('in', None)
+            # remove frame
+            widget.grid_forget()
+            widget.destroy()
+            # place new widget
+            value.grid(**grid_info)
+        elif isinstance(widget, ScrolledText):
             widget.delete(1., 'end')
             widget.insert('end', value)
         else:
@@ -137,8 +162,15 @@ class ToolkitTk(ToolkitBase):
         if bottom: sticky += 's'
         widget.grid(sticky=sticky)
         
-    def spacer(self, parent):
-        '''a vertical/horizontal spacer'''
+    def box(self, parent, id=None, text='', given_id=''):
+        if given_id and text:
+            print(repr(given_id))
+            f = tk.LabelFrame(parent, name=id, text=text)
+            inner = tk.Frame(f)
+            inner.grid(row=0, column=0, sticky='nsew')
+        else:
+            f = tk.Frame(parent, name=id)
+        return f
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
