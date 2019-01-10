@@ -114,7 +114,14 @@ class BoxesDemo(AutoFrame):
          Use the source code to understand what is demonstrated here.
          Box:            <box>
         IGroup box:      <groupbox: Test >
+        INesting:        <nest_box:Turtles all the way down>
+        
     '''
+    
+    def __init__(self, level=2):
+        super().__init__()
+        self._level = level
+        
     
     def f_build(self, parent, body):
         super().f_build(parent, body)
@@ -128,6 +135,10 @@ class BoxesDemo(AutoFrame):
         self.box = self.f_toolkit.button(parent=bm, text="this replaces box")
         self.groupbox = self.f_toolkit.button(parent=gbm, text='this fills groupbox')
         
+        # Nesting
+        if self._level:
+            inner = BoxesDemo(self._level-1)
+            inner.f_build(parent=self.nest_box, body=inner.f_body)
         
 class AlignmentDemo(AutoFrame):
     '''Row/Column stretch is controlled by "-" in the column head and "I" in row head
