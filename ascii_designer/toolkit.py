@@ -210,6 +210,14 @@ class NodelistBase(MutableSequence):
             self._nodes = [self._node_from(item) for item in iterable]
         else:
             self._nodes = []
+    
+    @property
+    def selection(self):
+        '''returns the sublist of all currently-selected items.
+        
+        Raises RuntimeError if the nodelist is detached.
+        '''
+        raise RuntimeError('NodelistBase has no selection')
         
     def __getitem__(self, idx):
         return self._nodes[idx]
