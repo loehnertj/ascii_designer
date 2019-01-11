@@ -308,6 +308,7 @@ class NodelistVariable:
     def set(self, val):
         old_nl = self._nl
         old_nl.attached = False
+        old_nl.treeview.delete(*old_nl.treeview.get_children())
         self._nl = NodelistTk(old_nl.keys, old_nl.treeview, val)
         
     
