@@ -320,6 +320,18 @@ class NodelistTk(NodelistBase):
         self.attached = (treeview is not None)
         for idx, node in enumerate(self._nodes):
             self._treeinsert(idx, node)
+            
+    @property
+    def selection(self):
+        '''returns the sublist of all currently-selected items.
+        
+        Raises RuntimeError if the nodelist is detached.
+        '''
+        if not self.attached:
+            raise RuntimeError('This nodelist is detached!')
+        idxs = [int(iid) for iid in self.treeview.selection()]
+        return [self[idx] for idx in idxs]
+        
         
     def __setitem__(self, idx, item):
         super().__setitem__(idx, item)
