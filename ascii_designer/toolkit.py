@@ -275,7 +275,7 @@ class Node(dict):
                 self.nodelist._on_node_setkey(self, key, val)
         
     def __repr__(self):
-        return 'Node(%r, attached=%r)'%(self.values, self.attached,)
+        return 'Node(%s, attached=%r)'%(super()._str__(), (self.nodelist is not None))
         
 def test_nodelist():
     n = NodelistBase('name rank'.split(), 
