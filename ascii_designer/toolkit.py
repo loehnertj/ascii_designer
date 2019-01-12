@@ -54,7 +54,7 @@ class ToolkitBase:
     # (name, regex, human-readable explanation)
     grammar = [
         ('box', r'\<%s\>'%_re_maybe_id_text, '"<Text>"'),
-        ('option',   r'\((?P<checked> |x)\)\s+%s$'%_re_maybe_id_text, '"O text" or "0 text"'),
+        ('option',   r'\((?P<checked> |x)\)\s+%s$'%_re_maybe_id_text, '"( ) text" or "(x) text"'),
         ('checkbox', r'\[(?P<checked> |x)\]\s+%s$'%_re_maybe_id_text, '"[ ] Text" or "[x] Text"'),
         ('slider', r'\[\s*(?P<id>[a-zA-Z0-9_]+)\s*\:\s*(?P<min>\d+)\s*\-\+\-\s*(?P<max>\d+)\s*\]', '[id: 0 -+- 100]'),
         ('multiline',r'\[%s__\s*\]'%_re_maybe_id_text, '"[Text__]"'),

@@ -143,7 +143,76 @@ Vertical anchoring is not controllable. It defaults to "fill", which is the righ
 Widget specification
 --------------------
 
-to be done
++-----------------------+------------------------------------------+
+| To create a:          | Use the syntax:                          |
++=======================+==========================================+
+| Label                 | ``blah blah`` (just write plain text) or |
+|                       | ``label_id: Text``; or ``.Text`` to      |
+|                       | force treatment as text.                 |
++-----------------------+------------------------------------------+
+| Button                | ``[  ]`` or ``[Text]`` or                |
+|                       | ``[control_id: Text]``.                  |
+|                       |                                          |
+|                       | (From here on simplified as              |
+|                       | ``id_and_text``).                        |
++-----------------------+------------------------------------------+
+| Text field            | ``[id_and_text_]`` (single-line), or     |
+|                       | ``[id_and_text__]`` (multi-line)         |
++-----------------------+------------------------------------------+
+| Dropdown Chooser      | ``[id_and_text v]`` or                   |
+|                       | ``[id_and_text (choice1, choice2) v]``   |
++-----------------------+------------------------------------------+
+| Combobox              | ``[id_and_text_ v]`` or                  |
+|                       | ``[id_and_text_ (choice1, choice2) v]``  |
++-----------------------+------------------------------------------+
+| Checkbox              | ``[ ] id_and_text`` or                   |
+|                       | ``[x] id_and_text``                      |
++-----------------------+------------------------------------------+
+| Radio button          | ``( ) id_and_text`` or                   |
+|                       | ``(x) id_and_text``                      |
++-----------------------+------------------------------------------+
+| List/Tree view        | ``[= id_and_text]`` or                   |
+|                       | ``[= id_and_text (Column1, Column2)]``   |
++-----------------------+------------------------------------------+
+| Placeholder (empty or | ``<name>`` for empty box;                |
+| framed box)           | ``<name:Text>`` for framed box           |
++-----------------------+------------------------------------------+
+
+Control ID
+..........
+
+Each control gets an identifier which is generated as follows:
+
+ - If a control id is explicitly given, it has of course precedence.
+ - Otherwise, the control Text is converted to an identifier by
+    - replacing space with underscore
+    - lower-casing
+    - removing all characters not in (a-z, 0-9, ``_``)
+    - prepending ``x`` if the result starts with a number.
+    - Special-Case: Labels get ``label_`` prepended.
+ - If that yields no ID (e.g. Text is empty), the ID of a preceding Label 
+   (without ``label_`` prefix) is used. This requires the label to be *left* of the 
+   control in question.
+ - If that fails as well, an ID of the form ``x1``, ``x2``, ... is assigned.
+
+Examples:
+
+ - ``[ Hello ]`` gives id ``hello``
+ - ``[ Hello World! ]`` gives id ``hello_world``
+ - ``Hello World: |  [  ]`` gives a label with id ``label_hello_world`` and a button with id ``hello_world``
+ - ``[ $%&§§% ]`` gives a button with id ``x1`` (assuming this is the first control withoud id).
+ 
+The control id can be used to get/set the control value or the control object from the form - see below.
+
+Notes about specific widgets
+............................
+
+**Dropdown** and **combobox** without values can be populated after creation.
+
+All **radio buttons** on one form are grouped together. For multiple radio groups, create individiual AutoFrames for the group, and embed them in a box.
+
+**Listview**: The first column will have the text as heading. The subsequent columns have the given column headings. If Text is empty (or only id given), only the named columns are there. This makes a difference when using value-binding (see below).
+
 
 Value and event binding
 -----------------------
