@@ -146,36 +146,38 @@ Widget specification
 +-----------------------+------------------------------------------+
 | To create a:          | Use the syntax:                          |
 +=======================+==========================================+
-| Label                 | ``blah blah`` (just write plain text) or |
-|                       | ``label_id: Text``; or ``.Text`` to      |
-|                       | force treatment as text.                 |
+| Label                 | | ``blah blah`` (just write plain text), |
+|                       | | ``label_id: Text`` or                  |
+|                       | | ``.Text``                              |
 +-----------------------+------------------------------------------+
-| Button                | ``[  ]`` or ``[Text]`` or                |
-|                       | ``[control_id: Text]``.                  |
-|                       |                                          |
-|                       | (From here on simplified as              |
-|                       | ``id_and_text``).                        |
+| Button                | | ``[  ]`` or                            |
+|                       | | ``[Text]`` or                          |
+|                       | | ``[control_id: Text]``.                |
+|                       | | (From here on simplified as            |
+|                       |   ``id_and_text``).                      |
 +-----------------------+------------------------------------------+
-| Text field            | ``[id_and_text_]`` (single-line), or     |
-|                       | ``[id_and_text__]`` (multi-line)         |
+| Text field            | | ``[id_and_text_]`` (single-line) or    |
+|                       | | ``[id_and_text__]`` (multi-line)       |
 +-----------------------+------------------------------------------+
-| Dropdown Chooser      | ``[id_and_text v]`` or                   |
-|                       | ``[id_and_text (choice1, choice2) v]``   |
+| Dropdown Chooser      | | ``[id_and_text v]`` or                 |
+|                       | | ``[id_and_text (choice1, choice2) v]`` |
 +-----------------------+------------------------------------------+
-| Combobox              | ``[id_and_text_ v]`` or                  |
-|                       | ``[id_and_text_ (choice1, choice2) v]``  |
+| Combobox              | | ``[id_and_text_ v]`` or                |
+|                       | | ``[id_and_text_ (choice1, choice2) v]``|
 +-----------------------+------------------------------------------+
-| Checkbox              | ``[ ] id_and_text`` or                   |
-|                       | ``[x] id_and_text``                      |
+| Checkbox              | | ``[ ] id_and_text`` or                 |
+|                       | | ``[x] id_and_text``                    |
 +-----------------------+------------------------------------------+
-| Radio button          | ``( ) id_and_text`` or                   |
-|                       | ``(x) id_and_text``                      |
+| Radio button          | | ``( ) id_and_text`` or                 |
+|                       | | ``(x) id_and_text``                    |
 +-----------------------+------------------------------------------+
-| List/Tree view        | ``[= id_and_text]`` or                   |
-|                       | ``[= id_and_text (Column1, Column2)]``   |
+| Slider (horizontal)   | | ``[id: 0 -+- 100]``                    |
 +-----------------------+------------------------------------------+
-| Placeholder (empty or | ``<name>`` for empty box;                |
-| framed box)           | ``<name:Text>`` for framed box           |
+| List/Tree view        | | ``[= id_and_text]`` or                 |
+| (only in Tk for now)  | | ``[= id_and_text (Column1, Column2)]`` |
++-----------------------+------------------------------------------+
+| Placeholder (empty or | | ``<name>`` for empty box;              |
+| framed box)           | | ``<name:Text>`` for framed box         |
 +-----------------------+------------------------------------------+
 
 Control ID
@@ -185,11 +187,13 @@ Each control gets an identifier which is generated as follows:
 
  - If a control id is explicitly given, it has of course precedence.
  - Otherwise, the control Text is converted to an identifier by
+ 
     - replacing space with underscore
     - lower-casing
     - removing all characters not in (a-z, 0-9, ``_``)
     - prepending ``x`` if the result starts with a number.
     - Special-Case: Labels get ``label_`` prepended.
+    
  - If that yields no ID (e.g. Text is empty), the ID of a preceding Label 
    (without ``label_`` prefix) is used. This requires the label to be *left* of the 
    control in question.
@@ -211,13 +215,86 @@ Notes about specific widgets
 
 All **radio buttons** on one form are grouped together. For multiple radio groups, create individiual AutoFrames for the group, and embed them in a box.
 
+**Slider**: only supported with horizontal orientation. For a vertical slider, 
+change orientation afterwards; or use a placeholder box and create it yourself.
+
 **Listview**: The first column will have the text as heading. The subsequent columns have the given column headings. If Text is empty (or only id given), only the named columns are there. This makes a difference when using value-binding (see below).
 
 
 Value and event binding
 -----------------------
 
-to be done
+Control objects
+...............
+
+Usually you will access your controls from methods in your :any:`AutoFrame` 
+subclass. So let us assume that your ``AutoFrame`` variable is called ``self``.
+
+Then, access the generated controls by using ``self["control_id"]`` or 
+``self.f_controls["control_id"]``. The result is a toolkit-native widget, i.e. a 
+``QWidget`` subclass in Qt case, a ``tkinter`` widget in Tk case.
+
+For Tk widgets, if there is an associated Variable object (``StringVar`` or similar), you can find it as ``self["control_id"].variable`` attribute on the control.
+
+
+Event binding
+.............
+
+If you define a method named after a control-id, it will be automatically called ("bound", "connected") as follows:
+
+ * Button: When user clicks the button; without arguments (except for ``self``).
+ * Any other widget type: When the value changes; with one argument, being the new value.
+ 
+Example::
+
+    class EventDemo(AutoFrame):
+        f_body = '''
+            |               |
+             [ My Button   ]
+             [ Text field_ ]
+        '''
+        def my_button(self):
+            print('My Button was clicked')
+        
+        def text_field(self, val):
+            print('Text "%s" was entered'%val)
+            
+In case of the ListView, the method is called on selection (focus) of a row.
+
+
+Virtual value attribute
+.......................
+
+If the control is not bound to a function, you can access the value of a control 
+by using it like a class attribute::
+
+    class AttributeDemo(AutoFrame):
+        f_body = '''
+            |               |
+             [ Text field_ ]
+        '''
+        def some_function(self):
+            x = self.text_field
+            self.text_field = 'new_text'
+
+For label and button, the value is the text of the control.
+
+Boxes are a bit special. An empty box's value is the box widget itself. A framed box contains an empty box, which is returned as value.
+
+You can set the virtual attribute to another (any) widget the toolkit understands. In this case, the original box is destroyed, and the new "value" takes its place. For a framed box, the inner empty box is replaced. So you can use the box as a placeholder for a custom widget (say, a graph) that you generate yourself.
+
+.. note:: The new widget must have the same parent as the box you replace.
+
+A second possibility is to use the box as parent for one or more widgets that 
+you add later. For instance, you can render another AutoFrame into the box. (see under Extending).
+
+Value of  List / Tree View
+...........................
+
+Lists and tree views are considerably more complex than the other widgets. I am still experimenting with how to make handling as convenient as possible. Be prepared for changes here if you update.
+
+... to be done...
+
 
 Extending / integrating
 -----------------------
