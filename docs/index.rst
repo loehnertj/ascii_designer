@@ -291,9 +291,60 @@ you add later. For instance, you can render another AutoFrame into the box. (see
 Value of  List / Tree View
 ...........................
 
-Lists and tree views are considerably more complex than the other widgets. I am still experimenting with how to make handling as convenient as possible. Be prepared for changes here if you update.
+.. note::
+    Lists and tree views are considerably more complex than the other widgets. I am still experimenting with how to make handling as convenient as possible. Be prepared for changes here if you update.
 
-... to be done...
+The general picture is this: The Listview has a value, which on the python side looks mostly like a list. You can slice it, insert/remove items and so on.
+
+However, inserted items are turned into :any:`Node` instances fit for displaying in the list view. 
+The value list is attached to the actual list view. I.e. if you update the list or its items, the changes immediately reflect in the ListView widget.
+
+The value list or its items can become detached if you replace the list or pop nodes of it. You can still use it like a normal python object, but it will not have an onscreen representation anymore.
+
+The :any:`sources` method of the list can be used to configure how values are read from the given objects into the predefined columns. By default we look for attributes matching the column names. If you have a first column (defined via the "Text", not the "Columns" list in parens), it gets the object's string representation.
+
+That means that the simplemost way of using the List is this::
+
+    class SimpleList(AutoFrame):
+        f_body = '''
+            |
+             [= Some Items]
+        '''
+        def f_build(self, parent, body):
+            super().f_build(parent, body)
+            # populate the list
+            self.some_items = ['First', 'Second', 'Fifth']
+
+            
+A more complex example to showcase how additional columns work::
+
+    # RankRow is a stand-in for a "real" class.
+    RankRow = namedtuple('RankRow', 'name points rank')
+    
+    class TreeDemo(AutoFrame):
+        f_body = '''
+        |              <->                |
+        I[= Players (,Name, Points, Rank)]
+        '''
+        def f_build(self, parent, body):
+            super().f_build(parent, body)
+            self.players = [
+                RankRow('CaptainJack', 9010, 1),
+                RankRow('MasterOfDisaster', 3010, 2),
+                RankRow('LittleDuck', 12, 3),
+            ]
+            # changing columns / items triggers updating of the displayed data
+            self.players[1]['name'] = 'Changed Name'
+            self.players[2] = RankRow('BigDuck', 24, 3)
+            # change the data binding:
+            self.players.sources(
+                    name=['foo'], points=['bar'], # use __getitem__ for those
+                    # custom callback
+                    rank=lambda obj: obj['baz'], 
+                    # change binding for first ("default") column
+                    **{'': lambda obj:'ItsLikeMagic'}
+            )
+            self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
 
 
 Extending / integrating
