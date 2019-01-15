@@ -203,8 +203,12 @@ class NodelistBase(MutableSequence):
      
     Subclasses should implement the display update logic on modification.
     '''
-    def __init__(self, keys, iterable=None):
-        self.keys = keys
+    def __init__(self, keys, sources, iterable=None):
+        self.keys = list(keys)
+        if sources is None:
+            self._sources = {k:k for k in self.keys}
+        else:
+            self._sources = sources.copy()
         self.attached = True
         if iterable:
             self._nodes = [self._node_from(item) for item in iterable]
@@ -218,6 +222,22 @@ class NodelistBase(MutableSequence):
         Raises RuntimeError if the nodelist is detached.
         '''
         raise RuntimeError('NodelistBase has no selection')
+    
+    def sources(self, **kwargs):
+        '''Alter the data binding for each column.
+        
+        Takes the column names as kwargs and the data source as value; which can be:
+        
+            * Empty string to retrieve str(obj)
+            * String ``"name"`` to retrieve attribute ``name`` from the source object
+                (on attribute error, try to get as item)
+            * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
+            * Callable ``lambda obj: ..`` to do a custom computation.
+        '''
+        for key in kwargs:
+            if key not in self.keys:
+                raise KeyError('No column "%s" exists'%key)
+        self._sources.update(kwargs)
         
     def __getitem__(self, idx):
         return self._nodes[idx]
@@ -250,23 +270,50 @@ class NodelistBase(MutableSequence):
         pass
     
     def _node_from(self, item):
-        return Node(self, item)
+        return Node(self, item, self._sources)
     
 class Node(dict):
-    def __init__(self, nodelist, obj, attached=None):
+    '''Node(nodelist, obj, sources)
+    
+    Params:
+        nodelist (:any:`NodelistBase`): the nodelist including this node (for calling back when node is changed)
+        obj (any): source object
+        sources (dict): sources dict
+        
+    ``soures`` defines which columns to retrieve and how. The keys are the column names. The values can be:
+    
+        * Empty string to retrieve str(obj)
+        * String ``"name"`` to retrieve attribute ``name`` from the source object
+            (on attribute error, try to get as item)
+        * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
+        * Callable ``lambda obj: ..`` to do a custom computation.
+    '''
+    def __init__(self, nodelist, obj, sources, attached=None):
         # initially set to 'no nodelist' to disable callbacks
         self.nodelist = None
         self.text = ''
         self.ref = obj
-        for key in nodelist.keys:
+        for key, source in sources.items():
+            self[key] = self._retrieve(obj, source)
             if key=='':
-                self.text = str(obj)
+                self.text = self[key]
+        self.nodelist = nodelist
+    
+    def _retrieve(self, obj, source):
+        if isinstance(source, str):
+            if source == '':
+                return str(obj)
             else:
                 try:
-                    self[key] = obj[key]
-                except (AttributeError, KeyError, TypeError):
-                    self[key] = getattr(obj, key)
-        self.nodelist = nodelist
+                    return getattr(obj, source)
+                except AttributeError:
+                    return obj[source]
+        elif isinstance(source, list) and len(source)==1:
+            return obj[source[0]]
+        elif callable(source):
+            return source(obj)
+        else:
+            raise ValueError('Could not evaluate source: %r'%source)
         
     def detach(self):
         self.nodelist = None

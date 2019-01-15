@@ -238,7 +238,7 @@ class ToolkitTk(ToolkitBase):
             tv.heading(key, text=heading)
         
         # set up variable
-        nodelist = NodelistVariable(NodelistTk(keys, tv))
+        nodelist = NodelistVariable(NodelistTk(keys, None, tv))
         tv.variable = nodelist
         return tv
         
@@ -309,13 +309,13 @@ class NodelistVariable:
         old_nl = self._nl
         old_nl.attached = False
         old_nl.treeview.delete(*old_nl.treeview.get_children())
-        self._nl = NodelistTk(old_nl.keys, old_nl.treeview, val)
+        self._nl = NodelistTk(old_nl.keys, old_nl._sources, old_nl.treeview, val)
         
     
 class NodelistTk(NodelistBase):
-    def __init__(self, keys, treeview=None, iterable=None):
+    def __init__(self, keys, sources, treeview=None, iterable=None):
         self.attached = False
-        super().__init__(keys, iterable=iterable)
+        super().__init__(keys, sources, iterable=iterable)
         self.treeview = treeview
         self.attached = (treeview is not None)
         for idx, node in enumerate(self._nodes):
