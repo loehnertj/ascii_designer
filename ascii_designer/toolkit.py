@@ -186,7 +186,43 @@ class ToolkitBase:
         '''Checkbox'''
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-    
+        
+        
+class NodesMeta():
+    '''holds the metadata of a NodeList or Node.'''
+    def __init__(self, keys):
+        self.keys = list(keys or [])
+        self.sources = {k:k for k in self.keys}
+        self.children_source = None
+        self.has_children_source = None
+        
+    def copy(self):
+        nm = NodesMeta(self.keys)
+        nm.sources = self.sources.copy()
+        nm.children_source = self.children_source
+        nm.has_children_source = self.has_children_source
+        return nm
+        
+    def retrieve(self, obj, source):
+        if isinstance(source, str):
+            if source == '':
+                return str(obj)
+            else:
+                try:
+                    return getattr(obj, source)
+                except AttributeError as e:
+                    try:
+                        return obj[source]
+                    except TypeError:
+                        # raise original exception
+                        raise e
+        elif isinstance(source, list) and len(source)==1:
+            return obj[source[0]]
+        elif callable(source):
+            return source(obj)
+        else:
+            raise ValueError('Could not evaluate source: %r'%source)
+        
     
 class NodelistBase(MutableSequence):
     '''
@@ -203,18 +239,17 @@ class NodelistBase(MutableSequence):
      
     Subclasses should implement the display update logic on modification.
     '''
-    def __init__(self, keys, sources, iterable=None):
-        self.keys = list(keys)
-        if sources is None:
-            self._sources = {k:k for k in self.keys}
+    def __init__(self, iterable=None, keys=None, meta=None):
+        if meta:
+            self._meta = meta.copy()
         else:
-            self._sources = sources.copy()
+            self._meta = NodesMeta(keys)
         self.attached = True
         if iterable:
             self._nodes = [self._node_from(item) for item in iterable]
         else:
             self._nodes = []
-    
+            
     @property
     def selection(self):
         '''returns the sublist of all currently-selected items.
@@ -235,9 +270,21 @@ class NodelistBase(MutableSequence):
             * Callable ``lambda obj: ..`` to do a custom computation.
         '''
         for key in kwargs:
-            if key not in self.keys:
+            if key not in self._meta.keys:
                 raise KeyError('No column "%s" exists'%key)
-        self._sources.update(kwargs)
+        self._meta.sources.update(kwargs)
+        
+    def children(self, children_source, has_children_source=None):
+        '''Sets the source for children of each node, turning the list into a tree.
+        
+        ``children``, ``has_children`` follow the same semantics as other sources.
+        
+        Resolving ``children`` should return an iterable that will be turned into a NodeList according to the rules.
+        
+        ``has_children`` should return a truthy value that is used to decide whether to display the expander. If omitted, all nodes get the expander initially.
+        '''
+        self._meta.children_source = children_source
+        self._meta.has_children_source = has_children_source
         
     def __getitem__(self, idx):
         return self._nodes[idx]
@@ -270,7 +317,7 @@ class NodelistBase(MutableSequence):
         pass
     
     def _node_from(self, item):
-        return Node(self, item, self._sources)
+        return Node(self, item, self._meta)
     
 class Node(dict):
     '''Node(nodelist, obj, sources)
@@ -288,33 +335,35 @@ class Node(dict):
         * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
         * Callable ``lambda obj: ..`` to do a custom computation.
     '''
-    def __init__(self, nodelist, obj, sources, attached=None):
+    def __init__(self, nodelist, obj, meta, attached=None):
         # initially set to 'no nodelist' to disable callbacks
         self.nodelist = None
         self.text = ''
         self.ref = obj
-        for key, source in sources.items():
-            self[key] = self._retrieve(obj, source)
+        self._meta = meta
+        self._children = None
+        for key, source in self._meta.sources.items():
+            self[key] = self._meta.retrieve(obj, source)
             if key=='':
                 self.text = self[key]
         self.nodelist = nodelist
-    
-    def _retrieve(self, obj, source):
-        if isinstance(source, str):
-            if source == '':
-                return str(obj)
-            else:
-                try:
-                    return getattr(obj, source)
-                except AttributeError:
-                    return obj[source]
-        elif isinstance(source, list) and len(source)==1:
-            return obj[source[0]]
-        elif callable(source):
-            return source(obj)
-        else:
-            raise ValueError('Could not evaluate source: %r'%source)
         
+    @property
+    def has_children(self):
+        if self._meta.has_children_source:
+            return True
+        return self._meta.retrieve(self.ref, self._meta.has_children_source)
+    
+    @property
+    def children(self):
+        '''retrieve list of children. Cached on first call.'''
+        if self._children is None:
+            if self._meta.children_source is None:
+                self._children = []
+            else:
+                self._children = self._meta.retrieve(self.ref, self._meta.children_source)
+        return self._children
+    
     def detach(self):
         self.nodelist = None
         
@@ -333,11 +382,11 @@ class Node(dict):
         return 'Node(%s, attached=%r)'%(super()._str__(), (self.nodelist is not None))
         
 def test_nodelist():
-    n = NodelistBase('name rank'.split(), 
-        [
+    n = NodelistBase([
             {'name':1, 'rank':2},
             {'name':3, 'rank':4}
-        ]
+        ], 
+        keys='name rank'.split()
     )
     L().info(n._nodes)
     x = n.pop(0)

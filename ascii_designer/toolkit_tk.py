@@ -216,7 +216,6 @@ class ToolkitTk(ToolkitBase):
         
     def box(self, parent, id=None, text='', given_id=''):
         if given_id and text:
-            print(repr(given_id))
             f = tk.LabelFrame(parent, name=id, text=text)
             inner = tk.Frame(f)
             inner.grid(row=0, column=0, sticky='nsew')
@@ -290,7 +289,7 @@ class ToolkitTk(ToolkitBase):
             tv.heading(key, text=heading)
         
         # set up variable
-        nodelist = NodelistVariable(NodelistTk(keys, None, tv))
+        nodelist = NodelistVariable(NodelistTk([], keys=keys, treeview=tv))
         tv.variable = nodelist
         return tv
         
@@ -361,13 +360,13 @@ class NodelistVariable:
         old_nl = self._nl
         old_nl.attached = False
         old_nl.treeview.delete(*old_nl.treeview.get_children())
-        self._nl = NodelistTk(old_nl.keys, old_nl._sources, old_nl.treeview, val)
+        self._nl = NodelistTk(val, meta=old_nl._meta, treeview=old_nl.treeview)
         
     
 class NodelistTk(NodelistBase):
-    def __init__(self, keys, sources, treeview=None, iterable=None):
+    def __init__(self, iterable=None, keys=None, meta=None, treeview=None):
         self.attached = False
-        super().__init__(keys, sources, iterable=iterable)
+        super().__init__(iterable=iterable, keys=keys, meta=meta)
         self.treeview = treeview
         self.attached = (treeview is not None)
         for idx, node in enumerate(self._nodes):
@@ -413,7 +412,7 @@ class NodelistTk(NodelistBase):
         tv = self.treeview
         iid = str(idx)
         tv.item(iid, text=item.text)
-        for column in self.keys:
+        for column in self._meta.keys:
             if column == '': continue
             tv.set(iid, column, str(item[column]))
             
