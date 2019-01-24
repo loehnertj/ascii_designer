@@ -13,6 +13,34 @@ __all__ = [
     'ToolkitTk',
 ]
 
+_DOWNARROW = """
+-
+-
+-
+-
+################
+ ##############
+  ############
+   ##########
+    ########
+     ######
+      ####
+       ##
+"""
+_UPARROW = """
+       ##
+      ####
+     ######
+    ########
+   ##########
+  ############
+ ##############
+################
+-
+-
+-
+-
+"""
 def _on_tv_select(ev, function, widget):
     f = widget.focus()
     if not f:
@@ -21,6 +49,27 @@ def _on_tv_select(ev, function, widget):
     # get the node at idx and return its ref property (the original object)
     obj = widget.variable.get()[idx].ref
     function(obj)
+    
+def _aa2xbm(txt, marker='#'):
+    lines = txt.split('\n')
+    lines = [l for l in lines if l]
+    template = '''
+        #define im_width %d
+        #define im_height %d
+        static char im_bits[] = { %s };
+    '''
+    width = max(len(l) for l in lines)
+    height = len(lines)
+    # pad all lines to width
+    lines = [l+' '*(width-len(l)) for l in lines]
+    data = ''.join(lines)
+    data = ''.join('1' if char == marker else '0' for char in data)
+    enc_data= [
+        hex(int(data[ofs+8:ofs:-1], 2))
+        for ofs in range(0, len(data), 8)
+    ]
+    enc_data = ','.join(enc_data)
+    return template%(width, height, enc_data)
     
 _master_window = None
 def start_mainloop_if_necessary(widget):
@@ -60,6 +109,9 @@ class ToolkitTk(ToolkitBase):
         global _master_window
         if _master_window is None:
             _master_window = root = tk.Tk()
+            # store as attributes so that they do not get GC'd
+            root.uparrow = tk.BitmapImage(name='::icons::uparrow', data=_aa2xbm(_UPARROW))
+            root.downarrow = tk.BitmapImage(name='::icons::downarrow', data=_aa2xbm(_DOWNARROW))
         else:
             root = tk.Toplevel()
         root.tk.call('tk', 'scaling', 2.0)
