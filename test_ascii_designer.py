@@ -198,14 +198,19 @@ RankRow = namedtuple('RankRow', 'name points rank')
             
 class TreeDemo(AutoFrame):
     f_body = '''
-    |             |              <->                |
-    |Simple List   List with named columns~
-    I[= Shopping ] [= Players (,Name, Points, Rank)]
+    |             |     |        <->                |  <-> Tree   
+    |Simple List   List with named columns~          Tree~
+    I[= Shopping ] [= Players (,Name, Points, Rank)] [= Files]
+                   [Add] [Remove] ~
     '''
     def f_build(self, parent, body):
         super().f_build(parent, body)
         print(list(self.f_controls.keys()))
         self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
+        self._populate_players()
+        #self._populate_folder()
+        
+    def _populate_players(self):
         self.players = [
             RankRow('CaptainJack', 9010, 1),
             RankRow('MasterOfDisaster', 3010, 2),
@@ -214,7 +219,28 @@ class TreeDemo(AutoFrame):
         self.players[1]['name'] = 'Changed Name'
         self.players[2] = RankRow('BigDuck', 44, 3)
         self.players.sources(name=['name'], points=['points'], rank=['rank'], **{'': lambda obj:'ItsLikeMagic'})
+        # not recommended: mixed item types
         self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
+        self.players.sources(name='name', points='points', rank='rank')
+        
+    def add(self):
+        import random
+        p = RankRow(
+            'new%d'%(random.randint(1,1000)),
+            points=random.randint(1,999),
+            rank=9
+        )
+        idx = random.randint(0, len(self.players))
+        self.players.insert(idx, p)
+        # sorting needs to be restored explicitly
+        self.players.sort()
+        # Also possible; however causes reload of the whole list (since replaced by new list)
+        #self.players += [p]
+    
+    def remove(self):
+        nodes = self.players.selection[:]
+        for node in nodes:
+            self.players.remove(node)
         
     def shopping(self, item):
         print('Buy: ', item)
