@@ -64,13 +64,17 @@ def _aa2xbm(txt, marker='#'):
     # pad all lines to width
     lines = [l+' '*(width-len(l)) for l in lines]
     data = ''.join(lines)
-    data = ''.join('1' if char == marker else '0' for char in data)
+    # we need to reverse-index, but that cannot get at element 0
+    # since x[n:0:-1] gives you elements n, n-1, ... 1
+    # hacky solution: prepend a dummy char
+    data = 'x'+''.join('1' if char == marker else '0' for char in data)
     enc_data= [
-        hex(int(data[ofs+8:ofs:-1], 2))
-        for ofs in range(0, len(data), 8)
+        str(int(data[ofs+8:ofs:-1],2))
+        for ofs in range(0, len(data)-1, 8)
     ]
     enc_data = ','.join(enc_data)
-    return template%(width, height, enc_data)
+    xbm = template%(width, height, enc_data)
+    return(xbm)
     
 _master_window = None
 def start_mainloop_if_necessary(widget):
