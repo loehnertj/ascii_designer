@@ -225,5 +225,15 @@ class EmptyFrame(AutoFrame):
     
     
 if __name__ == '__main__':
-    frm = Main()
+    if sys.argv[2:]:
+        F = {
+            'autoconnect': AutoconnectDemo,
+            'bound': BoundCtlDemo,
+            'alignment': AlignmentDemo,
+            'boxes': BoxesDemo, 
+            'tree': TreeDemo,
+        }[sys.argv[2]]
+    else:
+        F = Main
+    frm = F()
     frm.f_show()
