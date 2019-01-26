@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 _ICONS = { 
-    'downarrow': """
+'downarrow': """
 -
 -
     ##    ##
@@ -26,7 +26,7 @@ _ICONS = {
        ## 
 -
 """,
-    'uparrow': """
+'uparrow': """
 -
        ##
       ####
@@ -38,6 +38,34 @@ _ICONS = {
 -
 -
 """,
+'sort_asc': """
+            ###-
+            ###
+            ###
+        ### ###
+        ### ###
+        ### ###
+    ### ### ###
+    ### ### ###
+    ### ### ###
+### ### ### ###
+### ### ### ###
+### ### ### ###
+""",
+'sort_desc': """
+###-------------
+###
+###
+### ###
+### ###
+### ###
+### ### ###
+### ### ###
+### ### ###
+### ### ### ###
+### ### ### ###
+### ### ### ###
+"""
 }
 
 def _on_tv_select(ev, function, widget):
@@ -462,5 +490,5 @@ class NodelistTk(NodelistBase):
         for key in self._meta.keys:
             tv.heading(key or '#0', image='')
         if self.sorted:
-            image = _master_window.icons['uparrow' if self._meta.sort_ascending else 'downarrow']
+            image = _master_window.icons['sort_asc' if self._meta.sort_ascending else 'sort_desc']
             tv.heading(self._meta.sort_key or '#0', image=image)
