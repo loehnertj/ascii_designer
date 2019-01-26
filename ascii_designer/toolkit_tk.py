@@ -384,8 +384,8 @@ class NodelistTk(NodelistBase):
         '''
         if not self.attached:
             raise RuntimeError('This nodelist is detached!')
-        idxs = [int(iid) for iid in self.treeview.selection()]
-        return [self[idx] for idx in idxs]
+        iids = self.treeview.selection()
+        return [node for node in self._nodes if node._tk_iid in iids]
         
         
     def __setitem__(self, idx, item):
