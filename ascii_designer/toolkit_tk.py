@@ -13,7 +13,8 @@ __all__ = [
     'ToolkitTk',
 ]
 
-_DOWNARROW = """
+_ICONS = { 
+    'downarrow': """
 -
 -
     ##    ##
@@ -24,8 +25,8 @@ _DOWNARROW = """
       ####
        ## 
 -
-"""
-_UPARROW = """
+""",
+    'uparrow': """
 -
        ##
       ####
@@ -36,7 +37,9 @@ _UPARROW = """
     ##    ##----
 -
 -
-"""
+""",
+}
+
 def _on_tv_select(ev, function, widget):
     iid = widget.focus()
     if not iid:
@@ -108,8 +111,10 @@ class ToolkitTk(ToolkitBase):
         if _master_window is None:
             _master_window = root = tk.Tk()
             # store as attributes so that they do not get GC'd
-            root.uparrow = tk.BitmapImage(name='::icons::uparrow', data=_aa2xbm(_UPARROW))
-            root.downarrow = tk.BitmapImage(name='::icons::downarrow', data=_aa2xbm(_DOWNARROW))
+            root.icons = {
+                key: tk.BitmapImage(name='::icons::%s'%key, data=_aa2xbm(data))
+                for key, data in _ICONS.items()
+            }
         else:
             root = tk.Toplevel()
         root.tk.call('tk', 'scaling', 2.0)
@@ -453,5 +458,5 @@ class NodelistTk(NodelistBase):
         for key in self._meta.keys:
             tv.heading(key or '#0', image='')
         if self.sorted:
-            image = _master_window.uparrow if self._meta.sort_ascending else _master_window.downarrow
+            image = _master_window.icons['uparrow' if self._meta.sort_ascending else 'downarrow']
             tv.heading(self._meta.sort_key or '#0', image=image)
