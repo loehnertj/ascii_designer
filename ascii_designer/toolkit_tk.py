@@ -362,7 +362,7 @@ class NodelistVariable:
     
     def on_heading_click(self, key):
         if key == self._nl._meta.sort_key:
-            ascending = not self._nl._meta.sort_ascending
+            ascending = True if not self._nl.sorted else not self._nl._meta.sort_ascending
         else:
             ascending = True
         self._nl.sort(key, ascending)
