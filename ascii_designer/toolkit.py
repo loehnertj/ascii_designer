@@ -195,8 +195,8 @@ class NodesMeta():
         self.sources = {k:k for k in self.keys}
         self.children_source = None
         self.has_children_source = None
-        self.sort_key = None
-        self.sort_ascending = None
+        self.sort_key = ''
+        self.sort_ascending = True
         
     def copy(self):
         nm = NodesMeta(self.keys)
