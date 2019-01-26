@@ -195,12 +195,16 @@ class NodesMeta():
         self.sources = {k:k for k in self.keys}
         self.children_source = None
         self.has_children_source = None
+        self.sort_key = None
+        self.sort_ascending = None
         
     def copy(self):
         nm = NodesMeta(self.keys)
         nm.sources = self.sources.copy()
         nm.children_source = self.children_source
         nm.has_children_source = self.has_children_source
+        nm.sort_key = self.sort_key
+        nm.sort_ascending = self.sort_ascending
         return nm
         
     def retrieve(self, obj, source):
@@ -249,6 +253,7 @@ class NodelistBase(MutableSequence):
             self._nodes = [self._node_from(item) for item in iterable]
         else:
             self._nodes = []
+        self.sorted = False
             
     @property
     def selection(self):
@@ -286,6 +291,18 @@ class NodelistBase(MutableSequence):
         self._meta.children_source = children_source
         self._meta.has_children_source = has_children_source
         
+    def sort(self, key:str=None, ascending:bool=None):
+        '''sort the list. If key and/or ascending are not given, the settings from Meta (i.e. last used settings) are used.
+        '''
+        if key is None:
+            key = self._meta.sort_key
+        if ascending is None:
+            ascending = self._meta.sort_ascending
+        self._meta.sort_key = key
+        self._meta.sort_ascending = ascending
+        self._nodes.sort(key=lambda node: node[key], reverse=not ascending)
+        self.sorted = True
+        
     def __getitem__(self, idx):
         return self._nodes[idx]
         
@@ -295,6 +312,7 @@ class NodelistBase(MutableSequence):
     def __setitem__(self, idx, item):
         self._nodes[idx].detach()
         self._nodes[idx] = self._node_from(item)
+        self.sorted = False
         
     def __delitem__(self, idx):
         self._nodes[idx].detach()
@@ -309,12 +327,14 @@ class NodelistBase(MutableSequence):
         else:
             if idx > N: idx = N
         self._nodes.insert(idx, node)
+        self.sorted = False
         return idx, node
     
     def _on_node_setkey(self, node, key, value):
         # callback when a node value (key) is changed.
         # subclass should update view.
-        pass
+        if key == self._meta.sort_key:
+            self.sorted = False
     
     def _node_from(self, item):
         return Node(self, item, self._meta)
@@ -379,7 +399,8 @@ class Node(dict):
                 self.nodelist._on_node_setkey(self, key, val)
         
     def __repr__(self):
-        return 'Node(%s, attached=%r)'%(super()._str__(), (self.nodelist is not None))
+        items = '\, '.join('%r: %r'%(k, v) for k, v in self.items())
+        return 'Node({%s}, attached=%r)'%(items, (self.nodelist is not None))
         
 def test_nodelist():
     n = NodelistBase([

@@ -42,12 +42,14 @@ _UPARROW = """
 -
 """
 def _on_tv_select(ev, function, widget):
-    f = widget.focus()
-    if not f:
+    iid = widget.focus()
+    if not iid:
         return
-    idx = int(widget.focus())
     # get the node at idx and return its ref property (the original object)
-    obj = widget.variable.get()[idx].ref
+    nodelist = widget.variable.get()
+    items = [n for n in nodelist if n._tk_iid == iid]
+    assert len(items)==1
+    obj = items[0].ref
     function(obj)
     
 def _aa2xbm(txt, marker='#'):
@@ -277,20 +279,20 @@ class ToolkitTk(ToolkitBase):
         tv.place = frame.place
         tv.grid = frame.grid
         
+        tv.variable = NodelistVariable(NodelistTk([], keys=keys, treeview=tv))
+        
         # configure tree view
         if has_first_column:
-            tv.heading('#0', text=text)
+            tv.heading('#0', text=text, command=lambda: tv.variable.on_heading_click(''))
         else:
             # hide first column
             tv['show'] = 'headings'
         for key, heading in zip(keys, columns):
             if not key:
                 continue
-            tv.heading(key, text=heading)
+            tv.heading(key, text=heading, command=lambda key=key: tv.variable.on_heading_click(key))
         
         # set up variable
-        nodelist = NodelistVariable(NodelistTk([], keys=keys, treeview=tv))
-        tv.variable = nodelist
         return tv
         
     def dropdown(self, parent, id=None, text='', values=None):
@@ -361,7 +363,13 @@ class NodelistVariable:
         old_nl.attached = False
         old_nl.treeview.delete(*old_nl.treeview.get_children())
         self._nl = NodelistTk(val, meta=old_nl._meta, treeview=old_nl.treeview)
-        
+    
+    def on_heading_click(self, key):
+        if key == self._nl._meta.sort_key:
+            ascending = not self._nl._meta.sort_ascending
+        else:
+            ascending = True
+        self._nl.sort(key, ascending)
     
 class NodelistTk(NodelistBase):
     def __init__(self, iterable=None, keys=None, meta=None, treeview=None):
@@ -385,11 +393,13 @@ class NodelistTk(NodelistBase):
         
         
     def __setitem__(self, idx, item):
+        iid = self._nodes[idx]._tk_iid
         super().__setitem__(idx, item)
         if not self.attached: 
             return
         item = self._nodes[idx]
-        self._update_item(idx, item)
+        item._tk_iid = iid
+        self._update_item(item)
         
     def __delitem__(self, idx):
         super().__delitem__(idx)
@@ -403,26 +413,47 @@ class NodelistTk(NodelistBase):
             return
         self._treeinsert(idx, item)
         
+    def sort(self, column=None, ascending=None):
+        super().sort(column, ascending)
+        if not self.attached:
+            return
+        for idx, node in enumerate(self._nodes):
+            self.treeview.move(node._tk_iid, '', idx)
+        self._update_sortarrows()
+        
     def _treeinsert(self, idx, item):
         item = self._nodes[idx]
-        self.treeview.insert('', idx, iid=str(idx), text=item.text)
-        self._update_item(idx, item)
+        item._tk_iid = self.treeview.insert('', idx, text=item.text)
+        self._update_item(item)
         
-    def _update_item(self, idx, item):
+    def _update_item(self, item):
         tv = self.treeview
-        iid = str(idx)
+        iid = item._tk_iid
         tv.item(iid, text=item.text)
         for column in self._meta.keys:
             if column == '': continue
             tv.set(iid, column, str(item[column]))
+        self._update_sortarrows()
             
     def _on_node_setkey(self, node, key, val):
+        super()._on_node_setkey(node, key, val)
         if not self.attached:
             return
         tv = self.treeview
-        idx = self._nodes.index(node)
-        iid = str(idx)
+        iid = node._tk_iid
         if key=='':
             tv.item(iid, text=str(val))
         else:
             tv.set(iid, key, str(val))
+        if not self.sorted:
+            self._update_sortarrows()
+            
+    def _update_sortarrows(self):
+        if not self.attached:
+            return
+        tv = self.treeview
+        for key in self._meta.keys:
+            tv.heading(key or '#0', image='')
+        if self.sorted:
+            image = _master_window.uparrow if self._meta.sort_ascending else _master_window.downarrow
+            tv.heading(self._meta.sort_key or '#0', image=image)

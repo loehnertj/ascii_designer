@@ -212,7 +212,7 @@ class TreeDemo(AutoFrame):
             RankRow('LittleDuck', 12, 3),
         ]
         self.players[1]['name'] = 'Changed Name'
-        self.players[2] = RankRow('BigDuck', 24, 3)
+        self.players[2] = RankRow('BigDuck', 44, 3)
         self.players.sources(name=['name'], points=['points'], rank=['rank'], **{'': lambda obj:'ItsLikeMagic'})
         self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
         
