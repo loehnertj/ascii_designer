@@ -398,9 +398,11 @@ class NodelistTk(NodelistBase):
         self._update_item(item)
         
     def __delitem__(self, idx):
+        iid = self._nodes[idx]._tk_iid
         super().__delitem__(idx)
         if not self.attached: 
             return
+        self.treeview.delete(iid)
         
     def insert(self, idx, item):
         # returns actual idx (within list range) and inserted item.
