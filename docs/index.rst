@@ -18,7 +18,8 @@ A library that:
 
  * creates GUI from ASCII-art (with well-defined syntax)
  * maps widgets to virtual class attributes
- * relieves you from the boring parts of Form building while leaving you in control.
+ * relieves you from the boring parts of Form building while leaving you in 
+   control.
  
 The workhorse class is the :any:`AutoFrame`::
 
@@ -116,7 +117,8 @@ widgets stretch more than others vertically.
 Anchoring
 .........
 
-Anchoring refers to the positioning and stretching of the widget *within* its grid cell.
+Anchoring refers to the positioning and stretching of the widget *within* its 
+grid cell.
 
 Horizontal anchoring of widgets within the grid cell is controlled by whether 
 the text is space-padded at the beginning and/or end of its text cell:
@@ -135,9 +137,13 @@ In graphical form::
      [Center]    ~
    [also center ] |
      
-Note how tilde character is used as space substitute. This is because trailing space is badly visible, and also removed by some text editors automatically. The last row shows another possibility by explicitly putting a pipe sign at the end.
+Note how tilde character is used as space substitute. This is because trailing 
+space is badly visible, and also removed by some text editors automatically. The 
+last row shows another possibility by explicitly putting a pipe sign at the end.
   
-Vertical anchoring is not controllable. It defaults to "fill", which is the right thing most of the time. If not, you can use toolkit-native methods to change the anchoring afterwards.
+Vertical anchoring is not controllable. It defaults to "fill", which is the 
+right thing most of the time. If not, you can use toolkit-native methods to 
+change the anchoring afterwards.
 
 
 Widget specification
@@ -203,22 +209,29 @@ Examples:
 
  - ``[ Hello ]`` gives id ``hello``
  - ``[ Hello World! ]`` gives id ``hello_world``
- - ``Hello World: |  [  ]`` gives a label with id ``label_hello_world`` and a button with id ``hello_world``
- - ``[ $%&§§% ]`` gives a button with id ``x1`` (assuming this is the first control withoud id).
+ - ``Hello World: |  [  ]`` gives a label with id ``label_hello_world`` and a 
+   button with id ``hello_world``
+ - ``[ $%&§§% ]`` gives a button with id ``x1`` (assuming this is the first 
+   control withoud id).
  
-The control id can be used to get/set the control value or the control object from the form - see below.
+The control id can be used to get/set the control value or the control object 
+from the form - see below.
 
 Notes about specific widgets
 ............................
 
 **Dropdown** and **combobox** without values can be populated after creation.
 
-All **radio buttons** on one form are grouped together. For multiple radio groups, create individiual AutoFrames for the group, and embed them in a box.
+All **radio buttons** on one form are grouped together. For multiple radio 
+groups, create individiual AutoFrames for the group, and embed them in a box.
 
 **Slider**: only supported with horizontal orientation. For a vertical slider, 
 change orientation afterwards; or use a placeholder box and create it yourself.
 
-**Listview**: The first column will have the text as heading. The subsequent columns have the given column headings. If Text is empty (or only id given), only the named columns are there. This makes a difference when using value-binding (see below).
+**Listview**: The first column will have the text as heading. The subsequent 
+columns have the given column headings. If Text is empty (or only id given), 
+only the named columns are there. This makes a difference when using 
+value-binding (see below).
 
 
 Value and event binding
@@ -234,16 +247,20 @@ Then, access the generated controls by using ``self["control_id"]`` or
 ``self.f_controls["control_id"]``. The result is a toolkit-native widget, i.e. a 
 ``QWidget`` subclass in Qt case, a ``tkinter`` widget in Tk case.
 
-For Tk widgets, if there is an associated Variable object (``StringVar`` or similar), you can find it as ``self["control_id"].variable`` attribute on the control.
+For Tk widgets, if there is an associated Variable object (``StringVar`` or 
+similar), you can find it as ``self["control_id"].variable`` attribute on the 
+control.
 
 
 Event binding
 .............
 
-If you define a method named after a control-id, it will be automatically called ("bound", "connected") as follows:
+If you define a method named after a control-id, it will be automatically called 
+("bound", "connected") as follows:
 
  * Button: When user clicks the button; without arguments (except for ``self``).
- * Any other widget type: When the value changes; with one argument, being the new value.
+ * Any other widget type: When the value changes; with one argument, being the 
+   new value.
  
 Example::
 
@@ -279,29 +296,46 @@ by using it like a class attribute::
 
 For label and button, the value is the text of the control.
 
-Boxes are a bit special. An empty box's value is the box widget itself. A framed box contains an empty box, which is returned as value.
+Boxes are a bit special. An empty box's value is the box widget itself. A framed 
+box contains an empty box, which is returned as value.
 
-You can set the virtual attribute to another (any) widget the toolkit understands. In this case, the original box is destroyed, and the new "value" takes its place. For a framed box, the inner empty box is replaced. So you can use the box as a placeholder for a custom widget (say, a graph) that you generate yourself.
+You can set the virtual attribute to another (any) widget the toolkit 
+understands. In this case, the original box is destroyed, and the new "value" 
+takes its place. For a framed box, the inner empty box is replaced. So you can 
+use the box as a placeholder for a custom widget (say, a graph) that you 
+generate yourself.
 
 .. note:: The new widget must have the same parent as the box you replace.
 
 A second possibility is to use the box as parent for one or more widgets that 
-you add later. For instance, you can render another AutoFrame into the box. (see under Extending).
+you add later. For instance, you can render another AutoFrame into the box. (see 
+under Extending).
 
 Value of  List / Tree View
 ...........................
 
 .. note::
-    Lists and tree views are considerably more complex than the other widgets. I am still experimenting with how to make handling as convenient as possible. Be prepared for changes here if you update.
+    Lists and tree views are considerably more complex than the other widgets. I 
+am still experimenting with how to make handling as convenient as possible. Be 
+prepared for changes here if you update.
 
-The general picture is this: The Listview has a value, which on the python side looks mostly like a list. You can slice it, insert/remove items and so on.
+The general picture is this: The Listview has a value, which on the python side 
+looks mostly like a list. You can slice it, insert/remove items and so on.
 
-However, inserted items are turned into :any:`Node` instances fit for displaying in the list view. 
-The value list is attached to the actual list view. I.e. if you update the list or its items, the changes immediately reflect in the ListView widget.
+However, inserted items are turned into :any:`Node` instances fit for displaying 
+in the list view. The value list is attached to the actual list view. I.e. if 
+you update the list or its items, the changes immediately reflect in the 
+ListView widget.
 
-The value list or its items can become detached if you replace the list or pop nodes of it. You can still use it like a normal python object, but it will not have an onscreen representation anymore.
+The value list or its items can become detached if you replace the list or pop 
+nodes of it. You can still use it like a normal python object, but it will not 
+have an onscreen representation anymore.
 
-The :any:`sources` method of the list can be used to configure how values are read from the given objects into the predefined columns. By default we look for attributes matching the column names. If you have a first column (defined via the "Text", not the "Columns" list in parens), it gets the object's string representation.
+The :any:`sources` method of the list can be used to configure how values are 
+read from the given objects into the predefined columns. By default we look for 
+attributes matching the column names. If you have a first column (defined via 
+the "Text", not the "Columns" list in parens), it gets the object's string 
+representation.
 
 That means that the simplemost way of using the List is this::
 
@@ -345,7 +379,7 @@ A more complex example to showcase how additional columns work::
                     **{'': lambda obj:'ItsLikeMagic'}
             )
             self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
-
+            
 
 Extending / integrating
 -----------------------
@@ -358,7 +392,8 @@ Developers
 
 The project is located at https://github.com/loehnertj/ascii_designer
 
-This is a hobby project. If you need something quick, contact me or better, send a pull request.
+This is a hobby project. If you need something quick, contact me or better, send 
+a pull request.
 
 
 Indices and tables
