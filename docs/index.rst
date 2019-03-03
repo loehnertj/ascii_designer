@@ -316,8 +316,8 @@ Value of  List / Tree View
 
 .. note::
     Lists and tree views are considerably more complex than the other widgets. I 
-am still experimenting with how to make handling as convenient as possible. Be 
-prepared for changes here if you update.
+    am still experimenting with how to make handling as convenient as possible. Be 
+    prepared for changes here if you update.
 
 The general picture is this: The Listview has a value, which on the python side 
 looks mostly like a list. You can slice it, insert/remove items and so on.
@@ -384,7 +384,78 @@ A more complex example to showcase how additional columns work::
 Extending / integrating
 -----------------------
 
-to be done
+In any real-world scenario, you will hit the limits of this library pretty soon. Usually it boils down to one of the questions:
+    
+  - How do I use toolkit-native methods on the widgets?
+  - How can I embed generated controls into a "3rd-party" window?
+  - How can include "3rd-party" controls in the generated grid?
+  
+Toolkit-native methods
+......................
+
+Having an AutoFrame ``self``, access the toolkit-native controls by using 
+``self["control_id"]`` or ``self.f_controls["control_id"]``. Do whatever you 
+like with them.
+
+Embedding ``AutoFrame`` into a 3rd-party host window
+....................................................
+
+The :any:`AutoFrame.f_build` method takes a parent window as argument. You can 
+use this to "render" the AutoFrame into a custom container.
+
+  - The container can be any widget taking children. It must be preconfigured to 
+    have a grid layout. I.e. for ``tk`` toolkit, ``.pack()`` must not have been used; in 
+    case of ``qt`` toolkit, a ``QGridLayout`` must have been set via ``.setLayout()``.
+  - Already-existing children are ignored and left in place. However, row/column 
+    stretching is modified.
+  - Automatic method / property binding works as usual.
+  
+Including 3rd-party controls into an ``AutoFrame``
+..................................................
+
+This is what the ``<placeholder>`` control is for. It creates an empty Frame / 
+Widget / Panel which you can either use as parent, or replace with your own 
+control. 
+
+For the former, get the placeholder object (via its value attribute) and use it 
+as parent. You must do the layout yourself.
+
+For the latter, set its virtual value attribute to your widget. This 
+destroys the placeholder. The layout of the placeholder (Grid position and 
+stretching) is copied onto the new widget.
+
+Nesting ``AutoFrame``
+.....................
+
+Combining both methods, you can also embed one AutoFrame into another. The 
+following example showcases everything::
+
+    class Host(AutoFrame):
+        f_body = '''
+            |
+             <placeholder>
+        '''
+        def f_build(self, parent, body=None):
+            super().f_build(parent, body)
+            # self.placeholder.setLayout(QGridLayout()) # only for Qt
+            
+            # create instance
+            af_embedded = Embedded()
+            # render widgets as children of self.placeholder
+            af_embedded.f_build(parent=self.placeholder)
+            # store away for later use    
+            self._embedded = af_embedded
+            
+    class Embedded(AutoFrame):
+        f_body = '''
+            |
+             <another placeholder>
+        '''
+        def f_build(self, parent, body=None):
+            super().f_build(parent, body)
+            parent = self.another_placeholder.master
+            self.another_placeholder = tk.Button(parent, text='3rd-party control')
+            
 
    
 Developers
