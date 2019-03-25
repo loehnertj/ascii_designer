@@ -70,7 +70,6 @@ class AutoFrame:
             if not grid_element.text.strip():
                 continue
             id, widget = toolkit.parse(parent, grid_element.text)
-            self.f_controls[id] = widget
                 
             # place on the grid
             e = grid_element
@@ -81,9 +80,16 @@ class AutoFrame:
             try:
                 attr = getattr(autoframe, id)
             except AttributeError:
-                attr = None # not callable
+                attr = None
+            if attr is None or not callable(attr):
+                # try with "on_<attr>"
+                try:
+                    attr = getattr(autoframe, 'on_'+id)
+                except AttributeError:
+                    attr = None # not callable
             if callable(attr):
-                toolkit.connect(widget, getattr(autoframe, id))
+                toolkit.connect(widget, attr)
+            self.f_controls[id] = widget
                 
         
     def __setattr__(self, name, val):

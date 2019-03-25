@@ -278,11 +278,15 @@ Example::
             
 In case of the ListView, the method is called on selection (focus) of a row.
 
+As second option, you can name the method ``on_<control-id>`` (e.g.: 
+``on_text_field``). Thus the handler can easily coexist with the virtual value 
+attribute (read on).
+
 
 Virtual value attribute
 .......................
 
-If the control is not bound to a function, you can access the value of a control 
+If the control is not bound to a function, you can access the value of the control 
 by using it like a class attribute::
 
     class AttributeDemo(AutoFrame):

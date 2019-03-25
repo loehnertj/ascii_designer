@@ -10,6 +10,7 @@ if sys.argv[1:]:
     TK = sys.argv[1]
 set_toolkit(TK)
 
+
 # Idea for later
 menu = '''
     File
@@ -86,12 +87,15 @@ class AutoconnectDemo(AutoFrame):
         '''
         self.f_add_widgets(self[''], body=row_3, offset_row=2)
         
-    def write_here(self, text):
-        print('write_here: "%s"'%text)
+    def on_write_here(self, text):
+        print('write_here: "%s" / "%s"'%(text, self.write_here))
     def foo(self, text):
         print('foo: "%s"'%text)
-    def choose(self, val):
-        print('choose: "%s"'%val)
+    def on_choose(self, val):
+        '''use on_<attr> if you want to be able to retrieve the auto-value as 
+well.
+        '''
+        print('choose: "%s" / "%s"'%(val, self.choose))
         
     def dropdown_empty(self, val):
         print('dropdown_empty: %r'%(val,))
@@ -241,6 +245,26 @@ class TreeDemo(AutoFrame):
         nodes = self.players.selection[:]
         for node in nodes:
             self.players.remove(node)
+        
+    def _populate_folder():
+        import pathlib
+        root = Pathlib.Path.home()
+        def children_of(fld):
+            for item in fld.iterdir():
+                if not item.name.startswith('.'):
+                    yield item
+        def has_children(fld):
+            if not fld.is_dir():
+                return False
+            try:
+                next(fld.iterdir())
+            except StopIteration:
+                return False
+            return True
+        # set the attribute or method which retrieves the iterable of children
+        self.folders.children(children_of, has_children=has_children)
+        # use a generator to set folder
+        self.Files =  children_of(root)
         
     def shopping(self, item):
         print('Buy: ', item)
