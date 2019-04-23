@@ -376,14 +376,27 @@ A more complex example to showcase how additional columns work::
             self.players[2] = RankRow('BigDuck', 24, 3)
             # change the data binding:
             self.players.sources(
+                    lambda obj: 'ItsLikeMagic',  # unnamed arg: sets the default text (first column)
                     name=['foo'], points=['bar'], # use __getitem__ for those
                     # custom callback
                     rank=lambda obj: obj['baz'], 
-                    # change binding for first ("default") column
-                    **{'': lambda obj:'ItsLikeMagic'}
             )
             self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
             
+            
+**Trees** are created by using the :any:`NodelistBase.children` method, 
+which works similar to  :any:`sources`. Here you can define two sources, one 
+for ``has_children`` (bool) and one for ``children`` (list).
+
+The tree is lazy-loading, i.e. :any:`Node.children` is only retrieved when a 
+node is expanded.
+
+``has_children`` is queried to determine whether expanders should be drawn on 
+each item. If not given, we assume that each entry might have children, and they 
+all get expanders initially.
+
+The ``children`` property, if retrieved, is again a special list like the "root" one.
+
 
 Extending / integrating
 -----------------------

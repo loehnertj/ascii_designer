@@ -10,6 +10,7 @@ __all__ = [
     'get_toolkit',
     'ToolkitBase',
     'NodelistBase',
+    'Node',
     'auto_id',
     ]
 
