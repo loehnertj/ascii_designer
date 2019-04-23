@@ -38,6 +38,7 @@ class Main(AutoFrame):
      [Autoconnect               ]
      [Boxes and embedding       ]
      [Bound values              ]
+     [List view                 ]
      [Tree view                 ]
      [Alignment                 ]
     I
@@ -51,6 +52,9 @@ class Main(AutoFrame):
         
     def bound_values(self):
         BoundCtlDemo().f_show()
+        
+    def list_view(self):
+        ListDemo().f_show()
         
     def tree_view(self):
         TreeDemo().f_show()
@@ -200,19 +204,18 @@ class BoundCtlDemo(AutoFrame):
 from collections import namedtuple
 RankRow = namedtuple('RankRow', 'name points rank')
             
-class TreeDemo(AutoFrame):
+class ListDemo(AutoFrame):
     f_body = '''
-    |             |     |        <->                |  <-> Tree   
-    |Simple List   List with named columns~          Tree~
-    I[= Shopping ] [= Players (,Name, Points, Rank)] [= Files]
-                   [Add] [Remove] ~
+    |             |     |        <->                |
+    |Simple List   List with named columns~         
+    I[= Shopping ] [= Players (,Name, Points, Rank)]
+                   [Add] [Remove] ~                 
     '''
     def f_build(self, parent, body):
         super().f_build(parent, body)
         print(list(self.f_controls.keys()))
         self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
         self._populate_players()
-        #self._populate_folder()
         
     def _populate_players(self):
         self.players = [
@@ -246,10 +249,24 @@ class TreeDemo(AutoFrame):
         for node in nodes:
             self.players.remove(node)
         
-    def _populate_folder():
+    def shopping(self, item):
+        print('Buy: ', item)
+
+class TreeDemo(AutoFrame):
+    f_body = '''
+    |  <-> Tree        |
+     Tree~
+    I[= Files         ]
+     [Replace Children]
+    '''
+    def f_build(self, parent, body):
+        super().f_build(parent, body)
+        self._populate_folder()
+        
+    def _populate_folder(self):
         import pathlib
-        root = Pathlib.Path.home()
         def children_of(fld):
+            print('Now retrieving children of %s'%(fld,))
             for item in fld.iterdir():
                 if not item.name.startswith('.'):
                     yield item
@@ -262,12 +279,20 @@ class TreeDemo(AutoFrame):
                 return False
             return True
         # set the attribute or method which retrieves the iterable of children
-        self.folders.children(children_of, has_children=has_children)
+        self.files.children(children_of, has_children_source=has_children)
         # use a generator to set folder
-        self.Files =  children_of(root)
+        self.files = children_of(pathlib.Path.home())
         
-    def shopping(self, item):
-        print('Buy: ', item)
+    def replace_children(self):
+        import pathlib
+        for node in self.files.selection:
+            # inception!1
+            node.children = [pathlib.Path(node[''])]
+            
+    def on_files(self, item):
+        print('focus', item)
+        print('selection', self.files.selection)
+        
         
     
 class EmptyFrame(AutoFrame):
@@ -281,6 +306,7 @@ if __name__ == '__main__':
             'bound': BoundCtlDemo,
             'alignment': AlignmentDemo,
             'boxes': BoxesDemo, 
+            'list': ListDemo,
             'tree': TreeDemo,
         }[sys.argv[2]]
     else:

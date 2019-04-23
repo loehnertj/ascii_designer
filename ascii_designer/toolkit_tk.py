@@ -74,7 +74,7 @@ def _on_tv_select(ev, function, widget):
         return
     # get the node at idx and return its ref property (the original object)
     nodelist = widget.variable.get()
-    items = [n for n in nodelist if n._tk_iid == iid]
+    items = [n for n in nodelist.loaded_nodes if n._tk_iid == iid]
     assert len(items)==1
     obj = items[0].ref
     function(obj)
@@ -324,6 +324,7 @@ class ToolkitTk(ToolkitBase):
             if not key:
                 continue
             tv.heading(key, text=heading, command=lambda key=key: tv.variable.on_heading_click(key))
+        tv.bind('<<TreeviewOpen>>', tv.variable.on_expand)
         
         # set up variable
         return tv
@@ -403,15 +404,43 @@ class NodelistVariable:
         else:
             ascending = True
         self._nl.sort(key, ascending)
+        
+    def on_expand(self, stuff):
+        tv = self._nl.treeview
+        iid = tv.focus()
+        # retrieve the item
+        item = [n for n in self._nl.loaded_nodes if n._tk_iid == iid]
+        assert len(item) == 1
+        item = item[0]
+        if item.children is None:
+            item.get_children()
+    
     
 class NodelistTk(NodelistBase):
-    def __init__(self, iterable=None, keys=None, meta=None, treeview=None):
+    def __init__(self, iterable=None, keys=None, meta=None, treeview=None, parent_iid=''):
         self.attached = False
         super().__init__(iterable=iterable, keys=keys, meta=meta)
         self.treeview = treeview
         self.attached = (treeview is not None)
+        self._parent_iid = parent_iid
         for idx, node in enumerate(self._nodes):
             self._treeinsert(idx, node)
+            
+    def _children_of(self, node, iterable):
+        if self.attached:
+            self.treeview.delete(*self.treeview.get_children(node._tk_iid))
+        # automatically inserts the children
+        return NodelistTk(iterable, meta=self._meta, treeview=self.treeview, parent_iid=node._tk_iid)
+    
+    @property
+    def loaded_nodes(self):
+        '''return all nodes in tree regardless of which list they are in.'''
+        childnodes = [
+            cn
+            for node in self._nodes if node.children
+            for cn in node.children.loaded_nodes
+        ]
+        return self._nodes + childnodes
             
     @property
     def selection(self):
@@ -422,8 +451,13 @@ class NodelistTk(NodelistBase):
         if not self.attached:
             raise RuntimeError('This nodelist is detached!')
         iids = self.treeview.selection()
-        return [node for node in self._nodes if node._tk_iid in iids]
-        
+        nodes = [node for node in self._nodes if node._tk_iid in iids]
+        # recursively collect children
+        for node in self._nodes:
+            if node.children:
+                nodes += node.children.selection
+        return nodes
+    
         
     def __setitem__(self, idx, item):
         iid = self._nodes[idx]._tk_iid
@@ -453,15 +487,18 @@ class NodelistTk(NodelistBase):
         if not self.attached:
             return
         for idx, node in enumerate(self._nodes):
-            self.treeview.move(node._tk_iid, '', idx)
+            self.treeview.move(node._tk_iid, self._parent_iid, idx)
         self._update_sortarrows()
         
     def _treeinsert(self, idx, item):
-        item = self._nodes[idx]
-        item._tk_iid = self.treeview.insert('', idx, text=item.text)
+        '''create visible tree entry'''
+        item._tk_iid = self.treeview.insert(self._parent_iid, idx, text=item.text)
+        if item.has_children:
+            self.treeview.insert(item._tk_iid, 0, text='')
         self._update_item(item)
         
     def _update_item(self, item):
+        '''replace visible tree entry'''
         tv = self.treeview
         iid = item._tk_iid
         tv.item(iid, text=item.text)
@@ -482,6 +519,13 @@ class NodelistTk(NodelistBase):
             tv.set(iid, key, str(val))
         if not self.sorted:
             self._update_sortarrows()
+            
+    def _on_node_setchildren(self, node, val):
+        super()._on_node_setchildren(node, val)
+        if not self.attached:
+            return
+        tv = self.treeview
+        # TODO
             
     def _update_sortarrows(self):
         if not self.attached:

@@ -254,6 +254,14 @@ class NodelistBase(MutableSequence):
         else:
             self._nodes = []
         self.sorted = False
+        
+    def _children_of(self, node, iterable):
+        '''Create a new nodelist instance representing child nodes of the given node.
+        
+        Override in subclass to create the fitting class instance, and insert 
+        the children in the tree if you see fit.
+        '''
+        return NodelistBase(iterable, meta=self.meta)
             
     @property
     def selection(self):
@@ -273,6 +281,9 @@ class NodelistBase(MutableSequence):
                 (on attribute error, try to get as item)
             * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
             * Callable ``lambda obj: ..`` to do a custom computation.
+            
+        Data source only applies on ``Node`` creation, i.e. when initializing 
+        and upon inserting items. Existing nodes are not updated upon source configuration.
         '''
         for key in kwargs:
             if key not in self._meta.keys:
@@ -284,9 +295,19 @@ class NodelistBase(MutableSequence):
         
         ``children``, ``has_children`` follow the same semantics as other sources.
         
-        Resolving ``children`` should return an iterable that will be turned into a NodeList according to the rules.
+        Resolving ``children`` should return an iterable that will be turned 
+        into a NodeList according to the rules.
         
-        ``has_children`` should return a truthy value that is used to decide whether to display the expander. If omitted, all nodes get the expander initially.
+        ``has_children`` should return a truthy value that is used to decide 
+        whether to display the expander. If omitted, all nodes get the expander 
+        initially if children_source is set.
+        
+        Children source only applies when the list of children is initially 
+        retrieved. Once the children are retrieved, source changes do not affect 
+        a Node anymore.
+        
+        ``has_children`` is usually evaluated immediately, because the treeview 
+        needs to decide whether to display an expander icon.
         '''
         self._meta.children_source = children_source
         self._meta.has_children_source = has_children_source
@@ -331,10 +352,16 @@ class NodelistBase(MutableSequence):
         return idx, node
     
     def _on_node_setkey(self, node, key, value):
-        # callback when a node value (key) is changed.
-        # subclass should update view.
+        '''callback when a node value (key) is changed.
+        subclass should update view.
+        '''
         if key == self._meta.sort_key:
             self.sorted = False
+            
+    def _on_node_setchildren(self, node, value):
+        '''callback when a node's children are changed.
+        subclass should update view.
+        '''
     
     def _node_from(self, item):
         return Node(self, item, self._meta)
@@ -353,7 +380,10 @@ class Node(dict):
         * String ``"name"`` to retrieve attribute ``name`` from the source object
             (on attribute error, try to get as item)
         * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
-        * Callable ``lambda obj: ..`` to do a custom computation.
+        * Callable ``lambda obj: ..`` to do  custom computation.
+        
+        
+    The ``nodelist`` MUST be set to be able to retrieve children.
     '''
     def __init__(self, nodelist, obj, meta, attached=None):
         # initially set to 'no nodelist' to disable callbacks
@@ -370,19 +400,35 @@ class Node(dict):
         
     @property
     def has_children(self):
-        if self._meta.has_children_source:
-            return True
+        if not self._meta.has_children_source:
+            return bool(self._meta.children_source)
         return self._meta.retrieve(self.ref, self._meta.has_children_source)
+    
     
     @property
     def children(self):
-        '''retrieve list of children. Cached on first call.'''
-        if self._children is None:
-            if self._meta.children_source is None:
-                self._children = []
-            else:
-                self._children = self._meta.retrieve(self.ref, self._meta.children_source)
+        '''Return cached list of children.
+        
+        To get children without working to much, use ``n.children or n.get_children()``.
+        
+        Returns Nodelist Instance or None.
+        '''
         return self._children
+        
+    def get_children(self):
+        '''retrieve list of children. Returns a NodeList instance.'''
+        if self._meta.children_source is None:
+            ch = []
+        else:
+            ch = self._meta.retrieve(self.ref, self._meta.children_source)
+        self._children = self.nodelist._children_of(self, ch)
+        return self._children
+    
+    @children.setter
+    def children(self, val):
+        self._children = self.nodelist._children_of(self, val)
+        if self.nodelist:
+            self.nodelist._on_node_setchildren(self, val)
     
     def detach(self):
         self.nodelist = None
