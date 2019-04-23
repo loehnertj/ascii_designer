@@ -271,7 +271,7 @@ class NodelistBase(MutableSequence):
         '''
         raise RuntimeError('NodelistBase has no selection')
     
-    def sources(self, **kwargs):
+    def sources(self, _text=None, **kwargs):
         '''Alter the data binding for each column.
         
         Takes the column names as kwargs and the data source as value; which can be:
@@ -284,10 +284,15 @@ class NodelistBase(MutableSequence):
             
         Data source only applies on ``Node`` creation, i.e. when initializing 
         and upon inserting items. Existing nodes are not updated upon source configuration.
+        
+        The ``_text`` argument, if given, is used to set the source ``''`` 
+        (with empty string as key), which gets the value of ``Node.text``.
         '''
         for key in kwargs:
             if key not in self._meta.keys:
                 raise KeyError('No column "%s" exists'%key)
+        if _text is not None:
+            kwargs[''] = _text
         self._meta.sources.update(kwargs)
         
     def children(self, children_source, has_children_source=None):

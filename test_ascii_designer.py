@@ -225,7 +225,7 @@ class ListDemo(AutoFrame):
         ]
         self.players[1]['name'] = 'Changed Name'
         self.players[2] = RankRow('BigDuck', 44, 3)
-        self.players.sources(name=['name'], points=['points'], rank=['rank'], **{'': lambda obj:'ItsLikeMagic'})
+        self.players.sources(lambda obj:'ItsLikeMagic', name=['name'], points=['points'], rank=['rank'])
         # not recommended: mixed item types
         self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
         self.players.sources(name='name', points='points', rank='rank')
