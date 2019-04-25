@@ -149,7 +149,8 @@ class ToolkitTk(ToolkitBase):
             }
         else:
             root = tk.Toplevel()
-        root.tk.call('tk', 'scaling', 2.0)
+        scale = root.winfo_fpixels('1i') / 72.0
+        root.tk.call('tk', 'scaling', scale)
         root.option_add('*Font', self._sane_font)
         # XXX does not work when opening another frame
         style = ttk.Style()
