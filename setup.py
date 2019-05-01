@@ -1,8 +1,12 @@
 from setuptools import setup
+from pathlib import Path
+
 
 setup(name='ascii_designer',
       version='0.1',
       description='Builds dialogs from ASCII art definition.',
+      long_description=Path('README.rst').read_text(),
+      long_description_content_type='text/x-rst',
       url='http://github.com/loehnertj/asciidesigner',
       author='Johannes Loehnert',
       author_email='loehnert.kde@gmx.de',
