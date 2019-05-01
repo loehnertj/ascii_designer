@@ -6,7 +6,7 @@ A library that:
 * creates GUI from ASCII-art (with well-defined syntax)
 * maps widgets to virtual class attributes
 * relieves you from the boring parts of Form building while leaving you in 
-   control.
+  control.
 
 Did you ever design a form by scribbling something like this in your editor::
 
