@@ -3,11 +3,11 @@ from pathlib import Path
 
 
 setup(name='ascii_designer',
-      version='0.1.0',
+      version='0.1.1.dev',
       description='Builds dialogs from ASCII art definition.',
       long_description=Path('README.rst').read_text(),
       long_description_content_type='text/x-rst',
-      url='http://github.com/loehnertj/asciidesigner',
+      url='http://github.com/loehnertj/ascii_designer',
       author='Johannes Loehnert',
       author_email='loehnert.kde@gmx.de',
       license='MIT',

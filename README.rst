@@ -107,6 +107,11 @@ DOCUMENTATION
 -------------
 
 Please proceed to http://ascii_designer.readthedocs.io/en/latest/index.html
+
+LICENCSE
+--------
+
+MIT License: https://github.com/loehnertj/ascii_designer/blob/master/LICENSE
     
 TODO
 ----
