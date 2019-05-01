@@ -1,6 +1,13 @@
 ASCII Designer
 ==============
 
+A library that:
+
+* creates GUI from ASCII-art (with well-defined syntax)
+* maps widgets to virtual class attributes
+* relieves you from the boring parts of Form building while leaving you in 
+   control.
+
 Did you ever design a form by scribbling something like this in your editor::
 
         Text to transform:   [ Text_      ]
@@ -111,4 +118,9 @@ TODO
 
 Alpha-state software, mostly working.
 
-This is a hobby project. If you need something quick, contact me or better, send a pull request.
+In the Qt implementation some stuff is missing (most notably lists and trees) 
+since I am currently focussed on the Tk toolkit.
+
+Test coverage is lacking, politely spoken.
+
+This is a hobby project. If you need something quick, open an issue or send a pull request.
