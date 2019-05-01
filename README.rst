@@ -20,7 +20,7 @@ Did you ever design a form by scribbling something like this in your editor::
         
             [ OK ]            [ Cancel ]
 
-... and wished that you could be done with design and start coding? Well, look at this::
+... and wished that you could be done with design and start coding? Wish no longer::
 
     from ascii_designer import AutoFrame
 
@@ -54,8 +54,6 @@ Did you ever design a form by scribbling something like this in your editor::
             
     if __name__ == '__main__':
         TextTransformer().f_show()
-
-You can find this very code in ``example.py``. Go ahead and try it!
 
 Some comments, incidentally highlighting the features of this library:
 
@@ -98,14 +96,11 @@ binding - and lets you do everything else with the API you know and (maybe) love
 
 INSTALLATION
 ------------
+::
 
-Requirements: Python >= 3, ``attrs``. Obviously, to use the Qt toolkit you need ``Pyqt4``.
-
-Then::
-
-    pip install https://github.com/loehnertj/ascii_designer/archive/master.zip
+    pip install ascii_designer
     
-Or, download / clone and use ``python setup.py install``.
+Requirements: Python >= 3, ``attrs``. Obviously, to use the Qt toolkit you need ``Pyqt4``.
     
     
 DOCUMENTATION
