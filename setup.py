@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 setup(name='ascii_designer',
-      version='0.1.0',
+      version='0.1.0.dev2',
       description='Builds dialogs from ASCII art definition.',
       long_description=Path('README.rst').read_text(),
       long_description_content_type='text/x-rst',
@@ -18,5 +18,6 @@ setup(name='ascii_designer',
         'Topic :: Software Development :: User Interfaces',
       ],
       packages=['ascii_designer'],
+      python_requires='>3.0',
       zip_safe=True
     )
