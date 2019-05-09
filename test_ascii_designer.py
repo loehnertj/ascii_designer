@@ -201,8 +201,14 @@ class BoundCtlDemo(AutoFrame):
         for name in self.bind_names:
             print('%s: %s'%(name, getattr(self, name)))
             
-from collections import namedtuple
-RankRow = namedtuple('RankRow', 'name points rank')
+class RankRow:
+    def __init__(self, name, points, rank):
+        self.name = name
+        self.points = points
+        self.rank = rank
+        
+    def __str__(self):
+        return 'RR'
             
 class ListDemo(AutoFrame):
     f_body = '''
@@ -223,7 +229,7 @@ class ListDemo(AutoFrame):
             RankRow('MasterOfDisaster', 3010, 2),
             RankRow('LittleDuck', 12, 3),
         ]
-        self.players[1]['name'] = 'Changed Name'
+        self.players[1].name = 'Changed Name'
         self.players[2] = RankRow('BigDuck', 44, 3)
         self.players.sources(lambda obj:'ItsLikeMagic', name=['name'], points=['points'], rank=['rank'])
         # not recommended: mixed item types

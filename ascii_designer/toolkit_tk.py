@@ -5,7 +5,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import font
 from tkinter import ttk
 from .toolkit import ToolkitBase
-from .list_model import NodelistBase
+from .list_model import ObsList
 
 #ttk = tk
 
@@ -314,7 +314,7 @@ class ToolkitTk(ToolkitBase):
         tv.place = frame.place
         tv.grid = frame.grid
         
-        tv.variable = NodelistVariable(NodelistTk([], keys=keys, treeview=tv))
+        tv.variable = NodelistVariable(tv, keys)
         
         # configure tree view
         if has_first_column:
@@ -388,24 +388,38 @@ class ToolkitTk(ToolkitBase):
         return s
     
 class NodelistVariable:
-    def __init__(self, nodelist):
-        self._nl = nodelist
+    def __init__(self, treeview, keys):
+        self._keys = keys
+        self._nl = ObsList(keys=keys)
+        self._nl.on_insert = self._on_insert
+        self._nl.on_rplace = self._on_replace
+        self._nl.on_remove = self._on_remove
+        self._tv = treeview
+        self._iids = []
         
     def get(self):
         return self._nl
         
     def set(self, val):
         old_nl = self._nl
-        old_nl.attached = False
-        old_nl.treeview.delete(*old_nl.treeview.get_children())
-        self._nl = NodelistTk(val, meta=old_nl._meta, treeview=old_nl.treeview)
+        if old_nl is not None:
+            old_nl.on_insert = old_nl.on_replace = old_nl.on_remove = None
+            self._tv.delete(*self._tv.get_children())
+        self._iids = []
+        self._nl = ObsList(val, meta=old_nl._meta)
+        self._nl.on_insert = self._on_insert
+        self._nl.on_replace = self._on_replace
+        self._nl.on_remove = self._on_remove
+        for idx, item in enumerate(self._nl):
+            self._on_insert(idx, item)
     
     def on_heading_click(self, key):
         if key == self._nl._meta.sort_key:
             ascending = True if not self._nl.sorted else not self._nl._meta.sort_ascending
         else:
             ascending = True
-        self._nl.sort(key, ascending)
+        keyfunc = lambda item: self._nl.retrieve(item, key)
+        self._nl.sort(keyfunc, ascending)
         
     def on_expand(self, stuff):
         tv = self._nl.treeview
@@ -416,17 +430,46 @@ class NodelistVariable:
         item = item[0]
         if item.children is None:
             item.get_children()
+            
+    def item_changed(self, item):
+        idx = self._nl.index(item)
+        self._on_replace(idx, item)
+            
+    def _on_insert(self, idx, item):
+        '''create visible tree entry'''
+        _parent_iid = ''
+        iid = self._tv.insert(_parent_iid, idx, text=self._nl.retrieve(item))
+        self._iids.insert(idx, iid)
+        #if item.has_children:
+        #    self.treeview.insert(item._tk_iid, 0, text='')
+        self._on_replace(idx, item)
+     
+    def _on_replace(self, idx, item):
+        '''replace visible tree entry'''
+        tv = self._tv
+        iid = self._iids[idx]
+        tv.item(iid, text=self._nl.retrieve(item))
+        for column in self._keys:
+            if column == '': continue
+            txt = str(self._nl.retrieve(item, column))
+            tv.set(iid, column, txt)
+        self._update_sortarrows()
+     
+    def _on_remove(self, idx):
+         iid = self._iids.pop(idx)
+         self._tv.delete(iid)
+         
+    def _update_sortarrows(self):
+        tv = self._tv
+        for key in self._keys:
+            tv.heading(key or '#0', image='')
+        if self._nl.sorted:
+            image = _master_window.icons['sort_asc' if self._meta.sort_ascending else 'sort_desc']
+            tv.heading(self._meta.sort_key or '#0', image=image)
     
     
-class NodelistTk(NodelistBase):
-    def __init__(self, iterable=None, keys=None, meta=None, treeview=None, parent_iid=''):
-        self.attached = False
-        super().__init__(iterable=iterable, keys=keys, meta=meta)
-        self.treeview = treeview
-        self.attached = (treeview is not None)
+"""
         self._parent_iid = parent_iid
-        for idx, node in enumerate(self._nodes):
-            self._treeinsert(idx, node)
             
     def _children_of(self, node, iterable):
         if self.attached:
@@ -443,7 +486,6 @@ class NodelistTk(NodelistBase):
             for cn in node.children.loaded_nodes
         ]
         return self._nodes + childnodes
-            
     @property
     def selection(self):
         '''returns the sublist of all currently-selected items.
@@ -460,81 +502,4 @@ class NodelistTk(NodelistBase):
                 nodes += node.children.selection
         return nodes
     
-        
-    def __setitem__(self, idx, item):
-        iid = self._nodes[idx]._tk_iid
-        super().__setitem__(idx, item)
-        if not self.attached: 
-            return
-        item = self._nodes[idx]
-        item._tk_iid = iid
-        self._update_item(item)
-        
-    def __delitem__(self, idx):
-        iid = self._nodes[idx]._tk_iid
-        super().__delitem__(idx)
-        if not self.attached: 
-            return
-        self.treeview.delete(iid)
-        
-    def insert(self, idx, item):
-        # returns actual idx (within list range) and inserted item.
-        idx, item = super().insert(idx, item)
-        if not self.attached: 
-            return
-        self._treeinsert(idx, item)
-        
-    def sort(self, column=None, ascending=None):
-        super().sort(column, ascending)
-        if not self.attached:
-            return
-        for idx, node in enumerate(self._nodes):
-            self.treeview.move(node._tk_iid, self._parent_iid, idx)
-        self._update_sortarrows()
-        
-    def _treeinsert(self, idx, item):
-        '''create visible tree entry'''
-        item._tk_iid = self.treeview.insert(self._parent_iid, idx, text=item.text)
-        if item.has_children:
-            self.treeview.insert(item._tk_iid, 0, text='')
-        self._update_item(item)
-        
-    def _update_item(self, item):
-        '''replace visible tree entry'''
-        tv = self.treeview
-        iid = item._tk_iid
-        tv.item(iid, text=item.text)
-        for column in self._meta.keys:
-            if column == '': continue
-            tv.set(iid, column, str(item[column]))
-        self._update_sortarrows()
-            
-    def _on_node_setkey(self, node, key, val):
-        super()._on_node_setkey(node, key, val)
-        if not self.attached:
-            return
-        tv = self.treeview
-        iid = node._tk_iid
-        if key=='':
-            tv.item(iid, text=str(val))
-        else:
-            tv.set(iid, key, str(val))
-        if not self.sorted:
-            self._update_sortarrows()
-            
-    def _on_node_setchildren(self, node, val):
-        super()._on_node_setchildren(node, val)
-        if not self.attached:
-            return
-        tv = self.treeview
-        # TODO
-            
-    def _update_sortarrows(self):
-        if not self.attached:
-            return
-        tv = self.treeview
-        for key in self._meta.keys:
-            tv.heading(key or '#0', image='')
-        if self.sorted:
-            image = _master_window.icons['sort_asc' if self._meta.sort_ascending else 'sort_desc']
-            tv.heading(self._meta.sort_key or '#0', image=image)
+"""

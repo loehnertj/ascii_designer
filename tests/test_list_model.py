@@ -1,17 +1,25 @@
 import pytest
-from ascii_designer.list_model import NodelistBase
+from unittest.mock import Mock, call
+from ascii_designer.list_model import ObsList
 
-def test_nodelist():
-    n = NodelistBase([
+def test_obslist_callbacks():
+    m = Mock()
+    n = ObsList([
             {'name':1, 'rank':2},
             {'name':3, 'rank':4}
         ], 
         keys='name rank'.split()
     )
-    print(n._nodes)
+    n.on_insert = m.on_insert
+    n.on_replace = m.on_replace
+    n.on_remove = m.on_remove
     x = n.pop(0)
-    print(n._nodes)
-    print('popped:', x)
+    m.on_remove.assert_called_with(0)
+    assert list(n) == [{'name':3, 'rank':4}]
+    
     x2 = {'name':5, 'rank':6}
     n += [x2]
-    print(n._nodes)
+    m.on_insert.assert_called_with(1, x2)
+    n[0] = x2
+    m.on_replace.assert_called_with(0, x2)
+    
