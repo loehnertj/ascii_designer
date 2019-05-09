@@ -4,7 +4,8 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import font
 from tkinter import ttk
-from .toolkit import ToolkitBase, NodelistBase
+from .toolkit import ToolkitBase
+from .list_model import NodelistBase
 
 #ttk = tk
 
