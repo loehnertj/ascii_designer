@@ -246,7 +246,7 @@ class ListDemo(AutoFrame):
         idx = random.randint(0, len(self.players))
         self.players.insert(idx, p)
         # sorting needs to be restored explicitly
-        self.players.sort()
+        self.players.sort(restore=True)
         # Also possible; however causes reload of the whole list (since replaced by new list)
         #self.players += [p]
     

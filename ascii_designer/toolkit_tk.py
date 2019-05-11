@@ -69,16 +69,6 @@ _ICONS = {
 """
 }
 
-def _on_tv_select(ev, function, widget):
-    iid = widget.focus()
-    if not iid:
-        return
-    # get the node at idx and return its ref property (the original object)
-    nodelist = widget.variable.get()
-    items = [n for n in nodelist.loaded_nodes if n._tk_iid == iid]
-    assert len(items)==1
-    obj = items[0].ref
-    function(obj)
     
 def _aa2xbm(txt, marker='#'):
     lines = txt.split('\n')
@@ -200,7 +190,7 @@ class ToolkitTk(ToolkitBase):
             widget.bind('<Return>', lambda ev:function(widget.variable.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
         elif isinstance(widget, ttk.Treeview):
-            widget.bind('<<TreeviewSelect>>', lambda ev: _on_tv_select(ev, function, widget))
+            widget.bind('<<TreeviewSelect>>', lambda ev: widget.variable.on_tv_focus(function))
         else:
             widget.variable.trace('w', lambda *args: function(widget.variable.get()))
             
@@ -391,11 +381,8 @@ class NodelistVariable:
     def __init__(self, treeview, keys):
         self._keys = keys
         self._nl = ObsList(keys=keys)
-        self._nl.on_insert = self._on_insert
-        self._nl.on_rplace = self._on_replace
-        self._nl.on_remove = self._on_remove
+        self._set_handlers(self._nl)
         self._tv = treeview
-        self._iids = []
         
     def get(self):
         return self._nl
@@ -403,23 +390,29 @@ class NodelistVariable:
     def set(self, val):
         old_nl = self._nl
         if old_nl is not None:
-            old_nl.on_insert = old_nl.on_replace = old_nl.on_remove = None
+            self._set_handlers(old_nl, True)
             self._tv.delete(*self._tv.get_children())
-        self._iids = []
         self._nl = ObsList(val, meta=old_nl._meta)
-        self._nl.on_insert = self._on_insert
-        self._nl.on_replace = self._on_replace
-        self._nl.on_remove = self._on_remove
+        self._set_handlers(self._nl)
         for idx, item in enumerate(self._nl):
             self._on_insert(idx, item)
+            
+    def _set_handlers(self, nl, reset=False):
+        if reset:
+            nl.on_insert = nl.on_replace = nl.on_remove = nl.on_sort = nl.on_get_selection = False
+        else:
+            nl.on_insert = self._on_insert
+            nl.on_replace = self._on_replace
+            nl.on_remove = self._on_remove
+            nl.on_sort = self._on_sort
+            nl.on_get_selection = self._on_get_selection
     
-    def on_heading_click(self, key):
+    def on_heading_click(self, key:str):
         if key == self._nl._meta.sort_key:
             ascending = True if not self._nl.sorted else not self._nl._meta.sort_ascending
         else:
             ascending = True
-        keyfunc = lambda item: self._nl.retrieve(item, key)
-        self._nl.sort(keyfunc, ascending)
+        self._nl.sort(key, ascending)
         
     def on_expand(self, stuff):
         tv = self._nl.treeview
@@ -439,15 +432,14 @@ class NodelistVariable:
         '''create visible tree entry'''
         _parent_iid = ''
         iid = self._tv.insert(_parent_iid, idx, text=self._nl.retrieve(item))
-        self._iids.insert(idx, iid)
+        self._nl.toolkit_ids[idx] = iid
         #if item.has_children:
         #    self.treeview.insert(item._tk_iid, 0, text='')
-        self._on_replace(idx, item)
+        self._on_replace(iid, item)
      
-    def _on_replace(self, idx, item):
+    def _on_replace(self, iid, item):
         '''replace visible tree entry'''
         tv = self._tv
-        iid = self._iids[idx]
         tv.item(iid, text=self._nl.retrieve(item))
         for column in self._keys:
             if column == '': continue
@@ -455,18 +447,41 @@ class NodelistVariable:
             tv.set(iid, column, txt)
         self._update_sortarrows()
      
-    def _on_remove(self, idx):
-         iid = self._iids.pop(idx)
+    def _on_remove(self, iid):
          self._tv.delete(iid)
+         
+    def _on_sort(self):
+        tv = self._tv
+        _parent_iid = ''
+        for idx, iid in enumerate(self._nl.toolkit_ids):
+            tv.move(iid, _parent_iid,  idx)
+        self._update_sortarrows()
          
     def _update_sortarrows(self):
         tv = self._tv
         for key in self._keys:
             tv.heading(key or '#0', image='')
         if self._nl.sorted:
-            image = _master_window.icons['sort_asc' if self._meta.sort_ascending else 'sort_desc']
-            tv.heading(self._meta.sort_key or '#0', image=image)
+            image = _master_window.icons['sort_asc' if self._nl._meta.sort_ascending else 'sort_desc']
+            tv.heading(self._nl._meta.sort_key or '#0', image=image)
     
+    def _on_get_selection(self):
+        iids = self._tv.selection()
+        nodes = [item for (item, iid) in zip(self._nl, self._nl.toolkit_ids) if iid in iids]
+        # recursively collect children
+        #for node in self._nodes:
+        #    if node.children:
+        #        nodes += node.children.selection
+        return nodes
+    
+    def on_tv_focus(self, function):
+        iid = self._tv.focus()
+        if not iid:
+            return
+        # get the node at idx and return its ref property (the original object)
+        idx = self._nl.toolkit_ids.index(iid)
+        function(self._nl[idx])
+                
     
 """
         self._parent_iid = parent_iid
@@ -486,20 +501,5 @@ class NodelistVariable:
             for cn in node.children.loaded_nodes
         ]
         return self._nodes + childnodes
-    @property
-    def selection(self):
-        '''returns the sublist of all currently-selected items.
-        
-        Raises RuntimeError if the nodelist is detached.
-        '''
-        if not self.attached:
-            raise RuntimeError('This nodelist is detached!')
-        iids = self.treeview.selection()
-        nodes = [node for node in self._nodes if node._tk_iid in iids]
-        # recursively collect children
-        for node in self._nodes:
-            if node.children:
-                nodes += node.children.selection
-        return nodes
     
 """
