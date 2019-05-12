@@ -3,12 +3,13 @@ from collections.abc import MutableSequence
 
 __all__ = [
     'ObsList',
+    'ListMeta',
     ]
 
 L = lambda: logging.getLogger(__name__)
 
-class NodesMeta():
-    '''holds the metadata of a NodeList or Node.'''
+class ListMeta():
+    '''holds the metadata of a ObsList.'''
     def __init__(self, keys):
         self.keys = list(keys or [])
         self.sources = {k:k for k in self.keys}
@@ -18,7 +19,7 @@ class NodesMeta():
         self.sort_ascending = True
         
     def copy(self):
-        nm = NodesMeta(self.keys)
+        nm = ListMeta(self.keys)
         nm.sources = self.sources.copy()
         nm.children_source = self.children_source
         nm.has_children_source = self.has_children_source
@@ -56,6 +57,7 @@ class ObsList(MutableSequence):
      * it provides notification when items are added or removed
      
     Attributes:
+     * ``meta``: Container for keys, source functions and remembered sorting. 
      * ``sorted``: bool, whether list is currently sorted *by one of the list columns*.
        Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
      * ``toolkit_ids``: can be indexed in the same way as the nodelist,
@@ -70,7 +72,7 @@ class ObsList(MutableSequence):
         if meta:
             self._meta = meta.copy()
         else:
-            self._meta = NodesMeta(keys)
+            self._meta = ListMeta(keys)
         self.attached = True
         if iterable:
             self._nodes = [item for item in iterable]
@@ -213,87 +215,3 @@ class ObsList(MutableSequence):
         if self.on_insert:
             self.on_insert(idx, item)
         return idx, item
-    
-    
-class Node(dict):
-    '''Node(nodelist, obj, sources)
-    
-    Params:
-        nodelist (:any:`ObsList`): the nodelist including this node (for calling back when node is changed)
-        obj (any): source object
-        sources (dict): sources dict
-        
-    ``soures`` defines which columns to retrieve and how. The keys are the column names. The values can be:
-    
-        * Empty string to retrieve str(obj)
-        * String ``"name"`` to retrieve attribute ``name`` from the source object
-            (on attribute error, try to get as item)
-        * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
-        * Callable ``lambda obj: ..`` to do  custom computation.
-        
-        
-    The ``nodelist`` MUST be set to be able to retrieve children.
-    '''
-    def __init__(self, nodelist, obj, meta, attached=None):
-        # initially set to 'no nodelist' to disable callbacks
-        self.nodelist = None
-        self.text = ''
-        self.ref = obj
-        self._meta = meta
-        self._children = None
-        for key, source in self._meta.sources.items():
-            self[key] = self._meta.retrieve(obj, source)
-            if key=='':
-                self.text = self[key]
-        self.nodelist = nodelist
-        
-    @property
-    def has_children(self):
-        if not self._meta.has_children_source:
-            return bool(self._meta.children_source)
-        return self._meta.retrieve(self.ref, self._meta.has_children_source)
-    
-    
-    @property
-    def children(self):
-        '''Return cached list of children.
-        
-        To get children without working to much, use ``n.children or n.get_children()``.
-        
-        Returns Nodelist Instance or None.
-        '''
-        return self._children
-        
-    def get_children(self):
-        '''retrieve list of children. Returns a NodeList instance.'''
-        if self._meta.children_source is None:
-            ch = []
-        else:
-            ch = self._meta.retrieve(self.ref, self._meta.children_source)
-        self._children = self.nodelist._children_of(self, ch)
-        return self._children
-    
-    @children.setter
-    def children(self, val):
-        self._children = self.nodelist._children_of(self, val)
-        if self.nodelist:
-            self.nodelist._on_node_setchildren(self, val)
-    
-    def detach(self):
-        self.nodelist = None
-        
-    def __setitem__(self, key, val):
-        super().__setitem__(key, val)
-        if self.nodelist:
-            self.nodelist._on_node_setkey(self, key, val)
-            
-    def __setattr__(self, key, val):
-        super().__setattr__(key, val)
-        if key == 'text':
-            if self.nodelist:
-                self.nodelist._on_node_setkey(self, key, val)
-        
-    def __repr__(self):
-        items = '\, '.join('%r: %r'%(k, v) for k, v in self.items())
-        return 'Node({%s}, attached=%r)'%(items, (self.nodelist is not None))
-        
