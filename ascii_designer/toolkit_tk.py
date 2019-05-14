@@ -436,6 +436,7 @@ class NodelistVariable:
         #if item.has_children:
         #    self.treeview.insert(item._tk_iid, 0, text='')
         self._on_replace(iid, item)
+        return iid
      
     def _on_replace(self, iid, item):
         '''replace visible tree entry'''

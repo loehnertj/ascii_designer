@@ -37,7 +37,7 @@ class ListMeta():
                 except AttributeError as e:
                     try:
                         return obj[source]
-                    except TypbeError:
+                    except TypeError:
                         # raise original exception
                         raise e
         elif isinstance(source, list) and len(source)==1:
@@ -62,7 +62,7 @@ class ObsList(MutableSequence):
        Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
      * ``toolkit_ids``: can be indexed in the same way as the nodelist,
        and gives the toolkit-specific identifier of the list/treeview node.
-     * ``on_insert(idx, item)``: function to call for each inserted item
+     * ``on_insert(idx, item) -> toolkit_id``: function to call for each inserted item
      * ``on_replace(toolkit_id, item)``: function to call for replaced item
      * ``on_remove(toolkit_id)``: function to call for each removed item
      * ``on_get_selection()``: return the items selected in the GUI
@@ -83,15 +83,17 @@ class ObsList(MutableSequence):
         self.on_insert = None
         self.on_replace = None
         self.on_remove = None
-        self.on_get_selection = None
+        self.on_get_selection = None # type: Optional[Callable[[],List[Any]]]
+        self.on_sort = None
         
+    # FIXME: BROKEN
     def _children_of(self, node, iterable):
         '''Create a new nodelist instance representing child nodes of the given node.
         
         Override in subclass to create the fitting class instance, and insert 
         the children in the tree if you see fit.
         '''
-        return ObsList(iterable, meta=self.meta)
+        return ObsList(iterable, meta=self._meta)
             
     @property
     def selection(self):
@@ -210,8 +212,10 @@ class ObsList(MutableSequence):
         else:
             if idx > N: idx = N
         self._nodes.insert(idx, item)
-        self.toolkit_ids.insert(idx, None)
         self.sorted = False
+        tkid = None
         if self.on_insert:
-            self.on_insert(idx, item)
+            tkid = self.on_insert(idx, item)
+            print('got tkid' , tkid)
+        self.toolkit_ids.insert(idx, tkid)
         return idx, item
