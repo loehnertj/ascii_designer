@@ -6,5 +6,5 @@ build/*
 dist/*
 .tox/*
 *.kdev4
-.mypy_cache/*
+**/.mypy_cache/*
 .vscode/*
