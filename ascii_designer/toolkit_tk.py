@@ -395,7 +395,8 @@ class NodelistVariable:
         self._nl = ObsList(val, meta=old_nl._meta)
         self._set_handlers(self._nl)
         for idx, item in enumerate(self._nl):
-            self._on_insert(idx, item)
+            iid = self._on_insert(idx, item)
+            self._nl.toolkit_ids[idx] = iid
             
     def _set_handlers(self, nl, reset=False):
         if reset:
@@ -432,7 +433,6 @@ class NodelistVariable:
         '''create visible tree entry'''
         _parent_iid = ''
         iid = self._tv.insert(_parent_iid, idx, text=self._nl.retrieve(item))
-        self._nl.toolkit_ids[idx] = iid
         #if item.has_children:
         #    self.treeview.insert(item._tk_iid, 0, text='')
         self._on_replace(iid, item)
