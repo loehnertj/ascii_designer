@@ -1,3 +1,20 @@
+'''Pythonic list and tree classes that can be used in a GUI.
+
+The general concept for Lists is this:
+
+ - List is wrapped into an :any:`ObsList` (by :any:`Toolkit.setval`)
+ - The "code-side" of the ``ObsList`` quacks like a regular list.
+ - The "gui-side" of the ``ObsList``:
+    - provides COLUMNS (key-value items) dynamically retrieved from each list
+      item
+    - remembers column and order to be used when sorting
+    - has a notion of "selection" (forwarded to a callback)
+    - provides event callbacks for insert, replace, remove, sort.
+ - Internally, the :any:`ListMeta` class holds the state data for those
+   functions.
+
+'''
+
 import logging
 from collections.abc import MutableSequence
 
@@ -8,6 +25,9 @@ __all__ = [
 
 L = lambda: logging.getLogger(__name__)
 
+def _do_nothing(*args, **kwargs):
+    pass
+
 class ListMeta():
     '''holds the metadata of a ObsList.'''
     def __init__(self, keys):
@@ -17,6 +37,14 @@ class ListMeta():
         self.has_children_source = None
         self.sort_key = ''
         self.sort_ascending = True
+        self.listener = None
+
+    def get_observer(self, name):
+        try:
+            handler = getattr(self.listener, 'on_'+name)
+        except AttributeError:
+            handler = _do_nothing
+        return handler
         
     def copy(self):
         nm = ListMeta(self.keys)
@@ -25,6 +53,7 @@ class ListMeta():
         nm.has_children_source = self.has_children_source
         nm.sort_key = self.sort_key
         nm.sort_ascending = self.sort_ascending
+        nm.listener = self.listener
         return nm
         
     def retrieve(self, obj, source):
@@ -62,11 +91,7 @@ class ObsList(MutableSequence):
        Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
      * ``toolkit_ids``: can be indexed in the same way as the nodelist,
        and gives the toolkit-specific identifier of the list/treeview node.
-     * ``on_insert(idx, item) -> toolkit_id``: function to call for each inserted item
-     * ``on_replace(toolkit_id, item)``: function to call for replaced item
-     * ``on_remove(toolkit_id)``: function to call for each removed item
-     * ``on_get_selection()``: return the items selected in the GUI
-     * ``on_sort()``: when list is reordered
+
     '''
     def __init__(self, iterable=None, keys=None, meta=None):
         if meta:
@@ -79,12 +104,9 @@ class ObsList(MutableSequence):
         else:
             self._nodes = []
         self.toolkit_ids = [None] * len(self._nodes)
+        def dummy_handler(*args, **kwargs):
+            return None
         self.sorted = False
-        self.on_insert = None
-        self.on_replace = None
-        self.on_remove = None
-        self.on_get_selection = None # type: Optional[Callable[[],List[Any]]]
-        self.on_sort = None
         
     # FIXME: BROKEN
     def _children_of(self, node, iterable):
@@ -101,10 +123,23 @@ class ObsList(MutableSequence):
         
         Raises RuntimeError if the nodelist is detached.
         '''
-        if not self.on_get_selection:
-            raise RuntimeError('ObsList has no selection')
-        return self.on_get_selection()
-    
+        handler = self._meta.get_observer('get_selection')
+        return handler()
+
+    def set_listener(self, listener):
+        '''Set listener that observes the list.
+
+        The listener can provide any or all of the following methods:
+
+        * ``on_insert(idx, item) -> toolkit_id``: function to call for each inserted item
+        * ``on_replace(toolkit_id, item)``: function to call for replaced item
+        * ``on_remove(toolkit_id)``: function to call for each removed item
+        * ``on_get_selection()``: return the items selected in the GUI
+        * ``on_sort()``: when list is reordered
+
+        ``set_listener(None)`` to reset listener.
+        '''
+        self._meta.listener = listener
     
     def sources(self, _text=None, **kwargs):
         '''Alter the data binding for each column.
@@ -183,8 +218,7 @@ class ObsList(MutableSequence):
         sl.sort(key=lambda t: keyfunc(t[0]), reverse=not ascending)
         self._nodes = [t[0] for t in sl]
         self.toolkit_ids = [t[1] for t in sl]
-        if self.on_sort:
-            self.on_sort()
+        self._meta.get_observer('sort')()
         
     def __getitem__(self, idx):
         return self._nodes[idx]
@@ -195,14 +229,14 @@ class ObsList(MutableSequence):
     def __setitem__(self, idx, item):
         self._nodes[idx] = item
         self.sorted = False
-        if self.on_replace:
-            self.on_replace(self.toolkit_ids[idx], item)
+        on_replace = self._meta.get_observer('replace')
+        on_replace(self.toolkit_ids[idx], item)
         
     def __delitem__(self, idx):
         del self._nodes[idx]
-        if self.on_remove:
-            tkid = self.toolkit_ids.pop(idx)
-            self.on_remove(tkid)
+        tkid = self.toolkit_ids.pop(idx)
+        on_remove = self._meta.get_observer('remove')
+        on_remove(tkid)
         
     def insert(self, idx, item):
         N = len(self._nodes)
@@ -213,9 +247,7 @@ class ObsList(MutableSequence):
             if idx > N: idx = N
         self._nodes.insert(idx, item)
         self.sorted = False
-        tkid = None
-        if self.on_insert:
-            tkid = self.on_insert(idx, item)
-            print('got tkid' , tkid)
+        on_insert = self._meta.get_observer('insert')
+        tkid = on_insert(idx, item)
         self.toolkit_ids.insert(idx, tkid)
         return idx, item

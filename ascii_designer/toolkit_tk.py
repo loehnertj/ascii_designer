@@ -378,10 +378,16 @@ class ToolkitTk(ToolkitBase):
         return s
     
 class NodelistVariable:
+    '''
+    Use ``get`` to return the ObsList;
+    ``set`` to replace the value using a new list.
+    
+    All the on_ methods are internal event handlers.
+    '''
     def __init__(self, treeview, keys):
         self._keys = keys
         self._nl = ObsList(keys=keys)
-        self._set_handlers(self._nl)
+        self._nl.set_listener(self)
         self._tv = treeview
         
     def get(self):
@@ -390,55 +396,32 @@ class NodelistVariable:
     def set(self, val):
         old_nl = self._nl
         if old_nl is not None:
-            self._set_handlers(old_nl, True)
+            old_nl.set_listener(None)
             self._tv.delete(*self._tv.get_children())
         self._nl = ObsList(val, meta=old_nl._meta)
-        self._set_handlers(self._nl)
+        self._nl.set_listener(self)
         for idx, item in enumerate(self._nl):
-            iid = self._on_insert(idx, item)
+            iid = self.on_insert(idx, item)
             self._nl.toolkit_ids[idx] = iid
             
-    def _set_handlers(self, nl, reset=False):
-        if reset:
-            nl.on_insert = nl.on_replace = nl.on_remove = nl.on_sort = nl.on_get_selection = False
-        else:
-            nl.on_insert = self._on_insert
-            nl.on_replace = self._on_replace
-            nl.on_remove = self._on_remove
-            nl.on_sort = self._on_sort
-            nl.on_get_selection = self._on_get_selection
-    
-    def on_heading_click(self, key:str):
-        if key == self._nl._meta.sort_key:
-            ascending = True if not self._nl.sorted else not self._nl._meta.sort_ascending
-        else:
-            ascending = True
-        self._nl.sort(key, ascending)
-        
-    def on_expand(self, stuff):
-        tv = self._nl.treeview
-        iid = tv.focus()
-        # retrieve the item
-        item = [n for n in self._nl.loaded_nodes if n._tk_iid == iid]
-        assert len(item) == 1
-        item = item[0]
-        if item.children is None:
-            item.get_children()
-            
     def item_changed(self, item):
+        '''For user code, to notify GUI that you did something to ``item``
+        '''
         idx = self._nl.index(item)
-        self._on_replace(idx, item)
-            
-    def _on_insert(self, idx, item):
+        self.on_replace(idx, item)
+
+    # === ObsList handlers ===
+
+    def on_insert(self, idx, item):
         '''create visible tree entry'''
         _parent_iid = ''
         iid = self._tv.insert(_parent_iid, idx, text=self._nl.retrieve(item))
         #if item.has_children:
         #    self.treeview.insert(item._tk_iid, 0, text='')
-        self._on_replace(iid, item)
+        self.on_replace(iid, item)
         return iid
      
-    def _on_replace(self, iid, item):
+    def on_replace(self, iid, item):
         '''replace visible tree entry'''
         tv = self._tv
         tv.item(iid, text=self._nl.retrieve(item))
@@ -448,10 +431,10 @@ class NodelistVariable:
             tv.set(iid, column, txt)
         self._update_sortarrows()
      
-    def _on_remove(self, iid):
+    def on_remove(self, iid):
          self._tv.delete(iid)
          
-    def _on_sort(self):
+    def on_sort(self):
         tv = self._tv
         _parent_iid = ''
         for idx, iid in enumerate(self._nl.toolkit_ids):
@@ -466,7 +449,7 @@ class NodelistVariable:
             image = _master_window.icons['sort_asc' if self._nl._meta.sort_ascending else 'sort_desc']
             tv.heading(self._nl._meta.sort_key or '#0', image=image)
     
-    def _on_get_selection(self):
+    def on_get_selection(self):
         iids = self._tv.selection()
         nodes = [item for (item, iid) in zip(self._nl, self._nl.toolkit_ids) if iid in iids]
         # recursively collect children
@@ -474,6 +457,8 @@ class NodelistVariable:
         #    if node.children:
         #        nodes += node.children.selection
         return nodes
+
+    # === GUI event handlers ===
     
     def on_tv_focus(self, function):
         iid = self._tv.focus()
@@ -482,6 +467,24 @@ class NodelistVariable:
         # get the node at idx and return its ref property (the original object)
         idx = self._nl.toolkit_ids.index(iid)
         function(self._nl[idx])
+
+    def on_expand(self, stuff):
+        tv = self._nl.treeview
+        iid = tv.focus()
+        # retrieve the item
+        item = [n for n in self._nl.loaded_nodes if n._tk_iid == iid]
+        assert len(item) == 1
+        item = item[0]
+        if item.children is None:
+            item.get_children()
+            
+    def on_heading_click(self, key:str):
+        if key == self._nl._meta.sort_key:
+            ascending = True if not self._nl.sorted else not self._nl._meta.sort_ascending
+        else:
+            ascending = True
+        self._nl.sort(key, ascending)
+        
                 
     
 """
