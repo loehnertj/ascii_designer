@@ -279,7 +279,7 @@ class TreeDemo(AutoFrame):
                 if not item.name.startswith('.'):
                     yield item
         def has_children(fld):
-            print('Has children?: %s'%(fld,))
+            #print('Has children?: %s'%(fld,))
             if not fld.is_dir():
                 return False
             try:

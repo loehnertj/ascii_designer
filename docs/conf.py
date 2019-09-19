@@ -28,6 +28,8 @@ qg = sys.modules['PyQt4.QtGui'] = FakeModule()
 qt.QtCore = qc
 qt.QtGui = qg
 qc.Qt = None
+qc.QAbstractItemModel = object
+qc.QModelIndex = None
 qg.QApplication = lambda *args, **kwargs: None
 
 

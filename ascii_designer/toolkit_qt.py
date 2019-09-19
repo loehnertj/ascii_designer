@@ -9,10 +9,11 @@ ToolkitQt-specific notes:
 '''
 import sys
 import PyQt4 as qt
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import Qt, QAbstractItemModel, QModelIndex
 import PyQt4.QtGui as qg
 
 from .toolkit import ToolkitBase
+from .list_model import ObsList
 
 __all__ = [
     'ToolkitQt',
@@ -71,6 +72,14 @@ class ToolkitQt(ToolkitBase):
         if isinstance(widget, qg.QPushButton):
             widget.clicked.connect(lambda *args: function())
             return
+        elif isinstance(widget, qg.QTreeView):
+            def handler(*args, widget=widget):
+                mindex = widget.currentIndex()
+                sl = mindex.internalPointer()
+                item = sl[mindex.row()]
+                function(item)
+            widget.clicked.connect(handler)
+            return
         # other cases
         handler = lambda *args, widget=widget: function(self.getval(widget))
         if isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
@@ -109,6 +118,8 @@ class ToolkitQt(ToolkitBase):
             else:
                 idx = widget.currentIndex()
                 return widget.itemText(idx) if idx >= 0 else None
+        if cls is qg.QTreeView:
+            return widget.model().getList()
             
     def setval(self, widget, value):
         if widget.hasFocus():
@@ -150,6 +161,8 @@ class ToolkitQt(ToolkitBase):
                 widget.setCurrentIndex(idx)
         elif isinstance(widget, qg.QSlider):
             widget.setValue(value)
+        elif isinstance(widget, qg.QTreeView):
+            widget.model().setList(value)
         else:
             raise TypeError('I do not know how to set the value of a %s'%(widget.__class__.__name__))
         
@@ -204,6 +217,30 @@ class ToolkitQt(ToolkitBase):
     def multiline(self, parent, id=None, text=''):
         '''multi-line text entry box'''
         return qg.QPlainTextEdit(text, parent=parent)
+
+    def treelist(self, parent, id=None, text='', columns=None):
+        '''treeview (also usable as plain list)
+        
+        Qt notes: The model does no caching on its own, but retrieves
+        item data all the time. I.e. if your columns are costly to
+        calculate, roll your own caching please.
+
+        TBD: Sort on header-click.
+        '''
+        if columns:
+            columns = [txt.strip() for txt in columns.split(',')]
+        else:
+            columns = []
+        keys = [name.lower() for name in columns]
+        if text:
+            keys.insert(0, '')
+            columns.insert(0, text.strip())
+
+        w = qg.QTreeView(parent)
+        model = TreeModel(w, keys, columns)
+        w.setModel(model)
+
+        return w
     
     def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
@@ -238,3 +275,122 @@ class ToolkitQt(ToolkitBase):
         s.setTickPosition(qg.QSlider.TicksBelow)
         return s
     
+class TreeModel(QAbstractItemModel):
+    def __init__(self, treeview, keys, captions):
+        super().__init__(parent=treeview)
+        self._keys = keys
+        self._captions = captions
+        self._nl = ObsList(keys=keys, toolkit_parent_id=QModelIndex())
+        self._nl.set_listener(self)
+        self._tv = treeview
+
+    def getList(self):
+        return self._nl
+
+    def setList(self, val):
+        '''replace all current items by the new iterable ``val``.'''
+        self.layoutAboutToBeChanged.emit()
+        old_nl = self._nl
+        if old_nl is not None:
+            old_nl.set_listener(None)
+        self._nl = ObsList(val, meta=old_nl._meta, toolkit_parent_id=QModelIndex())
+        self._nl.set_listener(self)
+        self.layoutChanged.emit()
+
+    def columnCount(self, parent):
+        return len(self._keys)
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal:
+            if role == Qt.DisplayRole:
+                return self._captions[section]
+        return None
+
+    def _idx2sl(self, model_index):
+        '''returns (sublist, item idx)'''
+        if not model_index.isValid():
+            return None, None
+        return (model_index.internalPointer(), model_index.row())
+
+    def hasChildren(self, parent):
+        sl, idx = self._idx2sl(parent)
+        if sl is None:
+            return True
+        return sl.has_children(sl[idx])
+
+    def rowCount(self, parent):
+        pl, idx = self._idx2sl(parent)
+        if parent.column() > 0:
+            return 0
+        if pl is None:
+            sl = self._nl
+        else:
+            sl = pl.get_children(idx)
+            sl.toolkit_parent_id = parent
+        return len(sl)
+
+    def index(self, row, column, parent):
+        if not self.hasIndex(row, column, parent):
+            return QModelIndex()
+        if column >= len(self._keys):
+            return QModelIndex()
+        pl, idx = self._idx2sl(parent)
+        
+        if pl is None:
+            sl = self._nl
+        else:
+            sl = pl.get_children(idx)
+            sl.toolkit_parent_id = parent
+        
+        if row < len(sl):
+            # internalPointer is the ObsList CONTAINING our item.
+            model_index = self.createIndex(row, column, sl)
+            sl.toolkit_ids[row] = model_index
+            return model_index
+        else:
+            return QModelIndex()
+
+    def data(self, index, role):
+        if not index.isValid(): return None
+        if role != Qt.DisplayRole: return None
+
+        sl, idx = self._idx2sl(index)
+        item = sl[idx]
+        key = self._keys[index.column()]
+        return sl.retrieve(item, key)
+
+    def flags(self, index):
+        if not index.isValid(): return Qt.NoItemFlags
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def parent(self, index):
+        if not index.isValid():
+            return QModelIndex()
+        sl, idx = self._idx2sl(index)
+
+        # root item
+        if sl is self._nl:
+            return QModelIndex()
+
+        # otherwise
+        return sl.toolkit_parent_id
+
+    # === ObsList handlers ===
+    def on_insert(self, idx, item, toolkit_parent_id):
+        self.layoutChanged.emit()
+
+    def on_load_children(self, children):
+        self.layoutChanged.emit()
+
+    def on_replace(self, iid, item):
+        self.layoutChanged.emit()
+
+    def on_remove(self, iid):
+        self.layoutChanged.emit()
+
+    def on_sort(self, nl):
+        self.layoutChanged.emit()
+
+    def on_get_selection(self):
+        # FIXME
+        return []

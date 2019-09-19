@@ -381,6 +381,16 @@ A more complex example to showcase how additional columns work::
             )
             self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
             
+.. note ::
+  Currently Tk and Qt toolkit behave notably different concerning lists.
+  Tk retrieves the "source" values once to build all the list items. Meaning
+  that changes in the underlying items do not reflect in the list unless
+  explicitly updated. 
+
+  Qt on the other hand queries the items permanently (e.g. on
+  mouse-over). This means that changes are immediately visible onscreen, but
+  that you should not do complicated calculations or I/O to retrieve column
+  values.
             
 **Trees** are created by using the :any:`ObsList.children_source` method, 
 which works similar to  :any:`sources`. Here you can define two sources, one 
