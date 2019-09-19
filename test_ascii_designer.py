@@ -214,7 +214,7 @@ class ListDemo(AutoFrame):
     f_body = '''
     |             |     |        <->                |
     |Simple List   List with named columns~         
-    I[= Shopping ] [= Players (,Name, Points, Rank)]
+    I[= Shopping ] [= Players  (Name, Points, Rank)]
                    [Add] [Remove] ~                 
     '''
     def f_build(self, parent, body):
