@@ -33,6 +33,8 @@ class ListMeta():
     def __init__(self, keys):
         self.keys = list(keys or [])
         self.sources = {k:k for k in self.keys}
+        # set text source always
+        self.sources.setdefault('', '')
         self.children_source = None
         self.has_children_source = None
         self.sort_key = ''
@@ -204,6 +206,12 @@ class ObsList(MutableSequence):
         self._childlists[idx] = childlist
         on_load_children = self._meta.get_observer('load_children')
         on_load_children(childlist)
+
+    def get_children(self, idx):
+        '''Get childlist of item at given idx, loading it if not already loaded.'''
+        if self._childlists[idx] is None:
+            self.load_children(idx)
+        return self._childlists[idx]
 
     def retrieve(self, item, column=''):
         source = self._meta.sources[column]
