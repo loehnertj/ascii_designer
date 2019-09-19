@@ -18,7 +18,7 @@ import shlex
 
 up = os.path.dirname
 
-sys.path.append(os.path.abspath(up(up(__file__))))
+sys.path.insert(0, os.path.abspath(up(up(__file__))))
 
 # Mock out PyQt4 for toolkit_qt.py.
 class FakeModule: pass

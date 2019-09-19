@@ -230,6 +230,8 @@ class ListDemo(AutoFrame):
             RankRow('LittleDuck', 12, 3),
         ]
         self.players[1].name = 'Changed Name'
+        # Notify listview about mutated item
+        self.players.item_mutated(self.players[1])
         self.players[2] = RankRow('BigDuck', 44, 3)
         self.players.sources(lambda obj:'ItsLikeMagic', name=['name'], points=['points'], rank=['rank'])
         # not recommended: mixed item types
@@ -263,7 +265,7 @@ class TreeDemo(AutoFrame):
     |  <-> Tree        |
      Tree~
     I[= Files         ]
-     [Replace Children]
+     [ Test Find ]
     '''
     def f_build(self, parent, body):
         super().f_build(parent, body)
@@ -277,6 +279,7 @@ class TreeDemo(AutoFrame):
                 if not item.name.startswith('.'):
                     yield item
         def has_children(fld):
+            print('Has children?: %s'%(fld,))
             if not fld.is_dir():
                 return False
             try:
@@ -285,19 +288,18 @@ class TreeDemo(AutoFrame):
                 return False
             return True
         # set the attribute or method which retrieves the iterable of children
-        self.files.children(children_of, has_children_source=has_children)
+        self.files.children_source(children_of, has_children_source=has_children)
         # use a generator to set folder
         self.files = children_of(pathlib.Path.home())
         
-    def replace_children(self):
-        import pathlib
-        for node in self.files.selection:
-            # inception!1
-            node.children = [pathlib.Path(node[''])]
-            
     def on_files(self, item):
         print('focus', item)
         print('selection', self.files.selection)
+
+    def test_find(self):
+        item = self.files.selection[0]
+        print('Find', item)
+        print('REsult:', self.files.find(item))
         
         
     

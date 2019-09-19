@@ -40,3 +40,9 @@ From ``ascii_designer`` you can directly import:
     :members:
     :undoc-members:
 
+`ascii_designer.list_model` module
+----------------------------------
+.. automodule:: ascii_designer.list_model
+    :members:
+    :undoc-members:
+    :inherited-members:

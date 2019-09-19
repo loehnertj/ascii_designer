@@ -2,9 +2,9 @@
 
 The general concept for Lists is this:
 
- - List is wrapped into an :any:`ObsList` (by :any:`Toolkit.setval`)
- - The "code-side" of the ``ObsList`` quacks like a regular list.
- - The "gui-side" of the ``ObsList``:
+ - List is wrapped into an :any:`ObsList` (by :any:`ToolkitBase.setval`)
+ - The "code-side" of the ``ObsList`` quacks (mostly) like a regular list.
+ - The "gui-side" of the ``ObsList``
     - provides COLUMNS (key-value items) dynamically retrieved from each list
       item
     - remembers column and order to be used when sorting
@@ -86,14 +86,13 @@ class ObsList(MutableSequence):
      * it provides notification when items are added or removed
      
     Attributes:
-     * ``meta``: Container for keys, source functions and remembered sorting. 
-     * ``sorted``: bool, whether list is currently sorted *by one of the list columns*.
-       Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
-     * ``toolkit_ids``: can be indexed in the same way as the nodelist,
-       and gives the toolkit-specific identifier of the list/treeview node.
-
+        meta (:any:`ListMeta`): Container for keys, source functions and remembered sorting. 
+        sorted (bool): whether list is currently sorted *by one of the list columns*.
+            Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
+        toolkit_ids: can be indexed in the same way as the nodelist,
+            and gives the toolkit-specific identifier of the list/treeview node.
     '''
-    def __init__(self, iterable=None, keys=None, meta=None):
+    def __init__(self, iterable=None, keys=None, meta=None, toolkit_parent_id=None):
         if meta:
             self._meta = meta.copy()
         else:
@@ -103,20 +102,17 @@ class ObsList(MutableSequence):
             self._nodes = [item for item in iterable]
         else:
             self._nodes = []
+        self.toolkit_parent_id = toolkit_parent_id
         self.toolkit_ids = [None] * len(self._nodes)
+        # If List is turned into a tree by setting children_source,
+        # this is made into a list of child ObsList.
+        # Initially all children are set to None, and will be loaded
+        # lazily by explicit call to ``load_children``.
+        self._childlists = [None]*len(self._nodes)
         def dummy_handler(*args, **kwargs):
             return None
         self.sorted = False
         
-    # FIXME: BROKEN
-    def _children_of(self, node, iterable):
-        '''Create a new nodelist instance representing child nodes of the given node.
-        
-        Override in subclass to create the fitting class instance, and insert 
-        the children in the tree if you see fit.
-        '''
-        return ObsList(iterable, meta=self._meta)
-            
     @property
     def selection(self):
         '''returns the sublist of all currently-selected items.
@@ -131,10 +127,13 @@ class ObsList(MutableSequence):
 
         The listener can provide any or all of the following methods:
 
-        * ``on_insert(idx, item) -> toolkit_id``: function to call for each inserted item
+        * ``on_insert(idx, item, toolkit_parent_id) -> toolkit_id``: function to call for each inserted item
         * ``on_replace(toolkit_id, item)``: function to call for replaced item
+            Replacement of item implies that children are "collapsed" again.
         * ``on_remove(toolkit_id)``: function to call for each removed item
+        * ``on_load_children(toolkit_parent_id, sublist)``: function when children of a node are retrieved.
         * ``on_get_selection()``: return the items selected in the GUI
+            Must return a List of (original) items.
         * ``on_sort()``: when list is reordered
 
         ``set_listener(None)`` to reset listener.
@@ -162,13 +161,13 @@ class ObsList(MutableSequence):
             kwargs[''] = _text
         self._meta.sources.update(kwargs)
         
-    def children(self, children_source, has_children_source=None):
+    def children_source(self, children_source, has_children_source=None):
         '''Sets the source for children of each list item, turning the list into a tree.
         
         ``children``, ``has_children`` follow the same semantics as other sources.
         
         Resolving ``children`` should return an iterable that will be turned 
-        into a NodeList according to the rules.
+        into an ``ObsList`` of its own.
         
         ``has_children`` should return a truthy value that is used to decide 
         whether to display the expander. If omitted, all nodes get the expander 
@@ -176,18 +175,40 @@ class ObsList(MutableSequence):
         
         Children source only applies when the list of children is initially 
         retrieved. Once the children are retrieved, source changes do not affect 
-        a Node anymore.
+        already-retrieved children anymore.
         
         ``has_children`` is usually evaluated immediately, because the treeview 
         needs to decide whether to display an expander icon.
         '''
         self._meta.children_source = children_source
+        if not has_children_source:
+            has_children_source = (lambda obj: True)
         self._meta.has_children_source = has_children_source
-        
+        self._childlists = [None] * len(self._nodes)
+
+    def has_children(self, item):
+        if not self._meta.children_source:
+            return False
+        source = self._meta.has_children_source
+        return self._meta.retrieve(item, source)
+
+    def load_children(self, idx):
+        '''Retrieves the childlist of item at given idx.
+        '''
+        source = self._meta.children_source
+        item = self._nodes[idx]
+        childlist = self._meta.retrieve(item, source)
+        childlist = ObsList(childlist, toolkit_parent_id=self.toolkit_ids[idx])
+        # Child SHARES _meta instance.
+        childlist._meta = self._meta
+        self._childlists[idx] = childlist
+        on_load_children = self._meta.get_observer('load_children')
+        on_load_children(childlist)
+
     def retrieve(self, item, column=''):
         source = self._meta.sources[column]
         return self._meta.retrieve(item, source)
-        
+
     def sort(self, key=None, ascending:bool=None, restore=False):
         '''Sort the list.
         
@@ -214,12 +235,69 @@ class ObsList(MutableSequence):
             self._meta.sort_ascending = True
             self.sorted = False
             keyfunc = key
-        sl = [ (item, iid) for item, iid in zip(self._nodes, self.toolkit_ids)]
+        sl = [ 
+            (item, iid, childlist) 
+            for item, iid, childlist in zip(
+                self._nodes, self.toolkit_ids, self._childlists
+            )
+        ]
         sl.sort(key=lambda t: keyfunc(t[0]), reverse=not ascending)
         self._nodes = [t[0] for t in sl]
         self.toolkit_ids = [t[1] for t in sl]
-        self._meta.get_observer('sort')()
+        self._childlists = [t[2] for t in sl]
+        self._meta.get_observer('sort')(self)
+        # FIXME: sort childlists as well?
+
+    def find(self, item):
+        '''Finds the sublist and index of the item.
+
+        Returns ``(sublist: ObsList, idx:int)``.
+
+        If not found, raises ValueError.
         
+        Scans the whole tree for the item.
+        '''
+        try:
+            idx = self._nodes.index(item)
+            # if we got here, we found it
+            return self, idx
+        except ValueError:
+            # Not in own items, search children
+            for childlist in self._childlists:
+                if childlist is None:
+                    continue
+                try:
+                    return childlist.find(item)
+                except ValueError:
+                    continue
+        # not found
+        raise ValueError('Item not in tree', item)
+
+    def find_by_toolkit_id(self, toolkit_id):
+        '''finds the sublist and index of the item having the given toolkit id.
+        
+        Returns ``(sublist: ObsList, idx: int)``
+
+        If not found, raises ValueError.
+
+        Scans the whole tree for the item.
+        '''
+        try:
+            idx = self.toolkit_ids.index(toolkit_id)
+            # if we got here, we found it
+            return self, idx
+        except ValueError:
+            # Not in own items, search children
+            for childlist in self._childlists:
+                if childlist is None:
+                    continue
+                try:
+                    return childlist.find_by_toolkit_id(toolkit_id)
+                except ValueError:
+                    continue
+        # not found
+        raise ValueError('Toolkit ID not in tree', toolkit_id)
+
     def __getitem__(self, idx):
         return self._nodes[idx]
         
@@ -228,12 +306,15 @@ class ObsList(MutableSequence):
     
     def __setitem__(self, idx, item):
         self._nodes[idx] = item
+        # collapse
+        self._childlists[idx] = None
         self.sorted = False
         on_replace = self._meta.get_observer('replace')
         on_replace(self.toolkit_ids[idx], item)
         
     def __delitem__(self, idx):
         del self._nodes[idx]
+        self._childlists.pop(idx)
         tkid = self.toolkit_ids.pop(idx)
         on_remove = self._meta.get_observer('remove')
         on_remove(tkid)
@@ -246,8 +327,21 @@ class ObsList(MutableSequence):
         else:
             if idx > N: idx = N
         self._nodes.insert(idx, item)
+        # cannot use "truthy" value since list might be empty
+        self._childlists.insert(idx, None)
         self.sorted = False
         on_insert = self._meta.get_observer('insert')
-        tkid = on_insert(idx, item)
+        tkid = on_insert(idx, item, self.toolkit_parent_id)
         self.toolkit_ids.insert(idx, tkid)
         return idx, item
+
+    def item_mutated(self, item):
+        '''Call this when you mutated the item (which must be in this list)
+        and want to update the GUI.
+        '''
+        idx = self._nodes.index(item)
+        # do NOT collapse
+        self.sorted = False
+        on_replace = self._meta.get_observer('replace')
+        on_replace(self.toolkit_ids[idx], item)
+

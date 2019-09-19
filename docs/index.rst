@@ -326,10 +326,9 @@ Value of  List / Tree View
 The general picture is this: The Listview has a value, which on the python side 
 looks mostly like a list. You can slice it, insert/remove items and so on.
 
-However, inserted items are turned into :any:`Node` instances fit for displaying 
-in the list view. The value list is attached to the actual list view. I.e. if 
-you update the list or its items, the changes immediately reflect in the 
-ListView widget.
+Inserted items are displayed in the list view in textual form. The value list
+is attached to the actual list view. I.e. if you update the list, the changes
+immediately reflect in the ListView widget.
 
 The value list or its items can become detached if you replace the list or pop 
 nodes of it. You can still use it like a normal python object, but it will not 
@@ -371,8 +370,7 @@ A more complex example to showcase how additional columns work::
                 RankRow('MasterOfDisaster', 3010, 2),
                 RankRow('LittleDuck', 12, 3),
             ]
-            # changing columns / items triggers updating of the displayed data
-            self.players[1]['name'] = 'Changed Name'
+            # Replacing items triggers updating of the displayed data
             self.players[2] = RankRow('BigDuck', 24, 3)
             # change the data binding:
             self.players.sources(
@@ -384,11 +382,11 @@ A more complex example to showcase how additional columns work::
             self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
             
             
-**Trees** are created by using the :any:`NodelistBase.children` method, 
+**Trees** are created by using the :any:`ObsList.children_source` method, 
 which works similar to  :any:`sources`. Here you can define two sources, one 
 for ``has_children`` (bool) and one for ``children`` (list).
 
-The tree is lazy-loading, i.e. :any:`Node.children` is only retrieved when a 
+The tree is lazy-loading, i.e. children are only retrieved when a 
 node is expanded.
 
 ``has_children`` is queried to determine whether expanders should be drawn on 
@@ -396,6 +394,13 @@ each item. If not given, we assume that each entry might have children, and they
 all get expanders initially.
 
 The ``children`` property, if retrieved, is again a special list like the "root" one.
+
+To identify items in the tree, the two methods :any:`ObsList.find` and
+:any:`ObsList.find_by_toolkit_id` are provided, which yield container list
+and index given the item or its toolkit-native identifier, respectively.
+
+For Tk, the toolkit-native identifier is the ``iid`` value of the tree item.
+For Qt (TBD!), it will be the ``QModelIndex``.
 
 
 Extending / integrating
