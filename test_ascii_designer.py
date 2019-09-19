@@ -155,7 +155,7 @@ class AlignmentDemo(AutoFrame):
     '''
     f_body = '''
     |              |     <->          |   <-->         |
-    [ fixed col  ] [  stretch 1x    ] [stretch 2x    ]
+    [ fixed col   ] [  stretch 1x    ] [stretch 2x    ]
                     [ colspan stretch 3x              ]
     I               [ stretch h+v __ ]|[left]          |
     I               {[left, v 2x __ ] |  [center]      |
