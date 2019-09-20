@@ -395,5 +395,10 @@ class TreeModel(QAbstractItemModel):
         self.layoutChanged.emit()
 
     def on_get_selection(self):
-        # FIXME
-        return []
+        indexes = self._tv.selectedIndexes()
+        return [
+            sl[idx]
+            for model_index in indexes
+            if model_index.column() == 0
+            for sl, idx in [self._idx2sl(model_index)]
+        ]
