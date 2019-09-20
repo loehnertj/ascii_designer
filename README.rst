@@ -118,9 +118,6 @@ TODO
 
 Alpha-state software, mostly working.
 
-In the Qt implementation some stuff is missing (most notably lists and trees) 
-since I am currently focussed on the Tk toolkit.
-
 Test coverage is lacking, politely spoken.
 
 This is a hobby project. If you need something quick, open an issue or send a pull request.

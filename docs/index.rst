@@ -381,6 +381,10 @@ A more complex example to showcase how additional columns work::
             )
             self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
             
+When working with the list, keep in mind that it **can be changed by user
+interaction** (like any other widget's value). Currently the only possible
+change is to re-sort the list, but more (edit, add, remove items) might come.
+
 .. note ::
   Currently Tk and Qt toolkit behave notably different concerning lists.
   Tk retrieves the "source" values once to build all the list items. Meaning
@@ -391,13 +395,13 @@ A more complex example to showcase how additional columns work::
   mouse-over). This means that changes are immediately visible onscreen, but
   that you should not do complicated calculations or I/O to retrieve column
   values.
-            
+
 **Trees** are created by using the :any:`ObsList.children_source` method, 
-which works similar to  :any:`sources`. Here you can define two sources, one 
+which works similar to  :any:`sources`. Here you can define two sources, one
 for ``has_children`` (bool) and one for ``children`` (list).
 
 The tree is lazy-loading, i.e. children are only retrieved when a 
-node is expanded.
+node is expanded. On repeated expansion, children are reloaded.
 
 ``has_children`` is queried to determine whether expanders should be drawn on 
 each item. If not given, we assume that each entry might have children, and they 
@@ -410,7 +414,10 @@ To identify items in the tree, the two methods :any:`ObsList.find` and
 and index given the item or its toolkit-native identifier, respectively.
 
 For Tk, the toolkit-native identifier is the ``iid`` value of the tree item.
-For Qt (TBD!), it will be the ``QModelIndex``.
+
+For Qt it is unset; only ``parent_toolkit_id`` is set to the parent
+``QModelIndex``. Given a ``QModelIndex``, its ``internalPointer()`` refers to
+the containing list and ``row()`` gives the index of the item.
 
 
 Extending / integrating
