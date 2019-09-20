@@ -383,7 +383,10 @@ class TreeModel(QAbstractItemModel):
         self.layoutChanged.emit()
 
     def on_replace(self, iid, item):
-        self.layoutChanged.emit()
+        sl, idx = self._nl.find(item)
+        top_left = self.createIndex(idx, 0, sl)
+        btm_right = self.createIndex(idx, len(self._keys)-1, sl)
+        self.dataChanged.emit(top_left, btm_right)
 
     def on_remove(self, iid):
         self.layoutChanged.emit()
