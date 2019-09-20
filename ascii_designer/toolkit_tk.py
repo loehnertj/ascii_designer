@@ -286,10 +286,15 @@ class ToolkitTk(ToolkitBase):
         
         Returns the treeview widget (within the frame).
         '''
-        columns = columns or ''
-        columns = [txt.strip() for txt in columns.split(',')]
-        has_first_column = ('' in columns)
+        if columns:
+            columns = [txt.strip() for txt in columns.split(',')]
+        else:
+            columns = []
         keys = [name.lower() for name in columns]
+        has_first_column = bool(text)
+        if has_first_column:
+            keys.insert(0, '')
+            columns.insert(0, text.strip())
         
         # setup scrollable container
         frame = tk.Frame(parent)
