@@ -242,6 +242,8 @@ class ToolkitQt(ToolkitBase):
 
         # connect events
         w.expanded.connect(model.on_gui_expand)
+        w.setSortingEnabled(True)
+        w.sortByColumn(-1)
 
         return w
     
@@ -417,3 +419,12 @@ class TreeModel(QAbstractItemModel):
         sl, idx = self._idx2sl(mindex)
         print('expand', idx)
         sl.load_children(idx)
+
+    # actually not a connected handler
+    def sort(self, column, order):
+        if column < 0:
+            # do nothing
+            return
+        ascending = (order == Qt.AscendingOrder)
+        key = self._keys[column]
+        self._nl.sort(key, ascending)
