@@ -240,6 +240,9 @@ class ToolkitQt(ToolkitBase):
         model = TreeModel(w, keys, columns)
         w.setModel(model)
 
+        # connect events
+        w.expanded.connect(model.on_gui_expand)
+
         return w
     
     def dropdown(self, parent, id=None, text='', values=None):
@@ -325,9 +328,11 @@ class TreeModel(QAbstractItemModel):
         if pl is None:
             sl = self._nl
         else:
-            sl = pl.get_children(idx)
-            sl.toolkit_parent_id = parent
-        return len(sl)
+            #sl = pl.get_children(idx)
+            sl = pl._childlists[idx]
+            if sl is not None:
+                sl.toolkit_parent_id = parent
+        return len(sl or [])
 
     def index(self, row, column, parent):
         if not self.hasIndex(row, column, parent):
@@ -339,8 +344,12 @@ class TreeModel(QAbstractItemModel):
         if pl is None:
             sl = self._nl
         else:
-            sl = pl.get_children(idx)
-            sl.toolkit_parent_id = parent
+            #sl = pl.get_children(idx)
+            sl = pl._childlists[idx]
+            if sl is not None:
+                sl.toolkit_parent_id = parent
+            else:
+                sl = []
         
         if row < len(sl):
             # internalPointer is the ObsList CONTAINING our item.
@@ -402,3 +411,9 @@ class TreeModel(QAbstractItemModel):
             if model_index.column() == 0
             for sl, idx in [self._idx2sl(model_index)]
         ]
+
+    # === GUI event handlers ===
+    def on_gui_expand(self, mindex):
+        sl, idx = self._idx2sl(mindex)
+        print('expand', idx)
+        sl.load_children(idx)

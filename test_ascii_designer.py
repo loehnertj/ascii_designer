@@ -4,6 +4,7 @@
 #import tkinter as tk
 import sys
 import random
+import time
 from ascii_designer import AutoFrame, set_toolkit
 
 TK = 'tk'
@@ -289,7 +290,8 @@ class TreeDemo(AutoFrame):
     def _populate_folder(self):
         import pathlib
         def children_of(fld):
-            print('Now retrieving children of %s'%(fld,))
+            print('Now retrieving children of %s, wait 1second'%(fld,))
+            time.sleep(1.0)
             for item in fld.iterdir():
                 if not item.name.startswith('.'):
                     yield item
