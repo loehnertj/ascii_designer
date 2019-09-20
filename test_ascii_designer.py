@@ -3,6 +3,7 @@
 
 #import tkinter as tk
 import sys
+import random
 from ascii_designer import AutoFrame, set_toolkit
 
 TK = 'tk'
@@ -212,10 +213,10 @@ class RankRow:
             
 class ListDemo(AutoFrame):
     f_body = '''
-    |             |     |        <->                |
-    |Simple List   List with named columns~         
-    I[= Shopping ] [= Players  (Name, Points, Rank)]
-                   [Add] [Remove] ~                 
+    |             |     |         |        |<->          |
+    |Simple List   List with named columns~~        
+    I[= Shopping ] [= Players  (Name, Points, Rank)     ]
+                   [Add] [Replace] [Mutate] [Remove] ~                 
     '''
     def f_build(self, parent, body):
         super().f_build(parent, body)
@@ -239,7 +240,6 @@ class ListDemo(AutoFrame):
         self.players.sources(name='name', points='points', rank='rank')
         
     def add(self):
-        import random
         p = RankRow(
             'new%d'%(random.randint(1,1000)),
             points=random.randint(1,999),
@@ -251,6 +251,21 @@ class ListDemo(AutoFrame):
         self.players.sort(restore=True)
         # Also possible; however causes reload of the whole list (since replaced by new list)
         #self.players += [p]
+
+    def replace(self):
+        for item in self.players.selection:
+            idx = self.players.index(item)
+            p = RankRow(
+                'replaced-%d'%(random.randint(1,1000)),
+                points=random.randint(1,999),
+                rank=9
+            )
+            self.players[idx] = p
+
+    def mutate(self):
+        for item in self.players.selection:
+            item.name = 'changed%d' % random.randint(1, 1000)
+            self.players.item_mutated(item)
     
     def remove(self):
         nodes = self.players.selection[:]
