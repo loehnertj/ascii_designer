@@ -35,8 +35,10 @@ class ToolkitQt(ToolkitBase):
     # widget generators
     def root(self, title='Window', on_close=None):
         '''make a root (window) widget'''
-        root = qg.QWidget()
-        root.setLayout(qg.QGridLayout())
+        root = qg.QMainWindow()
+        cw = qg.QWidget(root)
+        root.setCentralWidget(cw)
+        cw.setLayout(qg.QGridLayout())
         root.setWindowTitle(title)
         if on_close:
             root.closeEvent = lambda ev: on_close()
@@ -168,10 +170,14 @@ class ToolkitQt(ToolkitBase):
         
     def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''
+        if isinstance(container, qg.QMainWindow):
+            container = container.centralWidget()
         container.layout().setRowStretch(row, proportion)
         
     def col_stretch(self, container, col, proportion):
         '''set the given col to stretch according to the proportion.'''
+        if isinstance(container, qg.QMainWindow):
+            container = container.centralWidget()
         container.layout().setColumnStretch(col, proportion)
         
     def anchor(self, widget, left=True, right=True, top=True, bottom=True):
@@ -189,6 +195,8 @@ class ToolkitQt(ToolkitBase):
         
     # Widgets
     def box(self, parent, id=None, text='', given_id=''):
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         if given_id and text:
             f = qg.QGroupBox(parent=parent, title=text)
             f.setLayout(qg.QGridLayout())
@@ -204,18 +212,26 @@ class ToolkitQt(ToolkitBase):
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         return qg.QLabel(parent=parent, text=text)
         
     def button(self, parent, id=None, text=''):
         '''button'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         return qg.QPushButton(parent=parent, text=text)
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         return qg.QLineEdit(text, parent=parent)
     
     def multiline(self, parent, id=None, text=''):
         '''multi-line text entry box'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         return qg.QPlainTextEdit(text, parent=parent)
 
     def treelist(self, parent, id=None, text='', columns=None):
@@ -224,9 +240,9 @@ class ToolkitQt(ToolkitBase):
         Qt notes: The model does no caching on its own, but retrieves
         item data all the time. I.e. if your columns are costly to
         calculate, roll your own caching please.
-
-        TBD: Sort on header-click.
         '''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         if columns:
             columns = [txt.strip() for txt in columns.split(',')]
         else:
@@ -249,36 +265,64 @@ class ToolkitQt(ToolkitBase):
     
     def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         w = qg.QComboBox(parent)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         w.addItems(choices)
         return w
     
     def combo(self, parent, id=None, text='', values=None):
-        '''not supported'''
+        '''dropdown with editable values.'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         w = self.dropdown(parent, id=id, text=text, values=values)
         w.setEditable(True)
         return w
         
     def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         rb = qg.QRadioButton(text, parent=parent)
         rb.setChecked((checked=='x'))
         return rb
     
     def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         cb = qg.QCheckBox(text, parent=parent)
         cb.setChecked((checked=='x'))
         return cb
     
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
+        if isinstance(parent, qg.QMainWindow):
+            parent = parent.centralWidget()
         s = qg.QSlider(Qt.Horizontal, parent=parent)
         s.setMinimum(int(min))
         s.setMaximum(int(max))
         s.setTickPosition(qg.QSlider.TicksBelow)
         return s
+
+    def menu_root(self, parent):
+        '''Create menu object and set as parent's menu.'''
+        return parent.menuBar()
+
+    def menu_sub(self, parent, text):
+        '''Append submenu labeled ``text`` to menu ``parent``.'''
+        m = parent.addMenu(text)
+        return m
+
+    def menu_command(self, parent, text, handler):
+        '''Append command labeled ``text`` to menu ``parent``.
+
+        Handler: ``func() -> None``, is immediately connected.
+        '''
+        action = qg.QAction(text, parent)
+        action.triggered.connect(handler)
+        parent.addAction(action)
     
 class TreeModel(QAbstractItemModel):
     def __init__(self, treeview, keys, captions):

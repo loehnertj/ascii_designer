@@ -184,5 +184,13 @@ class ToolkitBase:
         '''Checkbox'''
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        
-        
+
+    def menu_root(self, parent):
+        '''Create menu object and set as parent's menu.'''
+    def menu_sub(self, parent, text):
+        '''Append submenu labeled ``text`` to menu ``parent``.'''
+    def menu_command(self, parent, text, handler):
+        '''Append command labeled ``text`` to menu ``parent``.
+
+        Handler: ``func() -> None``, is immediately connected.
+        '''

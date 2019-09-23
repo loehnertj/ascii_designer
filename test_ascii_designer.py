@@ -14,17 +14,6 @@ set_toolkit(TK)
 
 
 # Idea for later
-menu = '''
-    File
-        Open
-        Save
-        Save As...
-        Quit, C-Q
-    Help
-        About...
-'''
-
-# Idea for later
 toolbar = '''
  [ Open ]
  [ Save ]
@@ -43,6 +32,7 @@ class Main(AutoFrame):
      [List view                 ]
      [Tree view                 ]
      [Alignment                 ]
+     [Window Menu               ]
     I
        [Close]                   |
     '''
@@ -63,6 +53,9 @@ class Main(AutoFrame):
         
     def alignment(self):
         AlignmentDemo().f_show()
+
+    def window_menu(self):
+        MenuDemo().f_show()
         
 
 class AutoconnectDemo(AutoFrame):
@@ -318,6 +311,34 @@ class TreeDemo(AutoFrame):
         print('Find', item)
         print('REsult:', self.files.find(item))
         
+
+class MenuDemo(AutoFrame):
+    f_menu = [
+        'File >', ['Open', 'Save', 'Quit'],
+        'Nested >', [
+            'Submenu 1 >', [ 'Subitem 1'],
+            'Item 2',
+            'Submenu 3 >', [],
+        ],
+        'Help >', ['About']
+    ]
+    f_body = '''
+    |
+    '''
+
+    # all handlers must be there
+    def open(self):
+        print('menu action: open')
+    def save(self):
+        print('menu action: save')
+    # quit is predefined by AutoFrame
+    def subitem_1(self):
+        print('menu action: subitem_1')
+    def item_2(self):
+        print('menu action: item_2')
+    def about(self):
+        print('menu action: about')
+
         
     
 class EmptyFrame(AutoFrame):

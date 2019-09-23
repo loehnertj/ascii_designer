@@ -381,6 +381,26 @@ class ToolkitTk(ToolkitBase):
         )
         s.variable = var
         return s
+
+    def menu_root(self, parent):
+        '''Create menu object and set as parent's menu.'''
+        m = tk.Menu(parent, tearoff=0)
+        parent.config(menu=m)
+        return m
+
+    def menu_sub(self, parent, text):
+        '''Append submenu labeled ``text`` to menu ``parent``.'''
+        m = tk.Menu(parent, tearoff=0)
+        parent.add_cascade(label=text, menu=m)
+        return m
+
+    def menu_command(self, parent, text, handler):
+        '''Append command labeled ``text`` to menu ``parent``.
+
+        Handler: ``func() -> None``, is immediately connected.
+        '''
+        parent.add_command(label=text, command=handler)
+
     
 class NodelistVariable:
     '''
