@@ -338,13 +338,13 @@ class TreeModel(QAbstractItemModel):
 
     def setList(self, val):
         '''replace all current items by the new iterable ``val``.'''
-        self.layoutAboutToBeChanged.emit()
+        self.modelAboutToBeReset.emit()
         old_nl = self._nl
         if old_nl is not None:
             old_nl.set_listener(None)
         self._nl = ObsList(val, meta=old_nl._meta, toolkit_parent_id=QModelIndex())
         self._nl.set_listener(self)
-        self.layoutChanged.emit()
+        self.modelReset.emit()
 
     def columnCount(self, parent):
         return len(self._keys)
