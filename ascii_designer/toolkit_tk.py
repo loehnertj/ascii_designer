@@ -382,6 +382,14 @@ class ToolkitTk(ToolkitBase):
         s.variable = var
         return s
 
+    def _get_underline(self, text):
+        '''returns underline, text'''
+        if '&' in text:
+            idx = text.index('&')
+            return idx, text[:idx] + text[idx+1:]
+        else:
+            return None, text
+
     def menu_root(self, parent):
         '''Create menu object and set as parent's menu.'''
         m = tk.Menu(parent, tearoff=0)
@@ -391,7 +399,8 @@ class ToolkitTk(ToolkitBase):
     def menu_sub(self, parent, text):
         '''Append submenu labeled ``text`` to menu ``parent``.'''
         m = tk.Menu(parent, tearoff=0)
-        parent.add_cascade(label=text, menu=m)
+        underline, text = self._get_underline(text)
+        parent.add_cascade(label=text, menu=m, underline=underline)
         return m
 
     def menu_command(self, parent, text, handler):
@@ -399,7 +408,8 @@ class ToolkitTk(ToolkitBase):
 
         Handler: ``func() -> None``, is immediately connected.
         '''
-        parent.add_command(label=text, command=handler)
+        underline, text = self._get_underline(text)
+        parent.add_command(label=text, command=handler, underline=underline)
 
     
 class NodelistVariable:
