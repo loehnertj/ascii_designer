@@ -318,10 +318,10 @@ class MenuDemo(AutoFrame):
         '&File >', ['Open', '&Save', '&Quit'],
         '&Nested >', [
             'Submenu 1 >', [ 'Subitem 1 #C-S-I'],
-            'Item 2 #C-2',
+            'Item 2 #C-I',
             'Sub&menu 3 >', [],
         ],
-        'Help >', ['About']
+        'Help >', ['About #C-A']
     ]
     f_body = '''
     |

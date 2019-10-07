@@ -69,7 +69,7 @@ class ToolkitBase:
         ('command', r'''(?ix)\s*
                         (?P<id>[a-zA-Z0-9_]+\s*\:)?
                         (?P<text>[^#]+)
-                        (?P<shortcut>\#[a-zA-Z0-9-]+)?
+                        (?:\#(?P<shortcut>[a-zA-Z0-9-]+))?
                     ''', '"text :C-A-S-x"'),
     ]
     
@@ -224,4 +224,8 @@ class ToolkitBase:
         '''Append command labeled ``text`` to menu ``parent``.
 
         Handler: ``func() -> None``, is immediately connected.
+
+        ``shortcut`` follows the syntax ``(modifier)-(key)``,
+        where ``modifier`` is one or more of ``C``, ``S``, ``A`` for Ctrl,
+        Shift, Alt respectively.
         '''

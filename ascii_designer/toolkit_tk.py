@@ -409,7 +409,29 @@ class ToolkitTk(ToolkitBase):
         Handler: ``func() -> None``, is immediately connected.
         '''
         underline, text = self._get_underline(text)
-        parent.add_command(label=text, command=handler, underline=underline)
+        if shortcut:
+            # make Tk compatible
+            parts = shortcut.split('-')
+            binding = ''
+            shift = False
+            for p in parts[:-1]:
+                p = p.upper()
+                if p=='S':
+                    shift=True
+                    binding += 'Shift-'
+                elif p=='C':
+                    binding += 'Control-'
+                elif p=='A':
+                    binding += 'Alt-'
+            if shift:
+                binding += parts[-1].upper()
+            else:
+                binding += parts[-1].lower()
+            toplevel = parent
+            while isinstance(toplevel, tk.Menu):
+                toplevel = toplevel.master
+            toplevel.bind('<'+binding+'>', lambda _: handler())
+        parent.add_command(label=text, command=handler, underline=underline, accelerator=shortcut)
 
     
 class NodelistVariable:
