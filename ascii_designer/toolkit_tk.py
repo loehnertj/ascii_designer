@@ -396,14 +396,14 @@ class ToolkitTk(ToolkitBase):
         parent.config(menu=m)
         return m
 
-    def menu_sub(self, parent, text):
+    def menu_sub(self, parent, id, text):
         '''Append submenu labeled ``text`` to menu ``parent``.'''
         m = tk.Menu(parent, tearoff=0)
         underline, text = self._get_underline(text)
         parent.add_cascade(label=text, menu=m, underline=underline)
         return m
 
-    def menu_command(self, parent, text, handler):
+    def menu_command(self, parent, id, text, shortcut, handler):
         '''Append command labeled ``text`` to menu ``parent``.
 
         Handler: ``func() -> None``, is immediately connected.

@@ -2,6 +2,7 @@
 '''
 
 #import tkinter as tk
+import logging
 import sys
 import random
 import time
@@ -316,8 +317,8 @@ class MenuDemo(AutoFrame):
     f_menu = [
         '&File >', ['Open', '&Save', '&Quit'],
         '&Nested >', [
-            'Submenu 1 >', [ 'Subitem 1'],
-            'Item 2',
+            'Submenu 1 >', [ 'Subitem 1 #C-S-I'],
+            'Item 2 #C-2',
             'Sub&menu 3 >', [],
         ],
         'Help >', ['About']
@@ -346,6 +347,7 @@ class EmptyFrame(AutoFrame):
     
     
 if __name__ == '__main__':
+    logging.basicConfig(level='DEBUG')
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,

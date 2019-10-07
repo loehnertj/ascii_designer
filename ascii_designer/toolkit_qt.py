@@ -310,12 +310,12 @@ class ToolkitQt(ToolkitBase):
         '''Create menu object and set as parent's menu.'''
         return parent.menuBar()
 
-    def menu_sub(self, parent, text):
+    def menu_sub(self, parent, id, text):
         '''Append submenu labeled ``text`` to menu ``parent``.'''
         m = parent.addMenu(text)
         return m
 
-    def menu_command(self, parent, text, handler):
+    def menu_command(self, parent, id, text, shortcut, handler):
         '''Append command labeled ``text`` to menu ``parent``.
 
         Handler: ``func() -> None``, is immediately connected.

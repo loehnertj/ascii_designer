@@ -63,6 +63,15 @@ class ToolkitBase:
         ('button', r'\[%s\]'%_re_maybe_id_text, '"[Text]"'),
         ('label', r'(?P<id>)(?:\.)?(?P<text>.+?)$', '"Text" or ".Text"'),
         ]
+
+    menu_grammar = [
+        ('sub', r'%s>'%_re_maybe_id_text, '"text >"'),
+        ('command', r'''(?ix)\s*
+                        (?P<id>[a-zA-Z0-9_]+\s*\:)?
+                        (?P<text>[^#]+)
+                        (?P<shortcut>\#[a-zA-Z0-9-]+)?
+                    ''', '"text :C-A-S-x"'),
+    ]
     
     def __init__(self):
         self._last_label_id = ''
@@ -116,16 +125,22 @@ class ToolkitBase:
         menudef = menudef[:]
         while menudef:
             item = menudef.pop(0)
-            if item.endswith('>'):
-                text = item[:-1].strip()
-                L().debug('create submenu "%s"', text)
-                submenu = self.menu_sub(parent, text=text)
-                self.parse_menu(submenu, menudef.pop(0), handlers)
-            else:
-                text = item
-                funcname = auto_id('', text=text)
-                L().debug('create menu item "%s" --> %s()', text, funcname)
-                self.menu_command(parent, text=text, handler=getattr(handlers, funcname))
+            for name, regex, _ in self.menu_grammar:
+                m = re.match(regex, item)
+                if m:
+                    d = m.groupdict()
+                    d['id'] = auto_id(d['id'], d.get('text', ''))
+                    if 'text' in d:
+                        d['text'] = (d['text'] or '').strip()
+                    L().debug('Menuentry %r --> %s %r', item, name, d)
+                    if name == 'sub':
+                        submenu = self.menu_sub(parent, **d)
+                        self.parse_menu(submenu, menudef.pop(0), handlers)
+                    elif name == 'command':
+                        self.menu_command(parent, handler=getattr(handlers, d['id']), **d)
+                    else:
+                        raise ValueError(item)
+                    break
     
     def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''
@@ -203,9 +218,9 @@ class ToolkitBase:
 
     def menu_root(self, parent):
         '''Create menu object and set as parent's menu.'''
-    def menu_sub(self, parent, text):
+    def menu_sub(self, parent, id, text):
         '''Append submenu labeled ``text`` to menu ``parent``.'''
-    def menu_command(self, parent, text, handler):
+    def menu_command(self, parent, id, text, shortcut, handler):
         '''Append command labeled ``text`` to menu ``parent``.
 
         Handler: ``func() -> None``, is immediately connected.
