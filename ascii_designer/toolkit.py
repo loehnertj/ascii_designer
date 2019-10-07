@@ -110,6 +110,22 @@ class ToolkitBase:
                     #raise ValueError('This toolkit does not support %s widget type.'%name)
                 return d['id'], widget
         raise ValueError('Could not convert widget: %r'%(text,))
+
+    def parse_menu(self, parent, menudef, handlers):
+        '''Parse menu definition list and attach to the handlers'''
+        menudef = menudef[:]
+        while menudef:
+            item = menudef.pop(0)
+            if item.endswith('>'):
+                text = item[:-1].strip()
+                L().debug('create submenu "%s"', text)
+                submenu = self.menu_sub(parent, text=text)
+                self.parse_menu(submenu, menudef.pop(0), handlers)
+            else:
+                text = item
+                funcname = auto_id('', text=text)
+                L().debug('create menu item "%s" --> %s()', text, funcname)
+                self.menu_command(parent, text=text, handler=getattr(handlers, funcname))
     
     def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''

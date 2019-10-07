@@ -1,7 +1,7 @@
 import logging
 
 from .ascii_slice import slice_grid, merged_cells
-from .toolkit import get_toolkit, auto_id
+from .toolkit import get_toolkit
 
 __all__ = [
     'AutoFrame',
@@ -95,22 +95,8 @@ class AutoFrame:
             return
         toolkit = self.f_toolkit
 
-        def _build_recurse(parent, menudef):
-            menudef = menudef[:]
-            while menudef:
-                item = menudef.pop(0)
-                if item.endswith('>'):
-                    text = item[:-1].strip()
-                    L().debug('create submenu "%s"', text)
-                    submenu = toolkit.menu_sub(parent, text=text)
-                    _build_recurse(submenu, menudef.pop(0))
-                else:
-                    text = item
-                    funcname = auto_id('', text=text)
-                    L().debug('create menu item "%s" --> %s()', text, funcname)
-                    toolkit.menu_command(parent, text=text, handler=getattr(self, funcname))
         mroot = toolkit.menu_root(parent)
-        _build_recurse(mroot, menudef)
+        toolkit.parse_menu(mroot, menudef, self)
 
     def f_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
         if not sliced_grid:
