@@ -423,10 +423,15 @@ class ToolkitTk(ToolkitBase):
                     binding += 'Control-'
                 elif p=='A':
                     binding += 'Alt-'
-            if shift:
-                binding += parts[-1].upper()
+            cmd = parts[-1]
+            if len(cmd) > 1:
+                # do not touch key name
+                binding += cmd
+            # single letter, look at shift
+            elif shift:
+                binding += cmd.upper()
             else:
-                binding += parts[-1].lower()
+                binding += cmd.lower()
             toplevel = parent
             while isinstance(toplevel, tk.Menu):
                 toplevel = toplevel.master

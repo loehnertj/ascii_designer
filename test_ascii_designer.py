@@ -315,13 +315,13 @@ class TreeDemo(AutoFrame):
 
 class MenuDemo(AutoFrame):
     f_menu = [
-        '&File >', ['Open', '&Save', '&Quit'],
+        '&File >', ['Open', '&Save #', '&Quit'],
         '&Nested >', [
             'Submenu 1 >', [ 'Subitem 1 #C-S-I'],
             'Item 2 #C-I',
             'Sub&menu 3 >', [],
         ],
-        'Help >', ['About #C-A']
+        'Help >', ['About #F1']
     ]
     f_body = '''
     |

@@ -69,9 +69,21 @@ class ToolkitBase:
         ('command', r'''(?ix)\s*
                         (?P<id>[a-zA-Z0-9_]+\s*\:)?
                         (?P<text>[^#]+)
-                        (?:\#(?P<shortcut>[a-zA-Z0-9-]+))?
+                        (?:\#(?P<shortcut>[a-zA-Z0-9-]*))?
                     ''', '"text :C-A-S-x"'),
     ]
+
+    default_shortcuts = {
+        'new': 'C-N',
+        'open': 'C-O',
+        'save': 'C-S',
+        'undo': 'C-Z',
+        'redo': 'C-S-Z',
+        'cut': 'C-X',
+        'copy': 'C-C',
+        'paste': 'C-P',
+        'find': 'C-F',
+    }
     
     def __init__(self):
         self._last_label_id = ''
@@ -137,6 +149,8 @@ class ToolkitBase:
                         submenu = self.menu_sub(parent, **d)
                         self.parse_menu(submenu, menudef.pop(0), handlers)
                     elif name == 'command':
+                        if d['shortcut'] is None and d['id'] in self.default_shortcuts:
+                            d['shortcut'] = self.default_shortcuts[d['id']]
                         self.menu_command(parent, handler=getattr(handlers, d['id']), **d)
                     else:
                         raise ValueError(item)
