@@ -10,7 +10,7 @@ ASCII Designer
 Changelog
 ---------
 
-v0.3.0: menus added
+v0.3.0: menus added (TBD: accelerators for Qt menus)
     fix Qt List crash
 v0.2.0: rework of the list model
 
