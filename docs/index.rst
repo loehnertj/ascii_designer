@@ -7,6 +7,13 @@ ASCII Designer
    manual
    api
 
+Changelog
+---------
+
+v0.3.0: menus added
+    fix Qt List crash
+v0.2.0: rework of the list model
+
 Developers
 ----------
 
