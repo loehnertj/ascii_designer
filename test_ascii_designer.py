@@ -61,7 +61,7 @@ class Main(AutoFrame):
 
 class AutoconnectDemo(AutoFrame):
     f_body = '''
-                       |      <->                                        ~
+                       |      <->
         Label:          This is a label
         Button:         [ Press me ]
         
@@ -71,6 +71,8 @@ class AutoconnectDemo(AutoFrame):
         Combo:          [ Color_ (Red,Green,Blue) v]
         Option:         ( ) Option A
                         (x) Option B
+                        - checkbox below should be centered,
+                        - longest line in the layout:
         Checkbox:       [x] agree:I agree to the terms and conditions.
         Slider:         [ slider: 0 -+- 100 ]
         '''
@@ -151,7 +153,7 @@ class AlignmentDemo(AutoFrame):
     '''
     f_body = '''
     |              |     <->          |   <-->         |
-    [ fixed col   ] [  stretch 1x    ] [stretch 2x    ]
+     [fixed col   ] [  stretch 1x    ] [stretch 2x    ]
                     [ colspan stretch 3x              ]
     I               [ stretch h+v __ ]|[left]          |
     I               {[left, v 2x __ ] |  [center]      |

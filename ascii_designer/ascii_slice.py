@@ -81,13 +81,18 @@ def slice_grid(grid_text):
         lines = [' '+line for line in lines]
         
     widths = [len(part)+1 for part in column_heads]
+    # if any line is longer than the header, adjust width of last column.
+    maxlen = max((len(line) for line in lines), default=0)
+    widths[-1] = max(widths[-1], maxlen-sum(widths[:-1]))
+
     body_lines = []
     for line in lines:
         body_line = []
-        for w in widths[:-1]:
+        for w in widths[:]:
             cell, line = line[:w], line[w:]
+            if len(cell) < w:
+                cell = cell + ' '*(w-len(cell))
             body_line.append(cell)
-        body_line.append(line)
         body_lines.append(body_line)
     return SlicedGrid(column_heads=column_heads, body_lines=body_lines)
 
