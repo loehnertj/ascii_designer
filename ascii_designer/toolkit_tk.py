@@ -94,6 +94,15 @@ def _aa2xbm(txt, marker='#'):
     enc_data = ','.join(enc_data)
     xbm = template%(width, height, enc_data)
     return(xbm)
+
+def _unique(parent, id):
+    try:
+        parent.nametowidget(id)
+    except KeyError:
+        return id
+    else:
+        # id exists
+        return ''
     
 _master_window = None
 def start_mainloop_if_necessary(widget):
@@ -242,6 +251,7 @@ class ToolkitTk(ToolkitBase):
         widget.grid(sticky=sticky)
         
     def box(self, parent, id=None, text='', given_id=''):
+        id = _unique(parent, id)
         if given_id and text:
             f = tk.LabelFrame(parent, name=id, text=text)
             inner = tk.Frame(f)
@@ -252,6 +262,7 @@ class ToolkitTk(ToolkitBase):
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
+        id = _unique(parent, id)
         var = tk.StringVar(parent, text)
         l = tk.Label(parent, name=id, textvariable=var)
         l.variable = var
@@ -259,6 +270,7 @@ class ToolkitTk(ToolkitBase):
         
     def button(self, parent, id=None, text=''):
         '''button'''
+        id = _unique(parent, id)
         var = tk.StringVar(parent, text)
         b = tk.Button(parent, name=id, textvariable = var)
         b.variable = var
@@ -266,12 +278,14 @@ class ToolkitTk(ToolkitBase):
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
+        id = _unique(parent, id)
         var = tk.StringVar(parent, text)
         e = tk.Entry(parent, name=id, textvariable=var)
         e.variable = var
         return e
     
     def multiline(self, parent, id=None, text=''):
+        id = _unique(parent, id)
         t = ScrolledText(parent, name=id, height=3)
         t.insert('end', text)
         return t
@@ -290,6 +304,7 @@ class ToolkitTk(ToolkitBase):
             columns = [txt.strip() for txt in columns.split(',')]
         else:
             columns = []
+        id = _unique(parent, id)
         keys = [name.lower() for name in columns]
         has_first_column = bool(text)
         if has_first_column:
@@ -334,6 +349,7 @@ class ToolkitTk(ToolkitBase):
     
     def _dropdown(self, parent, id=None, text='', values=None, editable=False):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
+        id = _unique(parent, id)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         var = tk.StringVar(parent, text)
         cbo = ttk.Combobox(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
@@ -347,7 +363,7 @@ class ToolkitTk(ToolkitBase):
         rb = tk.Radiobutton(parent,
                   text=text,
                   variable=self._radiobutton_var, 
-                  name=id,
+                  name=_unique(parent, id),
                   value=id,
         )
         if checked.strip():
@@ -358,6 +374,7 @@ class ToolkitTk(ToolkitBase):
     
     def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
+        id = _unique(parent, id)
         var = tk.BooleanVar(parent, bool(checked.strip()))
         cb = tk.Checkbutton(
             parent,
@@ -370,6 +387,7 @@ class ToolkitTk(ToolkitBase):
     
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
+        id = _unique(parent, id)
         var = tk.IntVar(parent, min)
         s = tk.Scale(
             parent,

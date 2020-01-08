@@ -75,6 +75,8 @@ class AutoconnectDemo(AutoFrame):
                         - longest line in the layout:
         Checkbox:       [x] agree:I agree to the terms and conditions.
         Slider:         [ slider: 0 -+- 100 ]
+                        this appears twice
+                        this appears twice
         '''
         
     def close(self):
