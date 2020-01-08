@@ -198,6 +198,8 @@ class ObsList(MutableSequence):
         '''Retrieves the childlist of item at given idx.
         '''
         source = self._meta.children_source
+        if not source:
+            return
         item = self._nodes[idx]
         childlist = self._meta.retrieve(item, source)
         childlist = ObsList(childlist, toolkit_parent_id=self.toolkit_ids[idx])
