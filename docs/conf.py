@@ -21,10 +21,12 @@ up = os.path.dirname
 sys.path.insert(0, os.path.abspath(up(up(__file__))))
 
 # Mock out PyQt4 for toolkit_qt.py.
-class FakeModule: pass
-qt = sys.modules['PyQt4'] = FakeModule()
-qc = sys.modules['PyQt4.QtCore'] = FakeModule()
-qg = sys.modules['PyQt4.QtGui'] = FakeModule()
+class DeepFakeModule:
+    def __getattr__(self, key):
+        return DeepFakeModule()
+qt = sys.modules['PyQt4'] = DeepFakeModule()
+qc = sys.modules['PyQt4.QtCore'] = DeepFakeModule()
+qg = sys.modules['PyQt4.QtGui'] = DeepFakeModule()
 qt.QtCore = qc
 qt.QtGui = qg
 qc.Qt = None

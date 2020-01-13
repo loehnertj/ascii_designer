@@ -83,11 +83,12 @@ class AutoFrame:
         which is itself a list (the submenu content).
         
         Example:
-        >>> menu = [
-                'File >', ['Open', 'Save', 'Quit'],
-                'Help >', ['About'],
-            ]
-        >>> autoframe.f_build_menu(autoframe.f_controls(''), menu)
+
+            >>> menu = [
+                    'File >', ['Open', 'Save', 'Quit'],
+                    'Help >', ['About'],
+                ]
+            >>> autoframe.f_build_menu(autoframe.f_controls(''), menu)
         '''
 
         menudef = menu or self.f_menu
