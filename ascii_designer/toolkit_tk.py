@@ -256,6 +256,8 @@ class ToolkitTk(ToolkitBase):
             f = tk.LabelFrame(parent, name=id, text=text)
             inner = tk.Frame(f)
             inner.grid(row=0, column=0, sticky='nsew')
+            f.grid_rowconfigure(0, weight=1)
+            f.grid_columnconfigure(0, weight=1)
         else:
             f = tk.Frame(parent, name=id)
         return f
