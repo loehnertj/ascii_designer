@@ -29,6 +29,23 @@ def _make_focusout(func):
     return _pte_focusOutEvent
 
 class ToolkitQt(ToolkitBase):
+    default_shortcuts = {
+        'new': qg.QKeySequence.New,
+        'open': qg.QKeySequence.Open,
+        'save': qg.QKeySequence.Save,
+        'undo': qg.QKeySequence.Undo,
+        'redo': qg.QKeySequence.Redo,
+        'cut': qg.QKeySequence.Cut,
+        'copy': qg.QKeySequence.Copy,
+        'paste': qg.QKeySequence.Paste,
+        'find': qg.QKeySequence.Find,
+        'refresh': qg.QKeySequence.Refresh,
+        # these are in addition to the Toolkit.default_shortcuts
+        'save_as': qg.QKeySequence.SaveAs,
+        'delete': qg.QKeySequence.Delete,
+        'preferences': qg.QKeySequence.Preferences,
+        'quit': qg.QKeySequence.Quit,
+    }
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -321,6 +338,17 @@ class ToolkitQt(ToolkitBase):
         Handler: ``func() -> None``, is immediately connected.
         '''
         action = qg.QAction(text, parent)
+        if shortcut:
+            if isinstance(shortcut, str):
+                # parse shortcut
+                shortcut = (shortcut
+                    .upper()
+                    .replace('C-', 'Ctrl+')
+                    .replace('S-', 'Shift+')
+                    .replace('A-', 'Alt+')
+                )
+                shortcut = qg.QKeySequence(shortcut)
+            action.setShortcut(shortcut)
         action.triggered.connect(handler)
         parent.addAction(action)
     

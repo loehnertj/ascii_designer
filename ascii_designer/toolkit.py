@@ -83,6 +83,7 @@ class ToolkitBase:
         'copy': 'C-C',
         'paste': 'C-P',
         'find': 'C-F',
+        'refresh': 'F5',
     }
     
     def __init__(self):

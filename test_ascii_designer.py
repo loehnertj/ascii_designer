@@ -319,8 +319,10 @@ class TreeDemo(AutoFrame):
 
 class MenuDemo(AutoFrame):
     f_menu = [
+        # For "Save" entry, explicitly set (no) shortcut
         '&File >', ['Open', '&Save #', '&Quit'],
         '&Nested >', [
+            # Subitem 1 and Item 2 to test correct discrimination of Shift key
             'Submenu 1 >', [ 'Subitem 1 #C-S-I'],
             'Item 2 #C-I',
             'Sub&menu 3 >', [],
