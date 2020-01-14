@@ -45,6 +45,21 @@ class Parent:
     ('lbl:. abc ', {'':'label', 'id': 'lbl', 'text': '. abc'}),
     # dot before makes it all label text
     ('.lbl: abc ', {'':'label', 'id': 'label_lbl_abc', 'text': 'lbl: abc'}),
+    ('<Test>', {'': 'box', 'id': 'test', 'text': 'Test', 'given_id': None}),
+    ('<test:Test>', {'': 'box', 'id': 'test', 'text': 'Test', 'given_id': 'test'}),
+    ('( ) Test', {'': 'option', 'id': 'test', 'text': 'Test', 'checked': ' '}),
+    ('(x) Test', {'': 'option', 'id': 'test', 'text': 'Test', 'checked': 'x'}),
+    ('[ ] Test', {'': 'checkbox', 'id': 'test', 'text': 'Test', 'checked': ' '}),
+    ('[x] Test', {'': 'checkbox', 'id': 'test', 'text': 'Test', 'checked': 'x'}),
+    ('[sl: 1 -+- 22]', {'': 'slider', 'id': 'sl', 'min': '1', 'max': '22'}),
+    ('[Test__]', {'': 'multiline', 'id': 'test', 'text': 'Test'}),
+    ('[Test_]', {'': 'textbox', 'id': 'test', 'text': 'Test'}),
+    ('[Test_ v]', {'': 'combo', 'id': 'test', 'text': 'Test', 'values': None}),
+    ('[Test v]', {'': 'dropdown', 'id': 'test', 'text': 'Test', 'values':None}),
+    ('[Test (a, b, c) v]', {'': 'dropdown', 'id': 'test', 'text': 'Test', 'values':'a, b, c'}),
+    ('[= Test]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':None}),
+    ('[= Test (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':'a, b, c'}),
+    ('[= test: (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': '', 'columns':'a, b, c'}),
     ('[Test]', {'': 'button', 'id': 'test', 'text': 'Test'}),
 ]
 )
