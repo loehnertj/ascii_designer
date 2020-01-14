@@ -8,10 +8,6 @@ import random
 import time
 from ascii_designer import AutoFrame, set_toolkit
 
-TK = 'tk'
-if sys.argv[1:]:
-    TK = sys.argv[1]
-set_toolkit(TK)
 
 
 # Idea for later
@@ -354,6 +350,10 @@ class EmptyFrame(AutoFrame):
     
 if __name__ == '__main__':
     logging.basicConfig(level='DEBUG')
+    TK = 'tk'
+    if sys.argv[1:]:
+        TK = sys.argv[1]
+    set_toolkit(TK)
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,
