@@ -61,7 +61,17 @@ class ToolkitBase:
         ('combo',r'\[%s_\s*(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text_ v]" or "[Text_ (val1, val2, ...) v]'),
         ('dropdown',r'\[%s(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text v]" or "[Text (val1, val2, ...) v]'),
         ('button', r'\[%s\]'%_re_maybe_id_text, '"[Text]"'),
-        ('label', r'(?P<id>)(?:\.)?(?P<text>.+?)$', '"Text" or ".Text"'),
+        (
+            'label', 
+            r'''(?x)
+                (?:                                 # Optional prefix:
+                    \s*(?P<id>[a-zA-Z0-9_]+)\s*:    # Identifier followed by :
+                    | \.                            # OR single .
+                )?
+                (?P<text>.*?)$                      # Any text up to end of string
+                ''',
+            '"Text" or ".Text"'
+         ),
         ]
 
     menu_grammar = [
@@ -113,14 +123,14 @@ class ToolkitBase:
             m = re.match(regex, mangled_text)
             if m:
                 d = m.groupdict()
-                # special treatment for box
-                if name == 'box':
+                # special treatment for box and label
+                if name in ('box', 'label'):
                     d['given_id'] = d['id']
                 d['id'] = auto_id(d['id'], d.get('text', ''), self._last_label_id)
                 # Special treatment for label
                 if name == 'label':
                     self._last_label_id = d['id']
-                    d['id'] = 'label_'+d['id']
+                    d['id'] = d.pop('given_id', '') or 'label_'+d['id']
                 else:
                     self._last_label_id = ''
                 if 'text' in d:
