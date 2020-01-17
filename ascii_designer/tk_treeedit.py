@@ -31,12 +31,13 @@ submitted on close, except if Escape key is used.
 
 **Events**:
 
- * TODO
+ * ``<<CellEdit>>`` when editor is opened
+ * ``<<CellModified>>`` when editor is closed
 
-# Emit events for:
-# Value changed
-# (more as needed)
+To find the cell that is being edited, look at the ``.edit_cell`` and ``.modified_cell`` properties.
 
+
+# TODO:
 # insert-row, insert-child, delete-row function
 '''
 
@@ -49,6 +50,7 @@ class TreeEdit(Treeview):
         self._editvar = tk.StringVar(self, '')
         self._editbox = tk.Entry(self, textvariable=self._editvar)
         self._edit_cell = None
+        self._modified_cell = None
         self._editable = {}
         self._all_columns = ['#0'] + list(kwargs.get('columns', []))
         for name in self._all_columns:
@@ -71,6 +73,30 @@ class TreeEdit(Treeview):
         self._editbox.bind('<Shift-Return>', lambda ev: self._advance('down'))
         self._editbox.bind('<Down>', lambda ev: self._advance('down'))
         self._editbox.bind('<Up>', lambda ev: self._advance('up'))
+
+    @property
+    def edit_cell(self):
+        '''Returns the currently-edited cell. Tuple (item id, column name).
+
+        Use this to get at the edited item when processing
+        ``<<CellEdit>>``. Unfortunately we cannot pass data with
+        a tkinter event.
+
+        If no edit is in progress, value is None.
+        '''
+        return self._edit_cell
+
+    @property
+    def modified_cell(self):
+        '''Returns the last-modified cell. Tuple (item id, column name).
+
+        Use this to get at the edited item when processing
+        ``<<CellModified>>``. Unfortunately we cannot pass data with
+        a tkinter event.
+
+        If no edit was done, value is None.
+        '''
+        return self._modified_cell
 
     def editable(self, column, editable=None):
         '''Query or specify whether the column is editable.
@@ -106,6 +132,7 @@ class TreeEdit(Treeview):
         self._edit_cell = (iid, column)
         self._editbox.selection_range(0, 'end')
         self._editbox.focus_set()
+        self.event_generate('<<CellEdit>>')
 
     def _close_edit_refocus(self, ev=None, cancel=False):
         self.close_edit(ev, cancel)
@@ -118,8 +145,9 @@ class TreeEdit(Treeview):
                 self.item(iid, text=self._editvar.get())
             else:
                 self.set(iid, column, self._editvar.get())
+            self._modified_cell = (iid, column)
             self._edit_cell = None
-            # TODO send event
+            self.event_generate( '<<CellModified>>')
         self._editbox.place_forget()
     
     def _dblclick(self, ev):
@@ -196,6 +224,13 @@ def main():
     style.configure("Treeview", rowheight=30)
     te = TreeEdit(tl, columns=['col1', 'col2', 'col3'])
     te.pack(fill='both', expand=True)
+
+    def print_begin(event):
+        print('Edit: ', te.edit_cell)
+    def print_change(event):
+        print('Modified: ', te.modified_cell)
+    te.bind('<<CellEdit>>', print_begin)
+    te.bind('<<CellModified>>', print_change)
 
     te.editable('#0', True)
     te.editable('col1', True)
