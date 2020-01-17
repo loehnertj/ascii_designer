@@ -18,12 +18,14 @@ def _convert_title(classname):
 
 class AutoFrame:
     '''
-    class name is converted to title. Override with f_title.
+    Automatic frame.
+
+    class name is converted to title. Override with ``f_title``.
     
-    Body definition with f_body.
+    Body definition with ``f_body``, menu definition with ``f_menu``.
     
     To create own widgets or customize the autocreated ones, override :any:`f_build`.
-    
+
     Get at the created controls using AutoFrame[key].
     
     close(), exit(), quit() provided for convenience.
