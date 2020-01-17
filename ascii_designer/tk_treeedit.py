@@ -36,16 +36,26 @@ submitted on close, except if Escape key is used.
 
 To find the cell that is being edited, look at the ``.edit_cell`` and ``.modified_cell`` properties.
 
+Two properties control whether items can be inserted and deleted. They can
+either be True or a callback that takes a single argument. The argument is
+the ID of the inserted item.
+ 
+ * ``on_new_item``: bool or a function that inserts a new item. If truthy,
+   "add" and "remove" buttons are shown. The same functions are bound to
+   Ctrl-Plus and Ctrl-Minus.
+ * ``on_new_child``: bool or a function that inserts a new child item. If truthy,
+   "add-child" button is shown. The same function is bound to
+   Ctrl-asterisk.
 
 # TODO:
-# insert-row, insert-child, delete-row function
+# reorder
 '''
 
 import tkinter as tk
 from tkinter.ttk import Treeview
 
 class TreeEdit(Treeview):
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, on_new_item=None, on_new_child=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._editvar = tk.StringVar(self, '')
         self._editbox = tk.Entry(self, textvariable=self._editvar)
@@ -60,7 +70,11 @@ class TreeEdit(Treeview):
         # Scroll wheel
         self.bind('<4>', self._close_edit_refocus)
         self.bind('<5>', self._close_edit_refocus)
-        self.bind('<Configure>', self.close_edit)
+        self.bind('<Configure>', self._on_configure)
+        self.bind('<Control-plus>', self._ins_item)
+        self.bind('<Control-asterisk>', lambda ev: self._ins_item(child=True))
+        self.bind('<Control-minus>', self._delitem)
+        self.bind('<Delete>', self._delitem)
 
         self._editbox.bind('<FocusOut>', self.close_edit)
         self._editbox.bind('<Return>', self._close_edit_refocus)
@@ -73,6 +87,15 @@ class TreeEdit(Treeview):
         self._editbox.bind('<Shift-Return>', lambda ev: self._advance('down'))
         self._editbox.bind('<Down>', lambda ev: self._advance('down'))
         self._editbox.bind('<Up>', lambda ev: self._advance('up'))
+
+        self._editbox.bind('<Control-plus>', self._ins_item)
+        self._editbox.bind('<Control-asterisk>', lambda ev: self._ins_item(child=True))
+        self._editbox.bind('<Control-minus>', self._delitem)
+
+        self._on_new_item = on_new_item
+        self._on_new_child = on_new_child
+
+        self._update_controls()
 
     @property
     def edit_cell(self):
@@ -97,6 +120,23 @@ class TreeEdit(Treeview):
         If no edit was done, value is None.
         '''
         return self._modified_cell
+
+    @property
+    def on_new_item(self):
+        return self._on_new_item
+    @on_new_item.setter
+    def on_new_item(self, val):
+        self._on_new_item = val
+        self._update_controls()
+    
+    @property
+    def on_new_child(self):
+        return self._on_new_child
+    @on_new_child.setter
+    def on_new_child(self, val):
+        self._on_new_child = val
+        self._update_controls()
+    
 
     def editable(self, column, editable=None):
         '''Query or specify whether the column is editable.
@@ -146,8 +186,8 @@ class TreeEdit(Treeview):
             else:
                 self.set(iid, column, self._editvar.get())
             self._modified_cell = (iid, column)
-            self._edit_cell = None
             self.event_generate( '<<CellModified>>')
+        self._edit_cell = None
         self._editbox.place_forget()
     
     def _dblclick(self, ev):
@@ -213,6 +253,45 @@ class TreeEdit(Treeview):
         # to disable default behaviour
         return 'break'
 
+    def _on_configure(self, ev):
+        self.close_edit()
+        if self._controls:
+            self._controls.place(relx=1, rely=1, anchor='se')
+
+    def _update_controls(self):
+        on_new_item = self._on_new_item
+        on_new_child = self._on_new_child
+        if on_new_item or on_new_child:
+            ctls = self._controls = tk.Frame(self)
+            if on_new_item:
+                addbtn = tk.Button(ctls, text=' + ', command=lambda:self._ins_item())
+                addbtn.pack(side='left')
+            if on_new_child:
+                addcbtn = tk.Button(ctls, text='+>', command=lambda:self._ins_item(child=True))
+                addcbtn.pack(side='left')
+            delbtn = tk.Button(ctls, text=' X ', command=self._delitem)
+            delbtn.pack(side='left')
+        else:
+            self._controls = None
+
+    def _ins_item(self, ev=None, child=False):
+        callback = self._on_new_child if child else self._on_new_item
+        if not callback:
+            return
+        f = self.focus()
+        self.close_edit()
+        new_iid = self.insert(f if child else self.parent(f), self.index(f)+1)
+        if callable(callback):
+            callback(new_iid)
+        elif child and callable(self._on_new_item):
+            self._on_new_item(new_iid)
+        self.focus(new_iid)
+        self._begin_edit_row(None)
+
+    def _delitem(self, ev=None):
+        self.close_edit(cancel=True)
+        self.delete(self.focus())
+
 def main():
     import tkinter as tk
     from tkinter import ttk
@@ -222,13 +301,21 @@ def main():
     style.configure(".", font= font.Font(family='Helvetica'))
     style.configure("Treeview.Heading", font=('Helvetica', 10, 'bold'))
     style.configure("Treeview", rowheight=30)
+
+    def ins_item(iid):
+        print('inserted: ', iid)
+
     te = TreeEdit(tl, columns=['col1', 'col2', 'col3'])
     te.pack(fill='both', expand=True)
+
+    te.on_new_item = ins_item
+    #te.on_new_child = True
 
     def print_begin(event):
         print('Edit: ', te.edit_cell)
     def print_change(event):
         print('Modified: ', te.modified_cell)
+
     te.bind('<<CellEdit>>', print_begin)
     te.bind('<<CellModified>>', print_change)
 
