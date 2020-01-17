@@ -47,6 +47,7 @@ properties to "bind" the event.
 
 # TODO:
 # reorder
+# copy/paste
 '''
 
 import tkinter as tk
