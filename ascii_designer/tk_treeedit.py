@@ -5,6 +5,15 @@ For basic information, see official Tkinter (``ttk``) docs.
 The following additional functionality is provided:
 
  * Mark column as editable using :any:`Treeedit.editable`.
+ * allow= parameter to specify legal structural operations.
+
+``allow`` is a list of strings or a comma-separated string. It can contain any of:
+
+ * ``add`` to allow adding new items (anywhere)
+ * ``addchild`` to allow insertion of child items
+ * ``remove`` to allow deletion of items.
+
+For each allowance, the corresponding control is shown, and the keybinding is activated.
 
 The following bindings / behaviors are built-in. Generally, value is
 submitted on close, except if Escape key is used.
@@ -15,8 +24,8 @@ submitted on close, except if Escape key is used.
  * Scroll:        Take focus (close edit)
  * Resize:        close edit box
  * F2:            open first edit of row
- * Ctrl+plus:     insert item (if enabled, see below)
- * Ctrl+asterisk: insert child (if enabled)
+ * Ctrl+plus:     add item (if enabled, see below)
+ * Ctrl+asterisk: add child (if enabled)
  * Ctrl+minus:    remove item (if enabled)
 
 **Edit box**:
@@ -32,18 +41,16 @@ submitted on close, except if Escape key is used.
  * Left arrow:    like Tab but backwards
  * Up arrow:      Close + edit same col in prev row
 
-**Callbacks**:
+**Events**:
 
-These are properties of the TreeeEdit control. Set the corresponding
-properties to "bind" the event.
+These are properties of the TreeeEdit control. 
+Use ``treeedit.<property> += handler``to bind a handler, ``-=`` to unbind it.
 
  * ``.on_cell_edit(iid, columnname)`` when editor is opened
  * ``.on_cell_modified(iid, columname)`` when editor is closed
- * ``on_new_item(iid)``: after item is inserted. To enable insertion without
-   setting callback, just set to True.
- * ``on_new_child(iid)``: after child is inserted. To enable insertion without
-   setting callback, just set to True.
- * ``on_del_item(iid)``: before child is deleted
+ * ``on_add(iid)``: after item is inserted.
+ * ``on_add_child(iid)``: after child is inserted.
+ * ``on_remove(iid)``: before child is deleted
 
 # TODO:
 # reorder
@@ -52,6 +59,8 @@ properties to "bind" the event.
 
 import tkinter as tk
 from tkinter.ttk import Treeview
+
+from .event import EventSource
 
 class TreeEdit(Treeview):
     '''see module docs'''
@@ -91,30 +100,25 @@ class TreeEdit(Treeview):
         self._editbox.bind('<Control-asterisk>', lambda ev: self._ins_item(child=True))
         self._editbox.bind('<Control-minus>', self._delitem)
 
-        self._on_new_item = on_new_item
-        self._on_new_child = on_new_child
-        self.on_del_item = lambda iid: None
-        self.on_cell_edit = lambda iid, column: None
-        self.on_cell_modified = lambda iid, column: None
-
-        self._update_controls()
+        self.on_add = EventSource()
+        self.on_add_child = EventSource()
+        self.on_remove = EventSource()
+        self.on_cell_edit = EventSource()
+        self.on_cell_modified = EventSource()
+        self.allow = allow
 
     @property
-    def on_new_item(self):
-        return self._on_new_item
-    @on_new_item.setter
-    def on_new_item(self, val):
-        self._on_new_item = val
+    def allow(self):
+        return self._allow[:]
+    @allow.setter
+    def allow(self, allow):
+        allow = allow or []
+        if isinstance(allow, str):
+            allow = allow.split(',')
+        allow = [item.strip() for item in allow]
+        self._allow = allow
         self._update_controls()
     
-    @property
-    def on_new_child(self):
-        return self._on_new_child
-    @on_new_child.setter
-    def on_new_child(self, val):
-        self._on_new_child = val
-        self._update_controls()
-
     def editable(self, column, editable=None):
         '''Query or specify whether the column is editable.
 
@@ -235,40 +239,41 @@ class TreeEdit(Treeview):
             self._controls.place(relx=1, rely=1, anchor='se')
 
     def _update_controls(self):
-        on_new_item = self._on_new_item
-        on_new_child = self._on_new_child
-        if on_new_item or on_new_child:
+        allow = self._allow
+        if allow:
             ctls = self._controls = tk.Frame(self)
-            if on_new_item:
+            if 'add' in allow:
                 addbtn = tk.Button(ctls, text=' + ', command=lambda:self._ins_item())
                 addbtn.pack(side='left')
-            if on_new_child:
+            if 'addchild' in allow:
                 addcbtn = tk.Button(ctls, text='+>', command=lambda:self._ins_item(child=True))
                 addcbtn.pack(side='left')
-            delbtn = tk.Button(ctls, text=' X ', command=self._delitem)
-            delbtn.pack(side='left')
+            if 'remove' in allow:
+                delbtn = tk.Button(ctls, text=' X ', command=self._delitem)
+                delbtn.pack(side='left')
         else:
             self._controls = None
 
     def _ins_item(self, ev=None, child=False):
-        callback = self._on_new_child if child else self._on_new_item
-        if not callback:
+        if ('addchild' if child else 'add') not in self._allow:
             return
         f = self.focus()
         self.close_edit()
         new_iid = self.insert(f if child else self.parent(f), self.index(f)+1)
-        if callable(callback):
-            callback(new_iid)
-        elif child and callable(self._on_new_item):
-            self._on_new_item(new_iid)
+        if child:
+            self.on_add_child(new_iid)
+        else:
+            self.on_add(new_iid)
         self.focus(new_iid)
         self._begin_edit_row(None)
 
     def _delitem(self, ev=None):
+        if 'remove' not in self._allow:
+            return
         self.close_edit(cancel=True)
         iid = self.focus()
         if iid:
-            self.on_del_item(iid)
+            self.on_remove(iid)
             self.delete(iid)
 
 def main():
@@ -276,25 +281,28 @@ def main():
     from tkinter import ttk
     from tkinter import font
     tl = tk.Tk()
+    tl.grid_rowconfigure(0, weight=1)
+    tl.grid_columnconfigure(0, weight=1)
     style = ttk.Style()
     style.configure(".", font= font.Font(family='Helvetica'))
     style.configure("Treeview.Heading", font=('Helvetica', 10, 'bold'))
     style.configure("Treeview", rowheight=30)
 
     te = TreeEdit(tl, columns=['col1', 'col2', 'col3'])
-    te.pack(fill='both', expand=True)
+    #te.pack(fill='both', expand=True)
+    te.grid(row=0, column=0, sticky='nsew')
+    te.allow = 'add,remove,addchild'
 
-    te.on_new_item = lambda iid: print('inserted', iid)
-    #te.on_new_child = True
-    te.on_del_item = lambda iid: print('del', iid)
+    te.on_add += lambda iid: print('inserted', iid)
+    te.on_remove += lambda iid: print('del', iid)
 
     def print_begin(iid, column):
         print('Edit: ', iid, column)
     def print_change(iid, column):
         print('Modified: ', iid, column)
 
-    te.on_cell_edit = print_begin
-    te.on_cell_modified = print_change
+    te.on_cell_edit += print_begin
+    te.on_cell_modified += print_change
 
     te.editable('#0', True)
     te.editable('col1', True)
