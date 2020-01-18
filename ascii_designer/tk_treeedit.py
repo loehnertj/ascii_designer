@@ -54,8 +54,9 @@ import tkinter as tk
 from tkinter.ttk import Treeview
 
 class TreeEdit(Treeview):
-    def __init__(self, master, on_new_item=None, on_new_child=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    '''see module docs'''
+    def __init__(self, master, allow=None, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
         self._editvar = tk.StringVar(self, '')
         self._editbox = tk.Entry(self, textvariable=self._editvar)
         self._edit_cell = None
