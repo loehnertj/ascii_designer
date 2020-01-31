@@ -65,7 +65,7 @@ class ToolkitBase:
             'label', 
             r'''(?x)
                 (?:                                 # Optional prefix:
-                    \s*(?P<id>[a-zA-Z0-9_]+)\s*:    # Identifier followed by :
+                    \s*(?P<id>[a-zA-Z0-9_]+)\s*:(?=.+)    # Identifier followed by : followed by something
                     | \.                            # OR single .
                 )?
                 (?P<text>.*?)$                      # Any text up to end of string

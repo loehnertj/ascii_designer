@@ -35,7 +35,8 @@ class Parent:
     ('.', {'': 'label', 'id': 'label_', 'text': ''}),
     ('..', {'': 'label', 'id': 'label_', 'text': '.'}),
     ('...', {'': 'label', 'id': 'label_', 'text': '..'}),
-    ('lbl:', {'':'label', 'id': 'lbl', 'text': ''}),
+    # label must have text
+    ('lbl:', {'':'label', 'id': 'label_lbl', 'text': 'lbl:'}),
     # text stripped
     ('lbl: abc ', {'':'label', 'id': 'lbl', 'text': 'abc'}),
     # identifier must precede :, otherwise part of text
