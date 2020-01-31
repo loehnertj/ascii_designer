@@ -20,7 +20,7 @@ The created widgets are **"raw", native widgets**. You do not get wrappers;
 instead, the library focuses on specific tasks - building the layout, 
 event-/value binding - and lets you do everything else with the API you know and 
 (maybe) love.
-    
+
 
 AutoFrame overview
 ------------------
@@ -51,6 +51,23 @@ structures.
 Finally, there is the :any:`f_build()` method, which does the actual form 
 generation. This is the method to override for custom building and 
 initialization code.
+
+
+Toolkit
+-------
+
+Currently there are implementations for Qt and Tkinter toolkit. You need to
+decide which one to use. Before showing the first ``AutoFrame``, use
+``set_toolkit(name)`` to set the toolkit.
+
+In particular, ``set_toolkit`` supports:
+
+ * ``"qt"`` for Qt4 toolkit. (TBD: differentiate in qt, qt4, qt5)
+ * ``"tk"`` for Tkinter
+ * ``"ttk"`` also for Tkinter, but using ttk-themed widgets wherever possible.
+
+If you use any native methods / properties, e.g. to set text box backgrounds,
+obviously changing the toolkit requires changing these parts of your code.
 
 
 Grid slicing, stretching and anchors
