@@ -15,15 +15,15 @@ _TOOLKIT_NAME  = 'qt'
 
 def set_toolkit(toolkit_name):
     toolkit_name = toolkit_name.lower()
-    if toolkit_name not in 'tk qt'.split(' '):
+    if toolkit_name not in 'tk ttk qt'.split(' '):
         raise ValueError('Unsupported toolkit "%s"'%toolkit_name)
     global _TOOLKIT_NAME
     _TOOLKIT_NAME = toolkit_name
     
 def get_toolkit():
-    if _TOOLKIT_NAME == 'tk':
+    if _TOOLKIT_NAME in ('tk', 'ttk'):
         from .toolkit_tk import ToolkitTk
-        return ToolkitTk()
+        return ToolkitTk(prefer_ttk=(_TOOLKIT_NAME=='ttk'))
     elif _TOOLKIT_NAME == 'qt':
         from .toolkit_qt import ToolkitQt
         return ToolkitQt()

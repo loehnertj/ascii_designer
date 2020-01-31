@@ -130,7 +130,7 @@ class BoxesDemo(AutoFrame):
     def f_build(self, parent, body):
         super().f_build(parent, body)
         # Replace placeholder with a label
-        if TK == 'tk':
+        if TK in ('tk', 'ttk'):
             bm = self.box.master
             gbm = self.groupbox.master
         elif TK == 'qt':
