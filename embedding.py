@@ -7,8 +7,7 @@ class Host(AutoFrame):
         |
             <placeholder>
     '''
-    def f_build(self, parent, body):
-        super().f_build(parent, body)
+    def f_on_build(self):
         #self.placeholder.setLayout(QGridLayout()) # only for Qt
         
         # create instance
@@ -23,8 +22,7 @@ class Embedded(AutoFrame):
         |
             <another placeholder>
     '''
-    def f_build(self, parent, body=None):
-        super().f_build(parent, body)
+    def f_on_build(self):
         parent = self.another_placeholder.master
         self.another_placeholder = tk.Button(parent, text='3rd-party control')
         

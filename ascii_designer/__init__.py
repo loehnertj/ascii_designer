@@ -1,29 +1,23 @@
 '''
 ASCII Designer: Library to generate Forms from ASCII Art... and then some.
 
-``AutoFrame`` is the main workhorse class. Subclass it and set the ``f_body`` 
-and maybe further attributes. All the reserved attributes are prepended with 
-``f_`` to get out of your way when subclassing.
+:any:`AutoFrame` is the main workhorse class. Subclass it and set the ``f_body`` 
+and maybe further attributes.
 
-  * ``f_body`` is the textual definition of the form.
-  * There is a **well-defined syntax** for how to get the usual widget types. In 
-    the example you can find labels (plain text), a text box, radio buttons and 
-    normal buttons. WIP: List / Tree View widget.
-  * If a method exists with the same name as a widget id, it is **automatically 
-    bound** to the usually-wanted event (click in case of button, value-changed in 
-    case of basically anything else). Oh, and ``close`` and ``quit`` are already 
-    there for your convenience.
-  * Otherwise, you can retrieve and set the widget's value by using its id like
-    a class **attribute**.
-    
-The ``Toolkit`` classes provide the binding to a certain toolkit. Currently 
-there are subclasses for the Qt and tkinter toolkits, the latter being more 
-complete.
+Package overview:
 
-The created widgets are **"raw", native widgets**. You do not get wrappers; 
-instead, the library focuses on specific tasks - building the layout, 
-event-/value binding - and lets you do everything else with the API you know and 
-(maybe) love.
+ * :any:`autoframe` provides the :any:`AutoFrame` class, which by itself
+   contains the build logic and the automatic binding infrastructure.
+ * :any:`toolkit` provides the widget generators and actual value and event
+   binding. The base :any:`ToolkitBase` contains the parsing function and lots
+   of abstract methods.
+ * :any:`toolkit_tk` and :any:`toolkit_qt` provide actual implementations of the
+   Toolkit interface.
+ * :any:`ascii_slice` contains the text slicing algorithm used to cut text into
+   grid cells.
+ * :any:`list_model` contains the list-like value class for list view / tree
+   view. The :any:`ObsList` is toolkit-agnostic and has has lots of hooks where
+   the GUI bindings (in the ``toolkit_`` modules) connect to.
 '''
 from .autoframe import AutoFrame
 from .toolkit import set_toolkit

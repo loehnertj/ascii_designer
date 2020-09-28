@@ -18,12 +18,16 @@ def _convert_title(classname):
 
 class AutoFrame:
     '''
-    class name is converted to title. Override with f_title.
+    Automatic frame.
+
+    class name is converted to title. Override with ``f_title``.
     
-    Body definition with f_body.
+    Body definition with ``f_body``, menu definition with ``f_menu``.
     
-    To create own widgets or customize the autocreated ones, override :any:`f_build`.
-    
+    To create own widgets or customize the autocreated ones, override :any:`f_on_build`.
+
+    To add initialization code, override :any:`f_on_show`.
+
     Get at the created controls using AutoFrame[key].
     
     close(), exit(), quit() provided for convenience.
@@ -51,6 +55,7 @@ class AutoFrame:
             root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title, on_close=self.close)
             self.f_build(root, self.f_body)
             self.f_build_menu(root, self.f_menu)
+        self.f_on_show()
         self.f_toolkit.show(root)
         
     def f_build(self, parent, body=None):
@@ -67,6 +72,20 @@ class AutoFrame:
             if head: head = head[0][0:1]
             self.f_toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
         self.f_add_widgets(parent, sliced_grid, autoframe=self)
+        self.f_on_build()
+
+    def f_on_build(self):
+        '''Hook that is called after form has been built. 
+        
+        Override this to add custom initialization of widgets.
+        '''
+
+    def f_on_show(self):
+        '''Hook that is called when form is about to be shown on screen.
+
+        In contrast to f_on_build, this is called again if the form is closed
+        and reopened.
+        '''
         
     def f_build_menu(self, parent, menu=None):
         '''Builds the menu from the given menu definition.

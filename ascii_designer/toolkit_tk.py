@@ -124,13 +124,17 @@ class ToolkitTk(ToolkitBase):
     variable.
     
     The ComboBox / Dropdown box is taken from ttk.
+
+    If you set prefer_ttk=True upon init, ttk widgets are generated if
+    possible. This happens upon ``set_toolkit("ttk")``. 
     
     Box variable (placeholder): If you replace the box by setting its virtual 
     attribute, the replacement widget must have the same master as the box: in 
     case of normal box the frame root, in case of group box the group box. 
     Recommendation: ``new_widget = tk.Something(master=autoframe.the_box.master)``
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, prefer_ttk=False, **kwargs):
+        self._prefer_ttk = prefer_ttk
         super().__init__(*args, **kwargs)
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
         # Find a better way of grouping (by parent maybe?)
@@ -154,6 +158,18 @@ class ToolkitTk(ToolkitBase):
         root.option_add('*Font', self._sane_font)
         # XXX does not work when opening another frame
         style = ttk.Style()
+        if self._prefer_ttk:
+            theme_list = style.theme_names()
+            # On linux, set clam theme, which arguably is the nicest-looking of the builtin themes.
+            # ttkthemes package has nicer themes, but this would lose the main advantage
+            # of tk toolkit, i.e. being usable on vanilla python.
+            for name in 'winnative', 'clam':
+                if name in theme_list:
+                    style.theme_use('clam')
+                    break
+            color = ttk.Style().lookup("TFrame", "background", default="white")
+            # Toplevel frame background is non-themed by default
+            root['background'] = color
         style.configure(".", font=self._sane_font)
         style.configure("Treeview.Heading", font=('Helvetica', 12, 'bold'))
         style.configure("Treeview", rowheight=30)
@@ -188,14 +204,14 @@ class ToolkitTk(ToolkitBase):
          * value_changed(new_value) for value-type controls;
             usually fired after focus-lost or Return-press.
         '''
-        if type(widget) is tk.Frame:
+        if type(widget) in (tk.Frame, ttk.Frame):
             raise TypeError('Cannot assign a handler to a box.')
-        elif isinstance(widget, tk.Button):
+        elif isinstance(widget, (tk.Button, ttk.Button)):
             widget.config(command=function)
         elif isinstance(widget, ScrolledText):
             widget.bind('<Return>', lambda ev:function(widget.get(1., 'end')))
             widget.bind('<FocusOut>', lambda ev: function(widget.get(1., 'end')))
-        elif isinstance(widget, tk.Entry):
+        elif isinstance(widget, (tk.Entry, ttk.Entry)):
             widget.bind('<Return>', lambda ev:function(widget.variable.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
         elif isinstance(widget, ttk.Treeview):
@@ -204,9 +220,9 @@ class ToolkitTk(ToolkitBase):
             widget.variable.trace('w', lambda *args: function(widget.variable.get()))
             
     def getval(self, widget):
-        if type(widget) is tk.Frame:
+        if type(widget) in (tk.Frame, ttk.Frame):
             return widget
-        elif isinstance(widget, tk.LabelFrame):
+        elif isinstance(widget, (tk.LabelFrame, ttk.LabelFrame)):
             return widget.winfo_children()[0]
         elif isinstance(widget, ScrolledText):
             return widget.get(1., 'end')
@@ -214,8 +230,8 @@ class ToolkitTk(ToolkitBase):
             return widget.variable.get()
     
     def setval(self, widget, value):
-        if type(widget) in (tk.Frame, tk.LabelFrame):
-            if type(widget) is tk.LabelFrame:
+        if type(widget) in (tk.Frame, tk.LabelFrame, ttk.Frame, ttk.LabelFrame):
+            if type(widget) in (tk.LabelFrame, ttk.LabelFrame):
                 widget = widget.winfo_children()[0]
             # Replace the frame with the given value
             if value.master is not widget.master:
@@ -251,36 +267,43 @@ class ToolkitTk(ToolkitBase):
         widget.grid(sticky=sticky)
         
     def box(self, parent, id=None, text='', given_id=''):
+        LabelFrame = ttk.LabelFrame if self._prefer_ttk else tk.LabelFrame
+        Frame = ttk.Frame if self._prefer_ttk else tk.Frame
         id = _unique(parent, id)
         if given_id and text:
-            f = tk.LabelFrame(parent, name=id, text=text)
-            inner = tk.Frame(f)
+            f = LabelFrame(parent, name=id, text=text)
+            inner = Frame(f)
             inner.grid(row=0, column=0, sticky='nsew')
+            f.grid_rowconfigure(0, weight=1)
+            f.grid_columnconfigure(0, weight=1)
         else:
-            f = tk.Frame(parent, name=id)
+            f = Frame(parent, name=id)
         return f
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
+        Label = ttk.Label if self._prefer_ttk else tk.Label
         id = _unique(parent, id)
         var = tk.StringVar(parent, text)
-        l = tk.Label(parent, name=id, textvariable=var)
+        l = Label(parent, name=id, textvariable=var)
         l.variable = var
         return l
         
     def button(self, parent, id=None, text=''):
         '''button'''
+        Button = ttk.Button if self._prefer_ttk else tk.Button
         id = _unique(parent, id)
         var = tk.StringVar(parent, text)
-        b = tk.Button(parent, name=id, textvariable = var)
+        b = Button(parent, name=id, textvariable = var)
         b.variable = var
         return b
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
+        Entry = ttk.Entry if self._prefer_ttk else tk.Entry
         id = _unique(parent, id)
         var = tk.StringVar(parent, text)
-        e = tk.Entry(parent, name=id, textvariable=var)
+        e = Entry(parent, name=id, textvariable=var)
         e.variable = var
         return e
     
@@ -300,6 +323,8 @@ class ToolkitTk(ToolkitBase):
         
         Returns the treeview widget (within the frame).
         '''
+        Frame = ttk.Frame if self._prefer_ttk else tk.Frame
+        Scrollbar = ttk.Scrollbar if self._prefer_ttk else tk.Scrollbar
         if columns:
             columns = [txt.strip() for txt in columns.split(',')]
         else:
@@ -314,7 +339,7 @@ class ToolkitTk(ToolkitBase):
         # setup scrollable container
         frame = tk.Frame(parent)
         tv = ttk.Treeview(frame, columns=[k for k in keys if k])
-        scb = tk.Scrollbar(frame)
+        scb = Scrollbar(frame)
         scb.pack(side='right', fill='y')
         tv.pack(expand=1, fill='both')
         scb.config(command=tv.yview)
@@ -358,9 +383,10 @@ class ToolkitTk(ToolkitBase):
     
     def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
+        Radiobutton = ttk.Radiobutton if self._prefer_ttk else tk.Radiobutton
         if not self._radiobutton_var:
             self._radiobutton_var = tk.StringVar(parent, id)
-        rb = tk.Radiobutton(parent,
+        rb = Radiobutton(parent,
                   text=text,
                   variable=self._radiobutton_var, 
                   name=_unique(parent, id),
@@ -374,9 +400,10 @@ class ToolkitTk(ToolkitBase):
     
     def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
+        Checkbutton = ttk.Checkbutton if self._prefer_ttk else tk.Checkbutton
         id = _unique(parent, id)
         var = tk.BooleanVar(parent, bool(checked.strip()))
-        cb = tk.Checkbutton(
+        cb = Checkbutton(
             parent,
             text=(text or '').strip(),
             name=id,
@@ -387,9 +414,10 @@ class ToolkitTk(ToolkitBase):
     
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
+        Scale = ttk.Scale if self._prefer_ttk else tk.Scale
         id = _unique(parent, id)
-        var = tk.IntVar(parent, min)
-        s = tk.Scale(
+        var = tk.DoubleVar(parent, min)
+        s = Scale(
             parent,
             name=id,
             from_=min,

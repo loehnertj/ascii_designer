@@ -15,15 +15,15 @@ _TOOLKIT_NAME  = 'qt'
 
 def set_toolkit(toolkit_name):
     toolkit_name = toolkit_name.lower()
-    if toolkit_name not in 'tk qt'.split(' '):
+    if toolkit_name not in 'tk ttk qt'.split(' '):
         raise ValueError('Unsupported toolkit "%s"'%toolkit_name)
     global _TOOLKIT_NAME
     _TOOLKIT_NAME = toolkit_name
     
 def get_toolkit():
-    if _TOOLKIT_NAME == 'tk':
+    if _TOOLKIT_NAME in ('tk', 'ttk'):
         from .toolkit_tk import ToolkitTk
-        return ToolkitTk()
+        return ToolkitTk(prefer_ttk=(_TOOLKIT_NAME=='ttk'))
     elif _TOOLKIT_NAME == 'qt':
         from .toolkit_qt import ToolkitQt
         return ToolkitQt()
@@ -61,7 +61,17 @@ class ToolkitBase:
         ('combo',r'\[%s_\s*(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text_ v]" or "[Text_ (val1, val2, ...) v]'),
         ('dropdown',r'\[%s(?:\((?P<values>.*?)\))?\s+v\s*\]'%_re_maybe_id_text, '"[Text v]" or "[Text (val1, val2, ...) v]'),
         ('button', r'\[%s\]'%_re_maybe_id_text, '"[Text]"'),
-        ('label', r'(?P<id>)(?:\.)?(?P<text>.+?)$', '"Text" or ".Text"'),
+        (
+            'label', 
+            r'''(?x)
+                (?:                                 # Optional prefix:
+                    \s*(?P<id>[a-zA-Z0-9_]+)\s*:(?=.+)    # Identifier followed by : followed by something
+                    | \.                            # OR single .
+                )?
+                (?P<text>.*?)$                      # Any text up to end of string
+                ''',
+            '"Text" or ".Text"'
+         ),
         ]
 
     menu_grammar = [
@@ -113,14 +123,14 @@ class ToolkitBase:
             m = re.match(regex, mangled_text)
             if m:
                 d = m.groupdict()
-                # special treatment for box
-                if name == 'box':
+                # special treatment for box and label
+                if name in ('box', 'label'):
                     d['given_id'] = d['id']
                 d['id'] = auto_id(d['id'], d.get('text', ''), self._last_label_id)
                 # Special treatment for label
                 if name == 'label':
                     self._last_label_id = d['id']
-                    d['id'] = 'label_'+d['id']
+                    d['id'] = d.pop('given_id', '') or 'label_'+d['id']
                 else:
                     self._last_label_id = ''
                 if 'text' in d:
