@@ -27,6 +27,7 @@ class Main(AutoFrame):
      [Boxes and embedding       ]
      [Bound values              ]
      [List view                 ]
+     [List edit                 ]
      [Tree view                 ]
      [Alignment                 ]
      [Window Menu               ]
@@ -47,6 +48,9 @@ class Main(AutoFrame):
     def list_view(self):
         ListDemo().f_show()
         
+    def list_edit(self):
+        ListEditDemo().f_show()
+
     def tree_view(self):
         TreeDemo().f_show()
 
@@ -270,6 +274,19 @@ class ListDemo(AutoFrame):
         print('Buy: ', item)
     
 
+class ListEditDemo(AutoFrame):
+    f_body = '''
+        | -
+        I[= Players (Name_, Points, Rank)]
+    '''
+    def f_build(self, parent, body=None):
+        super().f_build(parent, body)
+        self.players = [
+            RankRow('CaptainJack', 9010, 1),
+            RankRow('MasterOfDisaster', 3010, 2),
+            RankRow('LittleDuck', 12, 3),
+        ]
+
 class TreeDemo(AutoFrame):
     f_body = '''
     |  <-> Tree        |
@@ -361,6 +378,7 @@ if __name__ == '__main__':
             'boxes': BoxesDemo, 
             'list': ListDemo,
             'tree': TreeDemo,
+            'listedit': ListEditDemo,
         }[sys.argv[2]]
     else:
         F = Main

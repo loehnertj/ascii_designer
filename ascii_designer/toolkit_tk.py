@@ -5,6 +5,7 @@ import tkinter as tk
 import tkinter.font
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
+from .tk_treeedit import TreeEdit
 from .toolkit import ToolkitBase
 from .list_model import ObsList
 
@@ -364,25 +365,35 @@ class ToolkitTk(ToolkitBase):
         together with a vertical scrollbar. For correct placement, the
         .place, .grid, .pack methods of the returned tv are replaced by that of 
         the frame.
+
+        Columns can be marked editable by appending "_" to the name.
+        If any column is editable, a :any:`TreeEdit` is generated instead of the TreeView.
         
         Returns the treeview widget (within the frame).
         '''
+        def crop_(txt):
+            return txt if not txt.endswith('_') else txt[:-1]
         Frame = ttk.Frame if self._prefer_ttk else tk.Frame
         Scrollbar = ttk.Scrollbar if self._prefer_ttk else tk.Scrollbar
         if columns:
             columns = [txt.strip() for txt in columns.split(',')]
         else:
             columns = []
+        text = text.strip()
         id = _unique(parent, id)
-        keys = [name.lower() for name in columns]
+        is_editable = text.endswith('_') or any(name.endswith('_') for name in columns)
+        keys = [crop_(name.lower()) for name in columns]
         has_first_column = bool(text)
         if has_first_column:
             keys.insert(0, '')
-            columns.insert(0, text.strip())
-        
+            columns.insert(0, crop_(text))
+
         # setup scrollable container
-        frame = tk.Frame(parent)
-        tv = ttk.Treeview(frame, columns=[k for k in keys if k])
+        frame = Frame(parent)
+        if is_editable:
+            tv = TreeEdit(frame, columns=[k for k in keys if k])
+        else:
+            tv = ttk.Treeview(frame, columns=[k for k in keys if k])
         scb = Scrollbar(frame)
         scb.pack(side='right', fill='y')
         tv.pack(expand=1, fill='both')
@@ -397,16 +408,25 @@ class ToolkitTk(ToolkitBase):
         
         # configure tree view
         if has_first_column:
-            tv.heading('#0', text=text, command=lambda: tv.variable.on_heading_click(''))
+            tv.heading('#0', text=crop_(text), command=lambda: tv.variable.on_heading_click(''))
+            if text.endswith('_'):
+                tv.editable('#0', True)
         else:
             # hide first column
             tv['show'] = 'headings'
         for key, heading in zip(keys, columns):
             if not key:
                 continue
-            tv.heading(key, text=heading, command=lambda key=key: tv.variable.on_heading_click(key))
-        tv.bind('<<TreeviewOpen>>', tv.variable.on_gui_expand)
+            tv.heading(key, text=crop_(heading), command=lambda key=key: tv.variable.on_heading_click(key))
+            if heading.endswith('_'):
+                tv.editable(key, True)
+        if is_editable:
+            # XXX make explicit ([= MyList +*x ])
+            tv.allow = ['add', 'remove']
+            tv.on_cell_modified += tv.variable.on_cell_modified
         
+        tv.bind('<<TreeviewOpen>>', tv.variable.on_gui_expand)
+
         # set up variable
         return tv
         
@@ -650,6 +670,9 @@ class NodelistVariable:
         else:
             ascending = True
         self._nl.sort(key, ascending)
+
+    def on_cell_modified(self, iid, columnname):
+        print('Cell modified: %s %s', iid, columnname)
         
                 
     
