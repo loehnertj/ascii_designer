@@ -48,10 +48,9 @@ class named is turned into a title by space-separating on uppercase characters.
 If you like menus, ``f_menu`` can be used for concise definition of menu
 structures.
         
-Finally, there is the :any:`f_build()` method, which does the actual form 
-generation. This is the method to override for custom building and 
-initialization code.
-
+Finally, there is the :any:`f_build()` method, which does the actual form
+generation. It calls the :any:`f_on_build` hook, that you might want to
+override to initialize controls.
 
 Toolkit
 -------
@@ -358,8 +357,7 @@ That means that the simplemost way of using the List is this::
             |
              [= Some Items]
         '''
-        def f_build(self, parent, body):
-            super().f_build(parent, body)
+        def f_on_build(self):
             # populate the list
             self.some_items = ['First', 'Second', 'Fifth']
 
@@ -374,8 +372,7 @@ A more complex example to showcase how additional columns work::
         |              <->                |
         I[= Players (,Name, Points, Rank)]
         '''
-        def f_build(self, parent, body):
-            super().f_build(parent, body)
+        def f_on_build(self):
             self.players = [
                 RankRow('CaptainJack', 9010, 1),
                 RankRow('MasterOfDisaster', 3010, 2),
@@ -526,8 +523,7 @@ following example showcases everything::
             |
              <placeholder>
         '''
-        def f_build(self, parent, body=None):
-            super().f_build(parent, body)
+        def f_on_build(self):
             # self.placeholder.setLayout(QGridLayout()) # only for Qt
             
             # create instance
@@ -542,8 +538,7 @@ following example showcases everything::
             |
              <another placeholder>
         '''
-        def f_build(self, parent, body=None):
-            super().f_build(parent, body)
+        def f_on_build(self):
             parent = self.another_placeholder.master
             self.another_placeholder = tk.Button(parent, text='3rd-party control')
             

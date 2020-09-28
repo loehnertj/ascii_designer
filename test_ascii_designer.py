@@ -127,8 +127,7 @@ class BoxesDemo(AutoFrame):
         self._level = level
         
     
-    def f_build(self, parent, body):
-        super().f_build(parent, body)
+    def f_on_build(self):
         # Replace placeholder with a label
         if TK in ('tk', 'ttk'):
             bm = self.box.master
@@ -158,8 +157,7 @@ class AlignmentDemo(AutoFrame):
     I               {                           [right]|
     '''
         
-    def f_build(self, parent, body):
-        super().f_build(parent, body)
+    def f_on_build(self):
         if TK=='qt':
             from PyQt4.QtGui import QSizePolicy
             # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
@@ -213,8 +211,7 @@ class ListDemo(AutoFrame):
     I[= Shopping ] [= Players  (Name, Points, Rank)     ]
                    [Add] [Replace] [Mutate] [Remove] ~                 
     '''
-    def f_build(self, parent, body):
-        super().f_build(parent, body)
+    def f_on_build(self):
         print(list(self.f_controls.keys()))
         self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
         self._populate_players()
@@ -266,9 +263,10 @@ class ListDemo(AutoFrame):
         nodes = self.players.selection[:]
         for node in nodes:
             self.players.remove(node)
-        
+
     def shopping(self, item):
         print('Buy: ', item)
+    
 
 class TreeDemo(AutoFrame):
     f_body = '''
@@ -277,8 +275,7 @@ class TreeDemo(AutoFrame):
     I[= Files         ]
      [ Test Find ]
     '''
-    def f_build(self, parent, body):
-        super().f_build(parent, body)
+    def f_on_show(self):
         self._populate_folder()
         
     def _populate_folder(self):
