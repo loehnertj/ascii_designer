@@ -100,7 +100,7 @@ INSTALLATION
 
     pip install ascii_designer
     
-Requirements: Python >= 3, ``attrs``. Obviously, to use the Qt toolkit you need ``Pyqt4``.
+Requirements: Python >= 3, ``attrs``. To use the Qt toolkit you need ``qtpy``.
     
     
 DOCUMENTATION

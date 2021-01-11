@@ -61,7 +61,7 @@ decide which one to use. Before showing the first ``AutoFrame``, use
 
 In particular, ``set_toolkit`` supports:
 
- * ``"qt"`` for Qt4 toolkit. (TBD: differentiate in qt, qt4, qt5)
+ * ``"qt"`` for Qt toolkit (using qtpy).
  * ``"tk"`` for Tkinter
  * ``"ttk"`` also for Tkinter, but using ttk-themed widgets wherever possible.
 

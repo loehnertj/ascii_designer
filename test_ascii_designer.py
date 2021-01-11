@@ -159,7 +159,7 @@ class AlignmentDemo(AutoFrame):
         
     def f_on_build(self):
         if TK=='qt':
-            from PyQt4.QtGui import QSizePolicy
+            from qtpy.QtWidgets import QSizePolicy
             # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
             # set to Expanding to make the RowStretch work.
             self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
