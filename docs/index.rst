@@ -10,6 +10,11 @@ ASCII Designer
 Changelog
 ---------
 
+ * v0.3.3:
+   * Qt now depends on qtpy, not PyQt4 anymore.
+   * :py:obj:`set_toolkit` can set Options. Add ``font_size`` and ``ttk_theme``
+     option for Tkinter.
+   * Can set window icon by f_icon property
  * v0.3.2: 
    * Add "ttk" toolkit (which is actually :any:`TkToolkit` with a new option). YMMV.
    * Add :any:`f_on_build` and :any:`f_on_show` hooks
