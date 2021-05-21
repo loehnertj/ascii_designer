@@ -154,9 +154,6 @@ class AutoFrame:
     def __setattr__(self, name, val):
         if name in self:
             self.f_toolkit.setval(self[name], val)
-            if not self[name].winfo_exists():
-                # Probably a replaced placeholder frame.
-                del self.f_controls[name]
         else:
             super().__setattr__(name, val)
     
