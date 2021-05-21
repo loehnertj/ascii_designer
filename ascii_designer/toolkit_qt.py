@@ -8,9 +8,10 @@ ToolkitQt-specific notes:
 
 '''
 import sys
-import PyQt4 as qt
-from PyQt4.QtCore import Qt, QAbstractItemModel, QModelIndex
-import PyQt4.QtGui as qg
+import qtpy as qt
+from qtpy.QtCore import Qt, QAbstractItemModel, QModelIndex
+import qtpy.QtGui as qg
+import qtpy.QtWidgets as qw
 
 from .toolkit import ToolkitBase
 from .list_model import ObsList
@@ -19,7 +20,7 @@ __all__ = [
     'ToolkitQt',
 ]
 
-_qtapp = qg.QApplication(sys.argv)
+_qtapp = qw.QApplication(sys.argv)
 _qt_running=False
 
 def _make_focusout(func):
@@ -50,13 +51,21 @@ class ToolkitQt(ToolkitBase):
         super().__init__(**kwargs)
         
     # widget generators
-    def root(self, title='Window', on_close=None):
+    def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget'''
-        root = qg.QMainWindow()
-        cw = qg.QWidget(root)
+        root = qw.QMainWindow()
+        cw = qw.QWidget(root)
         root.setCentralWidget(cw)
-        cw.setLayout(qg.QGridLayout())
+        cw.setLayout(qw.QGridLayout())
         root.setWindowTitle(title)
+        if icon:
+            qicon = qg.QIcon(icon)
+            if _qtapp.windowIcon().isNull():
+                # Set icon for whole application; assuming that the first opened
+                # window is representative
+                _qtapp.setWindowIcon(qicon)
+            else:
+                root.setWindowIcon(qicon)
         if on_close:
             root.closeEvent = lambda ev: on_close()
         return root
@@ -88,10 +97,10 @@ class ToolkitQt(ToolkitBase):
          * value_changed(new_value) for value-type controls;
             usually fired after focus-lost or Return-press.
         '''
-        if isinstance(widget, qg.QPushButton):
+        if isinstance(widget, qw.QPushButton):
             widget.clicked.connect(lambda *args: function())
             return
-        elif isinstance(widget, qg.QTreeView):
+        elif isinstance(widget, qw.QTreeView):
             def handler(*args, widget=widget):
                 mindex = widget.currentIndex()
                 sl = mindex.internalPointer()
@@ -101,43 +110,43 @@ class ToolkitQt(ToolkitBase):
             return
         # other cases
         handler = lambda *args, widget=widget: function(self.getval(widget))
-        if isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
+        if isinstance(widget, (qw.QCheckBox, qw.QRadioButton)):
             # FIXME: For radiobutton, give the selected ID as value
             widget.toggled.connect(handler)
-        elif isinstance(widget, qg.QLineEdit):
+        elif isinstance(widget, qw.QLineEdit):
             widget.editingFinished.connect(handler)
-        elif isinstance(widget, qg.QPlainTextEdit):
+        elif isinstance(widget, qw.QPlainTextEdit):
             widget.focusOutEvent = _make_focusout(handler)
-        elif isinstance(widget, qg.QComboBox):
+        elif isinstance(widget, qw.QComboBox):
             if widget.isEditable():
                 widget.lineEdit().editingFinished.connect(handler)
             else:
                 widget.currentIndexChanged.connect(handler)
-        elif isinstance(widget, qg.QSlider):
+        elif isinstance(widget, qw.QSlider):
             widget.valueChanged.connect(handler)
         else:
             raise TypeError('I do not know how to connect a %s'%(widget.__class__.__name__))
             
     def getval(self, widget):
         cls = widget.__class__
-        if cls is qg.QWidget: return widget
-        if cls is qg.QGroupBox: 
+        if cls is qw.QWidget: return widget
+        if cls is qw.QGroupBox: 
             # child 0 is the layout, 1 the subwidget
             return widget.children()[1]
-        if cls is qg.QPushButton: return widget.text()
+        if cls is qw.QPushButton: return widget.text()
         # FIXME: for Radio Button, return checked ID
-        if cls is qg.QRadioButton: return widget.isChecked()
-        if cls is qg.QCheckBox: return widget.isChecked()
-        if cls is qg.QLineEdit: return widget.text()
-        if cls is qg.QPlainTextEdit: return widget.toPlainText()
-        if cls is qg.QSlider: return widget.value()
-        if cls is qg.QComboBox:
+        if cls is qw.QRadioButton: return widget.isChecked()
+        if cls is qw.QCheckBox: return widget.isChecked()
+        if cls is qw.QLineEdit: return widget.text()
+        if cls is qw.QPlainTextEdit: return widget.toPlainText()
+        if cls is qw.QSlider: return widget.value()
+        if cls is qw.QComboBox:
             if widget.isEditable():
                 return widget.lineEdit().text()
             else:
                 idx = widget.currentIndex()
                 return widget.itemText(idx) if idx >= 0 else None
-        if cls is qg.QTreeView:
+        if cls is qw.QTreeView:
             return widget.model().getList()
             
     def setval(self, widget, value):
@@ -145,8 +154,8 @@ class ToolkitQt(ToolkitBase):
             # FIXME: check the appropriate modified indicators for the wiget
             # if not modified, go through
             return
-        if type(widget) in (qg.QWidget, qg.QGroupBox):
-            if type(widget) is qg.QGroupBox:
+        if type(widget) in (qw.QWidget, qw.QGroupBox):
+            if type(widget) is qw.QGroupBox:
                 # child 0 is the layout, 1 the subwidget
                 widget = widget.children()[1]
             # Replace the frame with the given value
@@ -162,15 +171,15 @@ class ToolkitQt(ToolkitBase):
             self.place(value, row, col, rowspan, colspan)
             # FIXME: I could not figure out how to query the orignal widget's alignment.
             self.anchor(value, True,True,True,True)
-        elif isinstance(widget, qg.QPushButton):
+        elif isinstance(widget, qw.QPushButton):
             widget.setText(value)
-        elif isinstance(widget, (qg.QCheckBox, qg.QRadioButton)):
+        elif isinstance(widget, (qw.QCheckBox, qw.QRadioButton)):
             widget.setChecked(value)
-        elif isinstance(widget, qg.QLineEdit):
+        elif isinstance(widget, qw.QLineEdit):
             widget.setText(value)
-        elif isinstance(widget, qg.QPlainTextEdit):
+        elif isinstance(widget, qw.QPlainTextEdit):
             widget.document().setPlainText(value)
-        elif isinstance(widget, qg.QComboBox):
+        elif isinstance(widget, qw.QComboBox):
             if widget.isEditable():
                 widget.lineEdit().setText(value)
             else:
@@ -178,22 +187,22 @@ class ToolkitQt(ToolkitBase):
                 if idx<0:
                    raise ValueError('Tried to set value "%s" that is not in the list.'%value)
                 widget.setCurrentIndex(idx)
-        elif isinstance(widget, qg.QSlider):
+        elif isinstance(widget, qw.QSlider):
             widget.setValue(value)
-        elif isinstance(widget, qg.QTreeView):
+        elif isinstance(widget, qw.QTreeView):
             widget.model().setList(value)
         else:
             raise TypeError('I do not know how to set the value of a %s'%(widget.__class__.__name__))
         
     def row_stretch(self, container, row, proportion):
         '''set the given row to stretch according to the proportion.'''
-        if isinstance(container, qg.QMainWindow):
+        if isinstance(container, qw.QMainWindow):
             container = container.centralWidget()
         container.layout().setRowStretch(row, proportion)
         
     def col_stretch(self, container, col, proportion):
         '''set the given col to stretch according to the proportion.'''
-        if isinstance(container, qg.QMainWindow):
+        if isinstance(container, qw.QMainWindow):
             container = container.centralWidget()
         container.layout().setColumnStretch(col, proportion)
         
@@ -212,44 +221,44 @@ class ToolkitQt(ToolkitBase):
         
     # Widgets
     def box(self, parent, id=None, text='', given_id=''):
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
         if given_id and text:
-            f = qg.QGroupBox(parent=parent, title=text)
-            f.setLayout(qg.QGridLayout())
+            f = qw.QGroupBox(parent=parent, title=text)
+            f.setLayout(qw.QGridLayout())
             self.row_stretch(f, 0, 1)
             self.col_stretch(f, 0, 1)
-            inner = qg.QWidget(f)
+            inner = qw.QWidget(f)
             self.place(inner, 0, 0)
-            inner.setLayout(qg.QGridLayout())
+            inner.setLayout(qw.QGridLayout())
         else:
-            f = qg.QWidget(parent)
-            f.setLayout(qg.QGridLayout())
+            f = qw.QWidget(parent)
+            f.setLayout(qw.QGridLayout())
         return f
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qg.QLabel(parent=parent, text=text)
+        return qw.QLabel(parent=parent, text=text)
         
     def button(self, parent, id=None, text=''):
         '''button'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qg.QPushButton(parent=parent, text=text)
+        return qw.QPushButton(parent=parent, text=text)
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qg.QLineEdit(text, parent=parent)
+        return qw.QLineEdit(text, parent=parent)
     
     def multiline(self, parent, id=None, text=''):
         '''multi-line text entry box'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qg.QPlainTextEdit(text, parent=parent)
+        return qw.QPlainTextEdit(text, parent=parent)
 
     def treelist(self, parent, id=None, text='', columns=None):
         '''treeview (also usable as plain list)
@@ -258,7 +267,7 @@ class ToolkitQt(ToolkitBase):
         item data all the time. I.e. if your columns are costly to
         calculate, roll your own caching please.
         '''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
         if columns:
             columns = [txt.strip() for txt in columns.split(',')]
@@ -269,29 +278,29 @@ class ToolkitQt(ToolkitBase):
             keys.insert(0, '')
             columns.insert(0, text.strip())
 
-        w = qg.QTreeView(parent)
+        w = qw.QTreeView(parent)
         model = TreeModel(w, keys, columns)
         w.setModel(model)
 
         # connect events
         w.expanded.connect(model.on_gui_expand)
         w.setSortingEnabled(True)
-        w.sortByColumn(-1)
+        w.sortByColumn(-1, Qt.AscendingOrder)
 
         return w
     
     def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        w = qg.QComboBox(parent)
+        w = qw.QComboBox(parent)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         w.addItems(choices)
         return w
     
     def combo(self, parent, id=None, text='', values=None):
         '''dropdown with editable values.'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
         w = self.dropdown(parent, id=id, text=text, values=values)
         w.setEditable(True)
@@ -299,28 +308,28 @@ class ToolkitQt(ToolkitBase):
         
     def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        rb = qg.QRadioButton(text, parent=parent)
+        rb = qw.QRadioButton(text, parent=parent)
         rb.setChecked((checked=='x'))
         return rb
     
     def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        cb = qg.QCheckBox(text, parent=parent)
+        cb = qw.QCheckBox(text, parent=parent)
         cb.setChecked((checked=='x'))
         return cb
     
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        if isinstance(parent, qg.QMainWindow):
+        if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        s = qg.QSlider(Qt.Horizontal, parent=parent)
+        s = qw.QSlider(Qt.Horizontal, parent=parent)
         s.setMinimum(int(min))
         s.setMaximum(int(max))
-        s.setTickPosition(qg.QSlider.TicksBelow)
+        s.setTickPosition(qw.QSlider.TicksBelow)
         return s
 
     def menu_root(self, parent):
@@ -337,7 +346,7 @@ class ToolkitQt(ToolkitBase):
 
         Handler: ``func() -> None``, is immediately connected.
         '''
-        action = qg.QAction(text, parent)
+        action = qw.QAction(text, parent)
         if shortcut:
             if isinstance(shortcut, str):
                 # parse shortcut

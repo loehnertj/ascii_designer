@@ -33,6 +33,8 @@ class Main(AutoFrame):
     I
        [Close]                   |
     '''
+    f_icon = 'ascii_designer_icon.png'
+
     def autoconnect(self):
         AutoconnectDemo().f_show()
         
@@ -47,8 +49,8 @@ class Main(AutoFrame):
         
     def tree_view(self):
         TreeDemo().f_show()
-        
-    def alignment(self):
+
+    def on_alignment(self):
         AlignmentDemo().f_show()
 
     def window_menu(self):
@@ -159,7 +161,7 @@ class AlignmentDemo(AutoFrame):
         
     def f_on_build(self):
         if TK=='qt':
-            from PyQt4.QtGui import QSizePolicy
+            from qtpy.QtWidgets import QSizePolicy
             # Qt: -> Rowspan seems to not play well with RowStretch. The buttons must be
             # set to Expanding to make the RowStretch work.
             self['center'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

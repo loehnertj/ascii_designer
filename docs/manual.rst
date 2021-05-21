@@ -47,6 +47,10 @@ class named is turned into a title by space-separating on uppercase characters.
 
 If you like menus, ``f_menu`` can be used for concise definition of menu
 structures.
+
+The ``f_icon`` property can be set to the name of an image file to use as window
+icon. Note that the supported formats depend on the toolkit and maybe also
+operating system.
         
 Finally, there is the :any:`f_build()` method, which does the actual form
 generation. It calls the :any:`f_on_build` hook, that you might want to
@@ -61,7 +65,7 @@ decide which one to use. Before showing the first ``AutoFrame``, use
 
 In particular, ``set_toolkit`` supports:
 
- * ``"qt"`` for Qt4 toolkit. (TBD: differentiate in qt, qt4, qt5)
+ * ``"qt"`` for Qt toolkit (using qtpy).
  * ``"tk"`` for Tkinter
  * ``"ttk"`` also for Tkinter, but using ttk-themed widgets wherever possible.
 

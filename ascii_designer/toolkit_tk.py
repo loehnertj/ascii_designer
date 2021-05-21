@@ -1,11 +1,15 @@
 '''This is a construction site...''' 
 
+import logging
 import tkinter as tk
+import tkinter.font
 from tkinter.scrolledtext import ScrolledText
-from tkinter import font
 from tkinter import ttk
 from .toolkit import ToolkitBase
 from .list_model import ObsList
+
+def L():
+    return logging.getLogger(__name__)
 
 #ttk = tk
 
@@ -125,65 +129,86 @@ class ToolkitTk(ToolkitBase):
     
     The ComboBox / Dropdown box is taken from ttk.
 
-    If you set prefer_ttk=True upon init, ttk widgets are generated if
-    possible. This happens upon ``set_toolkit("ttk")``. 
-    
+    Parameters:
+        prefer_ttk (bool): 
+            Prefer ttk widgets before tk widgets. This means that
+            you need to use the Style system to set things like background color
+            etc.
+        font_size (int): controls default font size of all widgets.
+        ttk_theme (str): 
+            explicit choice of theme. Per default, no theme is set if
+            ``prefer_ttk`` is ``False``; otherwise, ``winnative`` is used if
+            available, otherwise ``clam``.
+
     Box variable (placeholder): If you replace the box by setting its virtual 
     attribute, the replacement widget must have the same master as the box: in 
     case of normal box the frame root, in case of group box the group box. 
     Recommendation: ``new_widget = tk.Something(master=autoframe.the_box.master)``
     '''
-    def __init__(self, *args, prefer_ttk=False, **kwargs):
+    def __init__(self, *args, prefer_ttk:bool=False, font_size:int=10, ttk_theme:str='', **kwargs):
         self._prefer_ttk = prefer_ttk
         super().__init__(*args, **kwargs)
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
         # Find a better way of grouping (by parent maybe?)
         self._radiobutton_var = None
+        self._font_size = font_size
+        self._ttk_theme = ttk_theme
+
+    def setup_style(self, root):
+        scale = root.winfo_fpixels('1i') / 72.0
+        root.tk.call('tk', 'scaling', scale)
+        fnt = tk.font.nametofont('TkDefaultFont')
+        fnt.configure(size=self._font_size)
+        root.option_add("*Font", fnt)
+        # XXX does not work when opening another frame
+        style = ttk.Style()
+        if self._prefer_ttk:
+            theme_list = style.theme_names()
+            if self._ttk_theme:
+                theme = self._ttk_theme
+            elif 'winnative' in theme_list:
+                theme = 'winnative'
+            else:
+                # On linux, set clam theme, which arguably is the nicest-looking of the builtin themes.
+                # ttkthemes package has nicer themes, but this would lose the main advantage
+                # of tk toolkit, i.e. being usable on vanilla python.
+                theme = 'clam'
+            style.theme_use(theme)
+            color = ttk.Style().lookup("TFrame", "background", default="white")
+            # Toplevel frame background is non-themed by default, fix that
+            root['background'] = color
+        style.configure(".", font=fnt)
+        # Font size fixes for some widgets
+        style.configure("Treeview.Heading", font=('Helvetica', self._font_size, 'bold'))
+        style.configure("Treeview", rowheight=self._font_size*2)
         
     # widget generators
-    def root(self, title='Window', on_close=None):
+    def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget'''
         global _master_window
-        if _master_window is None:
+        is_first = (_master_window is None)
+        if is_first:
             _master_window = root = tk.Tk()
             # store as attributes so that they do not get GC'd
             root.icons = {
                 key: tk.BitmapImage(name='::icons::%s'%key, data=_aa2xbm(data))
                 for key, data in _ICONS.items()
             }
+            self.setup_style(root)
         else:
             root = tk.Toplevel()
-        scale = root.winfo_fpixels('1i') / 72.0
-        root.tk.call('tk', 'scaling', scale)
-        root.option_add('*Font', self._sane_font)
-        # XXX does not work when opening another frame
-        style = ttk.Style()
-        if self._prefer_ttk:
-            theme_list = style.theme_names()
-            # On linux, set clam theme, which arguably is the nicest-looking of the builtin themes.
-            # ttkthemes package has nicer themes, but this would lose the main advantage
-            # of tk toolkit, i.e. being usable on vanilla python.
-            for name in 'winnative', 'clam':
-                if name in theme_list:
-                    style.theme_use('clam')
-                    break
-            color = ttk.Style().lookup("TFrame", "background", default="white")
-            # Toplevel frame background is non-themed by default
-            root['background'] = color
-        style.configure(".", font=self._sane_font)
-        style.configure("Treeview.Heading", font=('Helvetica', 12, 'bold'))
-        style.configure("Treeview", rowheight=30)
         root.title(title)
+        if icon:
+            try:
+                img = tk.PhotoImage(file=icon)
+                root.tk.call('wm', 'iconphoto', root._w, '-default' if is_first else '', img)
+            except tk.TclError:
+                # Icon files can be unreadable for several cases, don't fuzz about it.
+                L().error('Could not set window icon from file %s', icon, exc_info=True)
         if on_close:
             root.protocol('WM_DELETE_WINDOW', on_close)
         return root
         
-    @property
-    def _sane_font(self):
-        if not hasattr(self, '_sane_font_cached'):
-            self._sane_font_cached = font.Font(family='Helvetica', size=12)
-        return self._sane_font_cached
-    
     def show(self, frame):
         '''do what is necessary to make frame appear onscreen.'''
         start_mainloop_if_necessary(frame)

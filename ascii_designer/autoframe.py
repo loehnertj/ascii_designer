@@ -48,11 +48,15 @@ class AutoFrame:
             menu = self.f_menu
         except AttributeError:
             self.f_menu = []
+        try:
+            icon = self.f_icon
+        except AttributeError:
+            self.f_icon = ''
         
     def f_show(self):
         '''Bring the frame on the screen.'''
         if not self.f_controls:
-            root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title, on_close=self.close)
+            root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title, icon=self.f_icon, on_close=self.close)
             self.f_build(root, self.f_body)
             self.f_build_menu(root, self.f_menu)
         self.f_on_show()
