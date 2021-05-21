@@ -33,6 +33,7 @@ class Main(AutoFrame):
     I
        [Close]                   |
     '''
+
     def autoconnect(self):
         AutoconnectDemo().f_show()
         
@@ -47,8 +48,8 @@ class Main(AutoFrame):
         
     def tree_view(self):
         TreeDemo().f_show()
-        
-    def alignment(self):
+
+    def on_alignment(self):
         AlignmentDemo().f_show()
 
     def window_menu(self):
