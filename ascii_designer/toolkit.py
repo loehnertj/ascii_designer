@@ -12,21 +12,32 @@ __all__ = [
     ]
 
 _TOOLKIT_NAME  = 'qt'
+_TOOLKIT_OPTIONS = {}
 
-def set_toolkit(toolkit_name):
+def set_toolkit(toolkit_name, toolkit_options=None):
+    '''Set the toolkit to use and toolkit options.
+
+    Toolkit name can be ``tk``, ``ttk``, ``qt``.
+
+    ``toolkit_options`` is a dictionary of toolkit specific global settings like
+    font size or theme. See :py:obj:`.ToolkitTk`, :py:obj:`ToolkitQt`.
+    '''
     toolkit_name = toolkit_name.lower()
     if toolkit_name not in 'tk ttk qt'.split(' '):
         raise ValueError('Unsupported toolkit "%s"'%toolkit_name)
     global _TOOLKIT_NAME
+    global _TOOLKIT_OPTIONS
     _TOOLKIT_NAME = toolkit_name
+    _TOOLKIT_OPTIONS = toolkit_options or {}
     
 def get_toolkit():
+    '''Get toolkit instance as previously set.'''
     if _TOOLKIT_NAME in ('tk', 'ttk'):
         from .toolkit_tk import ToolkitTk
-        return ToolkitTk(prefer_ttk=(_TOOLKIT_NAME=='ttk'))
+        return ToolkitTk(prefer_ttk=(_TOOLKIT_NAME=='ttk'), **_TOOLKIT_OPTIONS)
     elif _TOOLKIT_NAME == 'qt':
         from .toolkit_qt import ToolkitQt
-        return ToolkitQt()
+        return ToolkitQt(**_TOOLKIT_OPTIONS)
 
 _unique_id_dispenser = it.count()
 _re_whitelist = re.compile(r'[a-zA-Z0-9_]')
