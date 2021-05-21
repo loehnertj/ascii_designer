@@ -110,7 +110,7 @@ class ToolkitBase:
     def __init__(self):
         self._last_label_id = ''
         
-    def root(self, title='Window', on_close=None):
+    def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget. Optionally you can give a close handler.'''
         
     def parse(self, parent, text):

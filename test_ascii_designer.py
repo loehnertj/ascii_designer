@@ -33,6 +33,7 @@ class Main(AutoFrame):
     I
        [Close]                   |
     '''
+    f_icon = 'ascii_designer_icon.png'
 
     def autoconnect(self):
         AutoconnectDemo().f_show()

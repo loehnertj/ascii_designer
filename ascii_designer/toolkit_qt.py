@@ -51,13 +51,21 @@ class ToolkitQt(ToolkitBase):
         super().__init__(**kwargs)
         
     # widget generators
-    def root(self, title='Window', on_close=None):
+    def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget'''
         root = qw.QMainWindow()
         cw = qw.QWidget(root)
         root.setCentralWidget(cw)
         cw.setLayout(qw.QGridLayout())
         root.setWindowTitle(title)
+        if icon:
+            qicon = qg.QIcon(icon)
+            if _qtapp.windowIcon().isNull():
+                # Set icon for whole application; assuming that the first opened
+                # window is representative
+                _qtapp.setWindowIcon(qicon)
+            else:
+                root.setWindowIcon(qicon)
         if on_close:
             root.closeEvent = lambda ev: on_close()
         return root

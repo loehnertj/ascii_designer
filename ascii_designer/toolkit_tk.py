@@ -1,11 +1,15 @@
 '''This is a construction site...''' 
 
+import logging
 import tkinter as tk
 import tkinter.font
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
 from .toolkit import ToolkitBase
 from .list_model import ObsList
+
+def L():
+    return logging.getLogger(__name__)
 
 #ttk = tk
 
@@ -179,10 +183,11 @@ class ToolkitTk(ToolkitBase):
         style.configure("Treeview", rowheight=self._font_size*2)
         
     # widget generators
-    def root(self, title='Window', on_close=None):
+    def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget'''
         global _master_window
-        if _master_window is None:
+        is_first = (_master_window is None)
+        if is_first:
             _master_window = root = tk.Tk()
             # store as attributes so that they do not get GC'd
             root.icons = {
@@ -193,6 +198,13 @@ class ToolkitTk(ToolkitBase):
         else:
             root = tk.Toplevel()
         root.title(title)
+        if icon:
+            try:
+                img = tk.PhotoImage(file=icon)
+                root.tk.call('wm', 'iconphoto', root._w, '-default' if is_first else '', img)
+            except tk.TclError:
+                # Icon files can be unreadable for several cases, don't fuzz about it.
+                L().error('Could not set window icon from file %s', icon, exc_info=True)
         if on_close:
             root.protocol('WM_DELETE_WINDOW', on_close)
         return root
