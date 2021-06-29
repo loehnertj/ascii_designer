@@ -241,7 +241,11 @@ class ToolkitTk(ToolkitBase):
         '''
         if type(widget) in (tk.Frame, ttk.Frame):
             raise TypeError('Cannot assign a handler to a box.')
-        elif isinstance(widget, (tk.Button, ttk.Button)):
+        elif isinstance(widget, (
+            tk.Button, ttk.Button,
+            tk.Scale, ttk.Scale,
+        )):
+            # ! different signature: button - no args, scale - 1 arg (value)
             widget.config(command=function)
         elif isinstance(widget, ScrolledText):
             widget.bind('<Return>', lambda ev:function(widget.get(1., 'end')))
@@ -249,10 +253,15 @@ class ToolkitTk(ToolkitBase):
         elif isinstance(widget, (tk.Entry, ttk.Entry)):
             widget.bind('<Return>', lambda ev:function(widget.variable.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
+        elif isinstance(widget, (
+            tk.Radiobutton, ttk.Radiobutton, 
+            tk.Checkbutton, ttk.Checkbutton,
+        )):
+            widget.config(command=lambda: function(widget.variable.get()))
         elif isinstance(widget, ttk.Treeview):
             widget.bind('<<TreeviewSelect>>', lambda ev: widget.variable.on_tv_focus(function))
         else:
-            widget.variable.trace('w', lambda *args: function(widget.variable.get()))
+            raise TypeError('Cannot autoconnect %s widget. Sorry.' % type(widget).__name__)
             
     def getval(self, widget):
         if type(widget) in (tk.Frame, ttk.Frame):
