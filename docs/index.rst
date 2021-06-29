@@ -10,13 +10,17 @@ ASCII Designer
 Changelog
 ---------
 
+ * v0.3.4:
+   * Add ``setup_style`` parameter to `ToolkitTk` for custom style setup
+   * Fix #6: for some Tk controls, value change via code would trigger the
+     control's autoconnected handler.
  * v0.3.3:
    * Qt now depends on qtpy, not PyQt4 anymore.
    * :py:obj:`set_toolkit` can set Options. Add ``font_size`` and ``ttk_theme``
      option for Tkinter.
    * Can set window icon by f_icon property
  * v0.3.2: 
-   * Add "ttk" toolkit (which is actually :any:`TkToolkit` with a new option). YMMV.
+   * Add "ttk" toolkit (which is actually :any:`ToolkitTk` with a new option). YMMV.
    * Add :any:`f_on_build` and :any:`f_on_show` hooks
    * Fix several bugs in control parser, esp. concerning labels.
  * v0.3.1: Qt Toolkit menu accelerators

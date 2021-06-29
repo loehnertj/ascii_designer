@@ -134,6 +134,10 @@ class ToolkitTk(ToolkitBase):
             Prefer ttk widgets before tk widgets. This means that
             you need to use the Style system to set things like background color
             etc.
+        setup_style (fn(root_widget) -> None): 
+            custom callback for setting up style of the Tk windows (font size,
+            themes). If not set, some sensible defaults are applied; see the
+            other options, and source of :py:meth:`setup_style`.
         font_size (int): controls default font size of all widgets.
         ttk_theme (str): 
             explicit choice of theme. Per default, no theme is set if
@@ -145,7 +149,7 @@ class ToolkitTk(ToolkitBase):
     case of normal box the frame root, in case of group box the group box. 
     Recommendation: ``new_widget = tk.Something(master=autoframe.the_box.master)``
     '''
-    def __init__(self, *args, prefer_ttk:bool=False, font_size:int=10, ttk_theme:str='', **kwargs):
+    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', **kwargs):
         self._prefer_ttk = prefer_ttk
         super().__init__(*args, **kwargs)
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
@@ -153,8 +157,14 @@ class ToolkitTk(ToolkitBase):
         self._radiobutton_var = None
         self._font_size = font_size
         self._ttk_theme = ttk_theme
+        if setup_style is not None:
+            self.setup_style = setup_style
 
     def setup_style(self, root):
+        '''Setup some default styling (dpi, font, ttk theme).
+
+        For details, refer to the source.
+        '''
         scale = root.winfo_fpixels('1i') / 72.0
         root.tk.call('tk', 'scaling', scale)
         fnt = tk.font.nametofont('TkDefaultFont')
@@ -231,7 +241,11 @@ class ToolkitTk(ToolkitBase):
         '''
         if type(widget) in (tk.Frame, ttk.Frame):
             raise TypeError('Cannot assign a handler to a box.')
-        elif isinstance(widget, (tk.Button, ttk.Button)):
+        elif isinstance(widget, (
+            tk.Button, ttk.Button,
+            tk.Scale, ttk.Scale,
+        )):
+            # ! different signature: button - no args, scale - 1 arg (value)
             widget.config(command=function)
         elif isinstance(widget, ScrolledText):
             widget.bind('<Return>', lambda ev:function(widget.get(1., 'end')))
@@ -239,10 +253,15 @@ class ToolkitTk(ToolkitBase):
         elif isinstance(widget, (tk.Entry, ttk.Entry)):
             widget.bind('<Return>', lambda ev:function(widget.variable.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
+        elif isinstance(widget, (
+            tk.Radiobutton, ttk.Radiobutton, 
+            tk.Checkbutton, ttk.Checkbutton,
+        )):
+            widget.config(command=lambda: function(widget.variable.get()))
         elif isinstance(widget, ttk.Treeview):
             widget.bind('<<TreeviewSelect>>', lambda ev: widget.variable.on_tv_focus(function))
         else:
-            widget.variable.trace('w', lambda *args: function(widget.variable.get()))
+            raise TypeError('Cannot autoconnect %s widget. Sorry.' % type(widget).__name__)
             
     def getval(self, widget):
         if type(widget) in (tk.Frame, ttk.Frame):
