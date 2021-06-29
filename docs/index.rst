@@ -16,7 +16,7 @@ Changelog
      option for Tkinter.
    * Can set window icon by f_icon property
  * v0.3.2: 
-   * Add "ttk" toolkit (which is actually :any:`TkToolkit` with a new option). YMMV.
+   * Add "ttk" toolkit (which is actually :any:`ToolkitTk` with a new option). YMMV.
    * Add :any:`f_on_build` and :any:`f_on_show` hooks
    * Fix several bugs in control parser, esp. concerning labels.
  * v0.3.1: Qt Toolkit menu accelerators
