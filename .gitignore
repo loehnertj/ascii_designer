@@ -7,4 +7,5 @@ dist/*
 .tox/*
 *.kdev4
 **/.mypy_cache/*
+**/.pytest_cache/*
 .vscode/*
