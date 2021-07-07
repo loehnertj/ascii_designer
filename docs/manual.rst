@@ -421,6 +421,18 @@ all get expanders initially.
 
 The ``children`` property, if retrieved, is again a special list like the "root" one.
 
+.. note::
+    If you assign a non-`ObsList` value to a ListView virtual-value, it is
+    converted into an `ObsList`. The ``children_source`` is taken over from the
+    **previous** value. I.e. you can configure it once and then assign plain
+    lists, retaining tree configuration. This is done for your convenience and
+    for backward compatibility.
+
+    If on the other hand, you assign an `ObsList` instance as value, it is
+    assumed that its `children_source` is already configured, and it won't be
+    touched. This is because `children_source` is taken to be part of the
+    data-model and not of the GUI binding.
+
 To identify items in the tree, the two methods :any:`ObsList.find` and
 :any:`ObsList.find_by_toolkit_id` are provided, which yield container list
 and index given the item or its toolkit-native identifier, respectively.

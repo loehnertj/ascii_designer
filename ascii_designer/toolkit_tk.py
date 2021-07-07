@@ -6,7 +6,7 @@ import tkinter.font
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
 from .tk_treeedit import TreeEdit
-from .toolkit import ToolkitBase
+from .toolkit import ToolkitBase, ListBinding
 from .list_model import ObsList
 
 def L():
@@ -404,7 +404,7 @@ class ToolkitTk(ToolkitBase):
         tv.place = frame.place
         tv.grid = frame.grid
         
-        tv.variable = NodelistVariable(tv, keys)
+        tv.variable = ListBindingTk(tv, keys)
         
         # configure tree view
         if has_first_column:
@@ -549,51 +549,44 @@ class ToolkitTk(ToolkitBase):
         parent.add_command(label=text, command=handler, underline=underline, accelerator=shortcut)
 
     
-class NodelistVariable:
+class ListBindingTk(ListBinding):
     '''
     Use ``get`` to return the ObsList;
     ``set`` to replace the value using a new list.
     
     All the on_ methods are internal event handlers.
     '''
-    def __init__(self, treeview, keys):
-        self._keys = keys
-        self._nl = ObsList(keys=keys, toolkit_parent_id='')
-        self._nl.set_listener(self)
+    def __init__(self, treeview, keys, **kwargs):
+        super().__init__(keys=keys, **kwargs)
+        self.list.toolkit_parent_id = ''
         self._tv = treeview
         
     def get(self):
-        return self._nl
+        return self.list
         
     def set(self, val):
-        old_nl = self._nl
-        if old_nl is not None:
-            old_nl.set_listener(None)
-            self._tv.delete(*self._tv.get_children())
-        self._nl = ObsList(val, meta=old_nl._meta, toolkit_parent_id='')
-        self._nl.set_listener(self)
-        for idx, item in enumerate(self._nl):
-            iid = self.on_insert(idx, item, '')
-            self._nl.toolkit_ids[idx] = iid
-            # FIXME: _nl might already have children.
-            
-    def item_changed(self, item):
-        '''For user code, to notify GUI that you did something to ``item``
-        '''
-        idx = self._nl.index(item)
-        self.on_replace(idx, item)
+        self.list = val
 
-    # === ObsList handlers ===
+    def _set_list(self, val):
+        if self._list is not None:
+            self._tv.delete(*self._tv.get_children())
+        super()._set_list(val)
+        # val could have been cast into ObsList, use internal value.
+        for idx, item in enumerate(self._list):
+            iid = self.on_insert(idx, item, '')
+            self._list.toolkit_ids[idx] = iid
+            
+    # === ObsList event-handler implementations ===
 
     def on_insert(self, idx, item, toolkit_parent_id):
         '''create visible tree entry'''
         iid = self._tv.insert(
             toolkit_parent_id,
             idx,
-            text=self._nl.retrieve(item)
+            text=self.retrieve(item, '')
         )
         # insert placeholder so that "+" icon appears
-        if self._nl.has_children(item):
+        if self._list.has_children(item):
             self._tv.insert(iid, 0, text='')
         self.on_replace(iid, item)
         return iid
@@ -608,30 +601,32 @@ class NodelistVariable:
     def on_replace(self, iid, item):
         '''replace visible tree entry'''
         tv = self._tv
-        tv.item(iid, text=self._nl.retrieve(item))
-        for column in self._keys:
+        tv.item(iid, text=self.retrieve(item, ''))
+        for column in self.keys:
             if column == '': continue
-            txt = str(self._nl.retrieve(item, column))
+            txt = str(self.retrieve(item, column))
             tv.set(iid, column, txt)
         self._update_sortarrows()
      
     def on_remove(self, iid):
          self._tv.delete(iid)
          
-    def on_sort(self, nl):
+    def on_sort(self, sublist, info):
+        super().on_sort(sublist, info)
         tv = self._tv
-        _parent_iid = ''
-        for idx, iid in enumerate(nl.toolkit_ids):
+        _parent_iid = sublist.toolkit_parent_id
+        for idx, iid in enumerate(sublist.toolkit_ids):
             tv.move(iid, _parent_iid,  idx)
+        self.sorted = info.get('gui_sorted', False)
         self._update_sortarrows()
          
     def _update_sortarrows(self):
         tv = self._tv
-        for key in self._keys:
+        for key in self.keys:
             tv.heading(key or '#0', image='')
-        if self._nl.sorted:
-            image = _master_window.icons['sort_asc' if self._nl._meta.sort_ascending else 'sort_desc']
-            tv.heading(self._nl._meta.sort_key or '#0', image=image)
+        if self.sorted:
+            image = _master_window.icons['sort_asc' if self.sort_ascending else 'sort_desc']
+            tv.heading(self.sort_key or '#0', image=image)
     
     def on_get_selection(self):
         iids = self._tv.selection()
@@ -644,7 +639,7 @@ class NodelistVariable:
                     nodes.append(node)
                 if childlist:
                     add_nodes(childlist)
-        add_nodes(self._nl)
+        add_nodes(self._list)
         return nodes
 
     # === GUI event handlers ===
@@ -654,45 +649,23 @@ class NodelistVariable:
         if not iid:
             return
         # get the node at idx and return its ref property (the original object)
-        sublist, idx = self._nl.find_by_toolkit_id(iid)
+        sublist, idx = self._list.find_by_toolkit_id(iid)
         function(sublist[idx])
 
     def on_gui_expand(self, stuff):
         iid = self._tv.focus()
         # retrieve the idx
-        sublist, idx = self._nl.find_by_toolkit_id(iid)
+        sublist, idx = self._list.find_by_toolkit_id(iid)
         # on_load_children callback does the rest
         sublist.load_children(idx)
             
     def on_heading_click(self, key:str):
-        if key == self._nl._meta.sort_key:
-            ascending = True if not self._nl.sorted else not self._nl._meta.sort_ascending
+        if key == self.sort_key:
+            ascending = True if not self.sorted else not self.sort_ascending
         else:
             ascending = True
-        self._nl.sort(key, ascending)
+        self.sort(key, ascending)
 
     def on_cell_modified(self, iid, columnname):
         print('Cell modified: %s %s', iid, columnname)
         
-                
-    
-"""
-        self._parent_iid = parent_iid
-            
-    def _children_of(self, node, iterable):
-        if self.attached:
-            self.treeview.delete(*self.treeview.get_children(node._tk_iid))
-        # automatically inserts the children
-        return NodelistTk(iterable, meta=self._meta, treeview=self.treeview, parent_iid=node._tk_iid)
-    
-    @property
-    def loaded_nodes(self):
-        '''return all nodes in tree regardless of which list they are in.'''
-        childnodes = [
-            cn
-            for node in self._nodes if node.children
-            for cn in node.children.loaded_nodes
-        ]
-        return self._nodes + childnodes
-    
-"""

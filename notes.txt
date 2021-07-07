@@ -1,0 +1,34 @@
+Tree model architecture:
+
+
+`ObsList` = "pure" list list_model
+  Python list,
+  plus: Children source / retrieval,
+  plus: events:
+      on_insert,
+      on_replace,
+      on_remove,
+      on_load_children,
+      on_sort,
+      on_get_selection,
+  plus: notion of associated "toolkit id"
+      
+`ListBinding` = databinding (non-toolkit specific):
+    mapping list columns to object propertes/functions and vice-versa
+    sort-key / sort-ascending
+    bind events to hook methods (to be subclassed)
+
+`ListBindingQt`, `ListBindingTk`: actual implementation of event reactions; also
+doubles as QAbstractitemModel / kind-of Tkinter traceable variable. ie.
+adapter-like classes
+
+
+Open problems / issues:
+
+ - Assigning ObsList from Listview A to Listview B binds both listviews to the list.
+    Test that this works (views synchronized; last assignment controls get_selection)
+
+ - ObsList.children_source: This is now a property of the ObsList (ie. model.)
+   When assigning a non-obslist to a view, children_source is taken over from
+   previous val --> impure!
+   when assigning an ObsList, its children_source is used --> hint in manual
