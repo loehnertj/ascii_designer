@@ -2,7 +2,6 @@
 '''
 
 # Bells and whistles that could be added:
-# - return values
 # - signature check
 # - description
 
@@ -19,6 +18,9 @@ class EventSource:
     '''Event dispatcher class
     
     You can register / unregister handlers via ``+=`` and ``-=`` methods.
+
+    Handlers *may* return a result. If multiple handlers return results, last
+    one is returned to the event's source.
     '''
     def __init__(self):
         self._handlers = []
@@ -33,8 +35,12 @@ class EventSource:
 
     def __call__(self, *args, **kwargs):
         '''Trigger the event. To be called by the event's owner.'''
+        all_result = None
         for handler in self._handlers:
             try:
-                handler(*args, **kwargs)
+                result = handler(*args, **kwargs)
             except CancelEvent:
-                return
+                break
+            if result is not None:
+                all_result = result
+        return all_result
