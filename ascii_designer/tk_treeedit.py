@@ -4,7 +4,7 @@ For basic information, see official Tkinter (``ttk``) docs.
 
 The following additional functionality is provided:
 
- * Mark column as editable using :any:`Treeedit.editable`.
+ * Mark column as editable using :any:`TreeEdit.editable`.
  * allow= parameter to specify legal structural operations.
 
 ``allow`` is a list of strings or a comma-separated string. It can contain any of:
@@ -69,6 +69,8 @@ Use ``treeedit.<property> += handler``to bind a handler, ``-=`` to unbind it.
 # copy/paste
 # have a handler for after-item-insertion with the actual iid as param (we don't need it currently)
 '''
+
+__all__ = ['TreeEdit',]
 
 import tkinter as tk
 from tkinter.ttk import Treeview

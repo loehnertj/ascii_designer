@@ -5,13 +5,12 @@ The general concept for Lists is this:
  - List is wrapped into an :any:`ObsList` (by :any:`ToolkitBase.setval`)
  - The "code-side" of the ``ObsList`` quacks (mostly) like a regular list.
  - The "gui-side" of the ``ObsList``
+    - provides event callbacks for insert, replace, remove, sort.
+ - a ``ListBinding``:
     - provides COLUMNS (key-value items) dynamically retrieved from each list
-      item
+      item (using `retrieve` function from here)
     - remembers column and order to be used when sorting
     - has a notion of "selection" (forwarded to a callback)
-    - provides event callbacks for insert, replace, remove, sort.
- - Internally, the :any:`ListMeta` class holds the state data for those
-   functions.
 
 '''
 
@@ -112,7 +111,6 @@ class ObsList(MutableSequence):
      * it provides notification when items are added or removed
      
     Attributes:
-        meta (:any:`ListMeta`): Container for keys, source functions and remembered sorting. 
         toolkit_ids: can be indexed in the same way as the nodelist,
             and gives the toolkit-specific identifier of the list/treeview node.
 
@@ -167,6 +165,10 @@ class ObsList(MutableSequence):
 
     @property
     def binding(self):
+        '''Weak reference to the binding using this list.
+        
+        If list is attached to multiple Bindings, last one wins. (TODO: make it a list)
+        '''
         return self._binding()
 
     @binding.setter

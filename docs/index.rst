@@ -9,10 +9,11 @@ ASCII Designer
 
 Changelog
 ---------
- * v0.3.5:
+ * v0.4.0:
 
    * Refactor internal implementation of List Binding. Architecture simplified
      to `ObsList` (data model) and `ListBinding` classes.
+   * Add basic editing capabilites to List / Tree view.
 
  * v0.3.4:
 
