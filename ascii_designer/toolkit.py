@@ -283,6 +283,10 @@ class ListBinding:
         sort_ascending (bool): sort order
         sorted (bool): whether list is currently sorted *by one of the list columns*.
             Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
+        factory (function() -> Any): 
+            Factory function for new items (on add).
+            Signature might change in future releases. I am not sure right now
+            what parameters might be useful.
 
     Abstract base class. Override methods where noted.
     '''
@@ -298,6 +302,10 @@ class ListBinding:
         # Set a dummy list first
         self._list:list_model.ObsList = None
         self.list = list_model.ObsList(binding=self)
+        
+        def no_factory():
+            raise RuntimeError('In order to create items, you need to set a factory!')
+        self.factory = no_factory
 
     @property
     def list(self) -> list_model.ObsList:

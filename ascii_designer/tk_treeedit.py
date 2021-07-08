@@ -127,7 +127,7 @@ class TreeEdit(Treeview):
     def allow(self):
         '''Allowed structural edits (add, delete, addchild).
 
-        Pass the allowed actions as list of strings or space-separated string.
+        Pass the allowed actions as list of strings or comma-separated string.
 
         Can be updated during operation.
         '''
@@ -138,6 +138,9 @@ class TreeEdit(Treeview):
         if isinstance(allow, str):
             allow = allow.split(',')
         allow = [item.strip() for item in allow]
+        bad_items = [item for item in allow if item not in ['add', 'addchild', 'remove']]
+        if bad_items:
+            raise ValueError('Unknown allow entries: %s' % (bad_items,))
         self._allow = allow
         self._update_controls()
     

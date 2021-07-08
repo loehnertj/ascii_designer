@@ -422,6 +422,9 @@ class ToolkitTk(ToolkitBase):
                 tv.editable(key, True)
         if is_editable:
             tv.on_cell_modified += tv.variable.on_cell_modified
+            tv.on_add += tv.variable.on_add_cmd
+            tv.on_remove += tv.variable.on_remove_cmd
+            tv.on_add_child += tv.variable.on_add_child_cmd
         
         tv.bind('<<TreeviewOpen>>', tv.variable.on_gui_expand)
 
@@ -641,14 +644,17 @@ class ListBindingTk(ListBinding):
         return nodes
 
     # === GUI event handlers ===
+
+    def _item(self, iid):
+        sublist, idx = self._list.find_by_toolkit_id(iid)
+        return sublist[idx], sublist
     
     def on_tv_focus(self, function):
         iid = self._tv.focus()
         if not iid:
             return
-        # get the node at idx and return its ref property (the original object)
-        sublist, idx = self._list.find_by_toolkit_id(iid)
-        function(sublist[idx])
+        item, _ = self._item(iid)
+        function(item)
 
     def on_gui_expand(self, stuff):
         iid = self._tv.focus()
@@ -665,10 +671,41 @@ class ListBindingTk(ListBinding):
         self.sort(key, ascending)
 
     def on_cell_modified(self, iid, columnname, val):
-        sublist, idx = self._list.find_by_toolkit_id(iid)
-        item = sublist[idx]
+        item, sublist = self._item(iid)
         self.store(item, val, columnname)
         sublist.item_mutated(item)
         return False
 
-        
+    # == TreeEdit structural changes ==
+
+    def on_add_cmd(self, after_iid):
+        if not after_iid:
+            sublist, idx = self._list, 0
+        else:
+            sublist, idx = self._list.find_by_toolkit_id(after_iid)
+        item = self.factory()
+        sublist.insert(idx+1, item)
+        iid = sublist.toolkit_ids[idx+1]
+        self._tv.focus(iid)
+        self._tv.begin_edit_row(None)
+        return False
+
+    def on_add_child_cmd(self, parent_iid):
+        if not parent_iid:
+            sublist, idx = self._list, -1
+        else:
+            sublist, idx = self._list.find_by_toolkit_id(parent_iid)
+        sublist = sublist.get_children(idx)
+        item = self.factory()
+        sublist.append(item)
+        iid = sublist.toolkit_ids[-1]
+        self._tv.focus(iid)
+        self._tv.begin_edit_row(None)
+        return False
+
+    def on_remove_cmd(self, iid):
+        if not iid:
+            return
+        item, sublist = self._item(iid)
+        sublist.remove(item)
+        return False

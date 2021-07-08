@@ -287,7 +287,8 @@ class ListEditDemo(AutoFrame):
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
         tv = self['players']
-        
+        tv.allow = 'add, remove'
+        tv.variable.factory = lambda: RankRow('', 0, 0)
         tv.on_cell_modified += self._print_change
         tv.on_cell_modified += self._check_recalc_ranks
 
@@ -305,6 +306,8 @@ class ListEditDemo(AutoFrame):
 
         # binds same ObsList instance to second view also.
         # Views are synchronized (sorting, mutation).
+        # Note that this is not really a supported feature right now. Will crash
+        # and burn instantly if the list has children.
         self.p2 = self.players
 
     def _print_change(self, iid, columname, val):
