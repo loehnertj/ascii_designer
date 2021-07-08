@@ -273,7 +273,7 @@ class ToolkitQt(ToolkitBase):
             columns = [txt.strip() for txt in columns.split(',')]
         else:
             columns = []
-        keys = [name.lower() for name in columns]
+        keys = [name.strip('_').lower() for name in columns]
         if text:
             keys.insert(0, '')
             columns.insert(0, text.strip())
@@ -379,9 +379,11 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
         return len(self.keys)
 
     def headerData(self, section, orientation, role):
+        def _crop(txt):
+            return txt if not txt.endswith('_') else txt[:-1]
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return self._captions[section]
+                return _crop(self._captions[section])
         return None
 
     def _idx2sl(self, model_index):
@@ -436,16 +438,36 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
 
     def data(self, index, role):
         if not index.isValid(): return None
-        if role != Qt.DisplayRole: return None
+        if role not in (Qt.DisplayRole, Qt.EditRole): return None
 
         sl, idx = self._idx2sl(index)
         item = sl[idx]
         key = self.keys[index.column()]
         return self.retrieve(item, key)
 
+    def setData(self, index, value, role):
+        if not index.isValid(): return False
+        if not self._captions[index.column()].endswith('_'):
+            # Not editable
+            return False
+        if role != Qt.EditRole: return None
+
+        sl, idx = self._idx2sl(index)
+        item = sl[idx]
+        key = self.keys[index.column()]
+        self.store(item, value, key)
+        # calculated fields might also have changed. Mutate whole item.
+        sl.item_mutated(item)
+        return True
+
+
     def flags(self, index):
         if not index.isValid(): return Qt.NoItemFlags
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        is_editable = self._captions[index.column()].endswith('_')
+        result = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        if is_editable:
+            result |= Qt.ItemIsEditable
+        return result
 
     def parent(self, index):
         if not index.isValid():

@@ -2,6 +2,7 @@
 '''
 
 #import tkinter as tk
+from ascii_designer.tk_treeedit import TreeEdit
 import logging
 import sys
 import random
@@ -287,15 +288,22 @@ class ListEditDemo(AutoFrame):
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
         tv = self['players']
-        tv.allow = 'add, remove'
-        tv.variable.factory = lambda: RankRow('', 0, 0)
-        tv.on_cell_modified += self._print_change
-        tv.on_cell_modified += self._check_recalc_ranks
+        # Configure treeviews, takes some toolkit-specific code
+        if isinstance(tv, TreeEdit):
+            # tk / ttk toolkit (ie. ascii_designer.tk_treeedit.TreeEdit widget)
+            tv.allow = 'add, remove'
+            # binding is ascii_designer.ListBindingTk
+            binding = tv.variable
+        else:
+            # qt toolkit (i.e. QTreeView)
+            # binding is ascii_designer.ListBindingQt
+            binding = tv.model()
 
         # Source setup: name, rank columns are already fine. Configure points to read points property as-is & store int(edited_value).
         def setpoints(obj, val):
             obj.points = int(val)
-        tv.variable.sources(points=('points', setpoints))
+        binding.sources(points=('points', setpoints))
+        binding.factory = lambda: RankRow('', 0, 0)
 
         # init list
         self.players = [
@@ -303,6 +311,13 @@ class ListEditDemo(AutoFrame):
             RankRow('MasterOfDisaster', 3010, 2),
             RankRow('LittleDuck', 12, 3),
         ]
+        # attach our own listeners for change events.
+        # Preferably use the ObsList's events for this. This way you will not
+        # only catch GUI-triggered but also externally induced changes.
+        self.players.on_replace += self._print_change
+        self.players.on_replace += self._check_recalc_ranks_ol
+        # FIXME: flag against infinite recursion, this smells
+        self._in_check_recalc = False
 
         # binds same ObsList instance to second view also.
         # Views are synchronized (sorting, mutation).
@@ -310,13 +325,21 @@ class ListEditDemo(AutoFrame):
         # and burn instantly if the list has children.
         self.p2 = self.players
 
-    def _print_change(self, iid, columname, val):
-        sublist, idx = self.players.find_by_toolkit_id(iid)
-        print('Item changed:', repr(sublist[idx]))
+    def _print_change(self, toolkit_id, item):
+        if not self._in_check_recalc:
+            print('Item changed:', item)
 
-    def _check_recalc_ranks(self, iid, columnname, val):
-        if columnname != 'points':
+    def _check_recalc_ranks_ol(self, toolkit_id, item):
+        if self._in_check_recalc:
+            # _check_recalc_ranks triggers item_mutated again. Prevent infinite recursion.
             return
+        self._in_check_recalc = True
+        try:
+            self._check_recalc_ranks()
+        finally:
+            self._in_check_recalc = False
+
+    def _check_recalc_ranks(self):
         print('Autoupdate rank column')
         i = 1
         for row in sorted(self.players, key=(lambda row: row.points), reverse=True):
