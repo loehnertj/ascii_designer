@@ -421,8 +421,6 @@ class ToolkitTk(ToolkitBase):
             if heading.endswith('_'):
                 tv.editable(key, True)
         if is_editable:
-            # XXX make explicit ([= MyList +*x ])
-            tv.allow = ['add', 'remove']
             tv.on_cell_modified += tv.variable.on_cell_modified
         
         tv.bind('<<TreeviewOpen>>', tv.variable.on_gui_expand)
@@ -666,6 +664,11 @@ class ListBindingTk(ListBinding):
             ascending = True
         self.sort(key, ascending)
 
-    def on_cell_modified(self, iid, columnname):
-        print('Cell modified: %s %s', iid, columnname)
+    def on_cell_modified(self, iid, columnname, val):
+        sublist, idx = self._list.find_by_toolkit_id(iid)
+        item = sublist[idx]
+        self.store(item, val, columnname)
+        sublist.item_mutated(item)
+        return False
+
         

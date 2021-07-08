@@ -208,7 +208,10 @@ class RankRow:
         self.rank = rank
         
     def __str__(self):
-        return 'RR'
+        return f'{self.name} - {self.rank}'
+
+    def __repr__(self):
+        return f'RankRow(name={self.name!r}, points={self.points!r}, rank={self.rank!r})'
             
 class ListDemo(AutoFrame):
     f_body = '''
@@ -277,15 +280,48 @@ class ListDemo(AutoFrame):
 class ListEditDemo(AutoFrame):
     f_body = '''
         | -
-        I[= Players (Name_, Points, Rank)]
+        I[= Players (Name_, Points_, Rank)]
+         Second view of same model:
+         [= p2: (Name, Points)            ]
     '''
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
+        tv = self['players']
+        
+        tv.on_cell_modified += self._print_change
+        tv.on_cell_modified += self._check_recalc_ranks
+
+        # Source setup: name, rank columns are already fine. Configure points to read points property as-is & store int(edited_value).
+        def setpoints(obj, val):
+            obj.points = int(val)
+        tv.variable.sources(points=('points', setpoints))
+
+        # init list
         self.players = [
             RankRow('CaptainJack', 9010, 1),
             RankRow('MasterOfDisaster', 3010, 2),
             RankRow('LittleDuck', 12, 3),
         ]
+
+        # binds same ObsList instance to second view also.
+        # Views are synchronized (sorting, mutation).
+        self.p2 = self.players
+
+    def _print_change(self, iid, columname, val):
+        sublist, idx = self.players.find_by_toolkit_id(iid)
+        print('Item changed:', repr(sublist[idx]))
+
+    def _check_recalc_ranks(self, iid, columnname, val):
+        if columnname != 'points':
+            return
+        print('Autoupdate rank column')
+        i = 1
+        for row in sorted(self.players, key=(lambda row: row.points), reverse=True):
+            # Note that we are not doing anything with the GUI object here. Just
+            # updating a regular old Python object. Then we just tell the list "I changed this item".
+            row.rank = i
+            self.players.item_mutated(row)
+            i += 1
 
 class TreeDemo(AutoFrame):
     f_body = '''
