@@ -38,9 +38,9 @@ submitted on close, except if Escape key is used.
  * Shift+enter,
  * Down arrow:    Close + edit same column in next row
  * Tab,
- * Right arrow:   close + edit next column (or 1st col in next row)
+ * Shift+Right arrow:   close + edit next column (or 1st col in next row)
  * Shift+Tab,
- * Left arrow:    like Tab but backwards
+ * Shift+Left arrow:    like Tab but backwards
  * Up arrow:      Close + edit same col in prev row
 
 **Events**:
@@ -100,13 +100,15 @@ class TreeEdit(Treeview):
 
         self._editbox.bind('<FocusOut>', self.close_edit)
         self._editbox.bind('<Return>', self._close_edit_refocus)
+        self._editbox.bind('<KP_Enter>', self._close_edit_refocus)
         self._editbox.bind('<Escape>', lambda ev: self._close_edit_refocus(ev, cancel=True))
-        self._editbox.bind('<Right>', lambda ev: self.advance('right'))
+        self._editbox.bind('<Shift-Right>', lambda ev: self.advance('right'))
         self._editbox.bind('<Tab>', lambda ev: self.advance('right'))
-        self._editbox.bind('<Left>', lambda ev: self.advance('left'))
+        self._editbox.bind('<Shift-Left>', lambda ev: self.advance('left'))
         self._editbox.bind('<Shift-Tab>', lambda ev: self.advance('left'))
         self._editbox.bind('<Shift-ISO_Left_Tab>', lambda ev: self.advance('left'))
         self._editbox.bind('<Shift-Return>', lambda ev: self.advance('down'))
+        self._editbox.bind('<Shift-KP_Enter>', lambda ev: self.advance('down'))
         self._editbox.bind('<Down>', lambda ev: self.advance('down'))
         self._editbox.bind('<Up>', lambda ev: self.advance('up'))
 
@@ -123,6 +125,12 @@ class TreeEdit(Treeview):
 
     @property
     def allow(self):
+        '''Allowed structural edits (add, delete, addchild).
+
+        Pass the allowed actions as list of strings or space-separated string.
+
+        Can be updated during operation.
+        '''
         return self._allow[:]
     @allow.setter
     def allow(self, allow):
