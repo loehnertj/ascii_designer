@@ -23,7 +23,7 @@ from .event import EventSource
 __all__ = [
     'ObsList',
     'retrieve',
-    'ListMeta',
+    'store',
     ]
 
 L = lambda: logging.getLogger(__name__)
@@ -43,8 +43,12 @@ def retrieve(obj, source):
     ``obj``.
 
     If ``source`` is a callable, return ``source(obj)``.
+    
+    If ``source`` is a 2-tuple, use the first item ("getter") as above.
     '''
-    if isinstance(source, str):
+    if isinstance(source, tuple) and len(source) == 2:
+        return retrieve(obj, source[0])
+    elif isinstance(source, str):
         if source == '':
             return str(obj)
         else:
@@ -62,6 +66,41 @@ def retrieve(obj, source):
         return source(obj)
     else:
         raise ValueError('Could not evaluate source: %r'%source)
+
+def store(obj, val, source):
+    '''Automagic storing of object properties.
+    
+    If ''source`` is a plain string (identifier), use ``setattr`` on ``obj``.
+
+    If ``source`` is a list with a single string-valued item, use ``setitem`` on ``obj``.
+
+    If ``source`` is a callable, call it as ``fn(obj, val)``.
+
+    If ``source`` is a 2-tuple of things, use the second item ("setter") as above.
+
+    .. note::
+        `store` is not fully symmetric to its counterpart `retrieve`.
+
+            * Empty source can not be used for `store`
+            * Plain string source will always use `setitem` without fallback.
+
+        If you use a single callable as source, it must be able to discern
+        between "getter" and "setter" calls, e.g. by having a special default
+        value for the second parameter.
+    '''
+    if isinstance(source, tuple) and len(source) == 2:
+        store(obj, val, source[1])
+    elif isinstance(source, str):
+        if source == '':
+            raise ValueError('Empty string source cannot be used to store data.')
+        else:
+            setattr(obj, source, val)
+    elif isinstance(source, list) and len(source) == 1:
+        obj[source[0]] = val
+    elif callable(source):
+        source(obj, val)
+    else:
+        raise ValueError('Could not evaluate source: %r' % source)
 
     
 class ObsList(MutableSequence):

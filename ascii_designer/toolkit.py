@@ -365,6 +365,9 @@ class ListBinding:
     def retrieve(self, item, column=''):
         return list_model.retrieve(item, self._sources[column])
 
+    def store(self, item, val, column=''):
+        return list_model.store(item, val, self._sources[column])
+
     def sort(self, key=None, ascending:bool=None, restore=False):
         '''Sort the list using one of the columns.
         
