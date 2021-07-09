@@ -13,7 +13,7 @@ from qtpy.QtCore import Qt, QAbstractItemModel, QModelIndex
 import qtpy.QtGui as qg
 import qtpy.QtWidgets as qw
 
-from .toolkit import ToolkitBase
+from .toolkit import ToolkitBase, ListBinding
 from .list_model import ObsList
 
 __all__ = [
@@ -147,7 +147,7 @@ class ToolkitQt(ToolkitBase):
                 idx = widget.currentIndex()
                 return widget.itemText(idx) if idx >= 0 else None
         if cls is qw.QTreeView:
-            return widget.model().getList()
+            return widget.model().list
             
     def setval(self, widget, value):
         if widget.hasFocus():
@@ -190,7 +190,7 @@ class ToolkitQt(ToolkitBase):
         elif isinstance(widget, qw.QSlider):
             widget.setValue(value)
         elif isinstance(widget, qw.QTreeView):
-            widget.model().setList(value)
+            widget.model().list = value
         else:
             raise TypeError('I do not know how to set the value of a %s'%(widget.__class__.__name__))
         
@@ -273,13 +273,13 @@ class ToolkitQt(ToolkitBase):
             columns = [txt.strip() for txt in columns.split(',')]
         else:
             columns = []
-        keys = [name.lower() for name in columns]
+        keys = [name.strip('_').lower() for name in columns]
         if text:
             keys.insert(0, '')
             columns.insert(0, text.strip())
 
         w = qw.QTreeView(parent)
-        model = TreeModel(w, keys, columns)
+        model = ListBindingQt(w, keys, columns)
         w.setModel(model)
 
         # connect events
@@ -361,35 +361,29 @@ class ToolkitQt(ToolkitBase):
         action.triggered.connect(handler)
         parent.addAction(action)
     
-class TreeModel(QAbstractItemModel):
-    def __init__(self, treeview, keys, captions):
-        super().__init__(parent=treeview)
-        self._keys = keys
+class ListBindingQt(QAbstractItemModel, ListBinding):
+    def __init__(self, parent, keys, captions, **kwargs):
+        super().__init__(parent=parent, keys=keys, **kwargs)
         self._captions = captions
-        self._nl = ObsList(keys=keys, toolkit_parent_id=QModelIndex())
-        self._nl.set_listener(self)
-        self._tv = treeview
+        self._list.toolkit_parent_id = QModelIndex()
+        self._tv = parent
 
-    def getList(self):
-        return self._nl
-
-    def setList(self, val):
+    def _set_list(self, val):
         '''replace all current items by the new iterable ``val``.'''
         self.modelAboutToBeReset.emit()
-        old_nl = self._nl
-        if old_nl is not None:
-            old_nl.set_listener(None)
-        self._nl = ObsList(val, meta=old_nl._meta, toolkit_parent_id=QModelIndex())
-        self._nl.set_listener(self)
+        super()._set_list(val)
+        self._list.toolkit_parent_id = QModelIndex()
         self.modelReset.emit()
 
     def columnCount(self, parent):
-        return len(self._keys)
+        return len(self.keys)
 
     def headerData(self, section, orientation, role):
+        def _crop(txt):
+            return txt if not txt.endswith('_') else txt[:-1]
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return self._captions[section]
+                return _crop(self._captions[section])
         return None
 
     def _idx2sl(self, model_index):
@@ -409,7 +403,7 @@ class TreeModel(QAbstractItemModel):
         if parent.column() > 0:
             return 0
         if pl is None:
-            sl = self._nl
+            sl = self._list
         else:
             #sl = pl.get_children(idx)
             sl = pl._childlists[idx]
@@ -420,12 +414,12 @@ class TreeModel(QAbstractItemModel):
     def index(self, row, column, parent):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
-        if column >= len(self._keys):
+        if column >= len(self.keys):
             return QModelIndex()
         pl, idx = self._idx2sl(parent)
         
         if pl is None:
-            sl = self._nl
+            sl = self._list
         else:
             #sl = pl.get_children(idx)
             sl = pl._childlists[idx]
@@ -444,16 +438,36 @@ class TreeModel(QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid(): return None
-        if role != Qt.DisplayRole: return None
+        if role not in (Qt.DisplayRole, Qt.EditRole): return None
 
         sl, idx = self._idx2sl(index)
         item = sl[idx]
-        key = self._keys[index.column()]
-        return sl.retrieve(item, key)
+        key = self.keys[index.column()]
+        return self.retrieve(item, key)
+
+    def setData(self, index, value, role):
+        if not index.isValid(): return False
+        if not self._captions[index.column()].endswith('_'):
+            # Not editable
+            return False
+        if role != Qt.EditRole: return None
+
+        sl, idx = self._idx2sl(index)
+        item = sl[idx]
+        key = self.keys[index.column()]
+        self.store(item, value, key)
+        # calculated fields might also have changed. Mutate whole item.
+        sl.item_mutated(item)
+        return True
+
 
     def flags(self, index):
         if not index.isValid(): return Qt.NoItemFlags
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        is_editable = self._captions[index.column()].endswith('_')
+        result = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        if is_editable:
+            result |= Qt.ItemIsEditable
+        return result
 
     def parent(self, index):
         if not index.isValid():
@@ -461,7 +475,7 @@ class TreeModel(QAbstractItemModel):
         sl, idx = self._idx2sl(index)
 
         # root item
-        if sl is self._nl:
+        if sl is self._list:
             return QModelIndex()
 
         # otherwise
@@ -475,15 +489,16 @@ class TreeModel(QAbstractItemModel):
         self.layoutChanged.emit()
 
     def on_replace(self, iid, item):
-        sl, idx = self._nl.find(item)
+        sl, idx = self._list.find(item)
         top_left = self.createIndex(idx, 0, sl)
-        btm_right = self.createIndex(idx, len(self._keys)-1, sl)
+        btm_right = self.createIndex(idx, len(self.keys)-1, sl)
         self.dataChanged.emit(top_left, btm_right)
 
     def on_remove(self, iid):
         self.layoutChanged.emit()
 
-    def on_sort(self, nl):
+    def on_sort(self, sublist, info):
+        super().on_sort(sublist, info)
         self.layoutChanged.emit()
 
     def on_get_selection(self):
@@ -503,9 +518,17 @@ class TreeModel(QAbstractItemModel):
 
     # actually not a connected handler
     def sort(self, column, order):
-        if column < 0:
-            # do nothing
-            return
-        ascending = (order == Qt.AscendingOrder)
-        key = self._keys[column]
-        self._nl.sort(key, ascending)
+        # we need to do some trickery here, because QAbstractItemModel.sort
+        # collides with ListBinding.sort. We detect which is wanted by looking
+        # at column's type.
+        if isinstance(column, str):
+            # Forward to base class
+            ListBinding.sort(self, column, order)
+        else:
+            # Qt sort implementation.
+            if column < 0:
+                # do nothing
+                return
+            ascending = (order == Qt.AscendingOrder)
+            key = self.keys[column]
+            ListBinding.sort(self, key, ascending)

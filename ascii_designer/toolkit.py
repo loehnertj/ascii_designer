@@ -1,6 +1,7 @@
 import logging
 import re
 import itertools as it
+from . import list_model
 
 L = lambda: logging.getLogger(__name__)
 
@@ -8,6 +9,7 @@ __all__ = [
     'set_toolkit',
     'get_toolkit',
     'ToolkitBase',
+    'ListBinding',
     'auto_id',
     ]
 
@@ -265,3 +267,181 @@ class ToolkitBase:
         where ``modifier`` is one or more of ``C``, ``S``, ``A`` for Ctrl,
         Shift, Alt respectively.
         '''
+
+class ListBinding:
+    '''Glue code to connect an ObsList to a GUI List widget.
+    
+    Takes care of:
+
+        * Extracting column values from list items
+        * Remembering/applying GUI-sorting
+        * Mapping "model" events to GUI actions and vice-versa.
+
+    Properties:
+        keys (list of str)
+            column keys
+        list (ObsList)
+            the bound list
+        sort_key (str)
+            column sorted by
+        sort_ascending (bool)
+            sort order
+        sorted (bool) 
+            whether list is currently sorted *by one of the list columns*.
+            Sorting the list with a key function ("Python way") resets ``sorted`` to ``False``.
+        factory (function() -> Any)
+            Factory function for new items (on add).
+            Signature might change in future releases. I am not sure right now
+            what parameters might be useful.
+
+    Abstract base class. Override methods where noted.
+    '''
+    def __init__(self, keys, **kwargs):
+        super().__init__(**kwargs)
+        self.keys = list(keys or [])
+        self._sources = {k:k for k in self.keys}
+        # set text source always
+        self._sources.setdefault('', '')
+        self.sort_key = ''
+        self.sort_ascending = True
+        self.sorted = False
+        # Set a dummy list first
+        self._list:list_model.ObsList = None
+        self.list = list_model.ObsList(binding=self)
+        
+        def no_factory():
+            raise RuntimeError('In order to create items, you need to set a factory!')
+        self.factory = no_factory
+
+    @property
+    def list(self) -> list_model.ObsList:
+        return self._list
+
+    @list.setter
+    def list(self, val):
+        if val is self._list:
+            return
+        self._set_list(val)
+    
+    def _set_list(self, val):
+        '''Actual list setter. Extracted as method to allow subclassing.'''
+        # detach old list if set
+        l = self._list
+        if l is not None:
+            l.on_insert -= self.on_insert
+            l.on_replace -= self.on_replace
+            l.on_remove -= self.on_remove
+            l.on_load_children -= self.on_load_children
+            l.on_sort -= self.on_sort
+            l.on_get_selection -= self.on_get_selection
+            l.binding = None
+        
+        # attach new list
+        # If the passed-in value is not an obs list, make a copy. Retain the old
+        # ObsList's children source property if set.
+        if not isinstance(val, list_model.ObsList):
+            val = list_model.ObsList(val, binding=self, toolkit_parent_id='')
+            # Copy children / has_children from previous list.
+            # FIXME: This is super hacky, think about where children_source should go.
+            if self._list is not None:
+                val.children_source(self._list._children_source, self._list._has_children_source)
+        l = self._list = val
+        if l is not None:
+            l.on_insert += self.on_insert
+            l.on_replace += self.on_replace
+            l.on_remove += self.on_remove
+            l.on_load_children += self.on_load_children
+            l.on_sort += self.on_sort
+            l.on_get_selection += self.on_get_selection
+            l.binding = self
+
+    def sources(self, _text=None, **kwargs):
+        '''Alter the data binding for each column.
+        
+        Takes the column names as kwargs and the data source as value; which can be:
+        
+            * Empty string to retrieve str(obj)
+            * String ``"name"`` to retrieve attribute ``name`` from the source object
+                (on attribute error, try to get as item)
+            * list of one item ``['something']`` to get item ``'something'`` (think of it as index without object)
+            * Callable ``lambda obj: ..`` to do a custom computation.
+            
+        The ``_text`` argument, if given, is used to set the source
+        for the "default" (anynomous-column) value.
+        '''
+        for key in kwargs:
+            if key not in self.keys:
+                raise KeyError('No column "%s" exists'%key)
+        if _text is not None:
+            kwargs[''] = _text
+        self._sources.update(kwargs)
+    
+    def retrieve(self, item, column=''):
+        return list_model.retrieve(item, self._sources[column])
+
+    def store(self, item, val, column=''):
+        return list_model.store(item, val, self._sources[column])
+
+    def sort(self, key=None, ascending:bool=None, restore=False):
+        '''Sort the list using one of the columns.
+        
+        ``key`` can be a string, refering to the particular column of the 
+        listview. Use Empty String to refer to the anonymous column.
+        
+        If ``key`` is a callable, the list is sorted in normal fashion.
+        
+        Instead of specifying ``key`` and ``ascending``, you can set
+        ``restore=True`` to reuse the last applied sorting, if any.
+        '''
+        if restore and key is None:
+            key = self.sort_key
+        if restore and ascending is None:
+            ascending = self.sort_ascending
+        if isinstance(key, str):
+            keyfunc = lambda item: self.retrieve(item, key)
+            info = {
+                'sort_ascending': self.sort_ascending,
+                'sort_key': self.sort_key
+            }
+        else:
+            # just use passed-in keyfunc, assume that it
+            #doesn't match a column.
+            keyfunc = key
+            info = {}
+        self._list.sort(
+            keyfunc, 
+            reverse=not ascending, 
+            info=info
+        )
+
+    def on_insert(self, idx, item, toolkit_parent_id):
+        '''ABSTRACT: Insert item in tree, return toolkit_id'''
+    def on_replace(self, iid, item):
+        '''ABSTRACT: update GUI with changed item'''
+    def on_remove(self, iid):
+        '''ABSTRACT: remove item in GUI'''
+    def on_load_children(self, children):
+        '''ABSTRACT: insert children into GUI tree'''
+    def on_sort(self, sublist, info):
+        '''reorder rows in GUI
+        
+        Base implementation remembers sort_key, sort_ascending entries
+        from info, and sets ``sorted`` flag if both are there.
+
+        Subclasses should call the base, and then update header formatting if
+        appropriate.
+        '''
+        key = info.get('sort_key', None)
+        asc = info.get('sort_ascending', None)
+
+        if key is not None and asc is not None:
+            self.sorted = True
+            self.sort_key = key
+            self.sort_ascending = asc
+        else:
+            self.sorted = False
+            self.sort_key = ''
+            self.sort_ascending = True
+
+    def on_get_selection(self):
+        '''ABSTRACT: query selected nodes from GUI'''

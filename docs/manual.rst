@@ -2,6 +2,8 @@
 ASCII Designer Manual
 =====================
 
+.. default-role:: py:obj
+
 What is this?
 -------------
 
@@ -329,8 +331,8 @@ A second possibility is to use the box as parent for one or more widgets that
 you add later. For instance, you can render another AutoFrame into the box. (see 
 under Extending).
 
-Value of  List / Tree View
-...........................
+List / Tree View
+----------------
 
 .. note::
     Lists and tree views are considerably more complex than the other widgets. I 
@@ -338,23 +340,33 @@ Value of  List / Tree View
     prepared for changes here if you update.
 
 The general picture is this: The Listview has a value, which on the python side 
-looks mostly like a list. You can slice it, insert/remove items and so on.
+looks mostly like a list. You can slice it, insert/remove items and so on. It is
+actually an instance of `ObsList`, which provides "events" for all changes to
+the list. Also you can make it into a tree by configuring `children_source` (see below).
 
-Inserted items are displayed in the list view in textual form. The value list
+There is a toolkit specific adapter between the `ObsList` object and the actual
+onscreen widget - the `ListBinding`. It interconnects list and widget events,
+and provides the mapping between list item (any object) and column values.
+
+ * With TK/TTk Toolkit, get the binding object by ``self['widgetname'].variable``.
+ * With Qt Toolkit, get the binding object by ``self['widgetname'].model()``.
+
+Items are displayed in the list view in textual form. The value list
 is attached to the actual list view. I.e. if you update the list, the changes
 immediately reflect in the ListView widget.
 
-The value list or its items can become detached if you replace the list or pop 
-nodes of it. You can still use it like a normal python object, but it will not 
-have an onscreen representation anymore.
+The value list can become detached if you replace the virtual value while
+keeping the old reference somehow.  You can still use it like a normal python
+object, but it will not have an onscreen representation anymore. If you attached
+own event handlers, take care of detaching them.
 
-The :any:`sources` method of the list can be used to configure how values are 
-read from the given objects into the predefined columns. By default we look for 
-attributes matching the column names. If you have a first column (defined via 
-the "Text", not the "Columns" list in parens), it gets the object's string 
-representation.
+The :any:`ListBinding.sources` method of the binding is used to configure how
+values are read from the given objects into the predefined columns. By default
+we look for attributes matching the column names. If you have a first column
+(defined via the "Text", not the "Columns" list in parens), it gets the object's
+string representation.
 
-That means that the simplemost way of using the List is this::
+The simplemost way of using the List is this::
 
     class SimpleList(AutoFrame):
         f_body = '''
@@ -394,11 +406,46 @@ A more complex example to showcase how additional columns work::
             self.players.append({'foo': 'Last', 'bar': -1, 'baz': 4})
             
 When working with the list, keep in mind that it **can be changed by user
-interaction** (like any other widget's value). Currently the only possible
-change is to re-sort the list, but more (edit, add, remove items) might come.
+interaction** (like any other widget's value). E.g. if the user sorts the list
+view, the underlying `ObsList` changes order. In case of doubt, make a copy.
+
+Editing
+.......
+
+As of v0.4, a list column can be made editable by appending ``_`` (underscore)
+to the column caption. Some default shortcuts (``F2``, ``Return``, etc.) apply.
+
+The `ListBinding.sources` setting for the column also determines how edits are processed.
+
+ * If set to a string value, the corresponding property is set.
+ * If set to a 1-item list, ``setitem`` is used. I.e. ``object[<name>] = <value>``.
+ * If set to a callable, ``fn(obj, val)`` is called.
+
+Especially in the latter case, you will want to split into getter and setter
+method. To achieve this, set the source to a 2-tuple of definitions. Example::
+
+    def my_setter(obj, val):
+      obj.my_property = float(val)
+
+    self.my_list.binding.sources(my_column=('my_property', my_setter))
+
+reads the value of ``my_column`` by taking ``my_property``, but upon edit,
+converts the value to float.
+
+If you use the Tk toolkit, instead of ``ttk.Treeview`` you will get a
+`tk_treeedit.TreeEdit` instance. This is a custom Tk widget providing the edit
+functionality as well as some more. Please refer to its documentation for details.
+
+The ``add``, ``adchild`` and ``remove`` actions, if permitted, are handled by
+the binding. `ListBindingTk` has a ``factory`` property which provides new items
+when ``add`` function is used. 
+
+In Qt toolkit, Add / Add Child / Remove functions are currently not provided as
+builtin function.
 
 .. note ::
-  Currently Tk and Qt toolkit behave notably different concerning lists.
+  Differences between Qt and Tk:
+
   Tk retrieves the "source" values once to build all the list items. Meaning
   that changes in the underlying items do not reflect in the list unless
   explicitly updated. 
@@ -408,8 +455,14 @@ change is to re-sort the list, but more (edit, add, remove items) might come.
   that you should not do complicated calculations or I/O to retrieve column
   values.
 
+  In Tk, a custom editable list widget is provided. In Qt, the native editing
+  capabilites are used. 
+
+Trees
+.....
+
 **Trees** are created by using the :any:`ObsList.children_source` method, 
-which works similar to  :any:`sources`. Here you can define two sources, one
+which works similar to  `ListBinding.sources`. Here you can define two sources, one
 for ``has_children`` (bool) and one for ``children`` (list).
 
 The tree is lazy-loading, i.e. children are only retrieved when a 
@@ -420,6 +473,26 @@ each item. If not given, we assume that each entry might have children, and they
 all get expanders initially.
 
 The ``children`` property, if retrieved, is again a special list like the "root" one.
+
+.. note::
+    If you assign a non-`ObsList` value to a ListView virtual-value, it is
+    converted into an `ObsList`. The ``children_source`` is taken over from the
+    **previous** value. I.e. you can configure it once and then assign plain
+    lists, retaining tree configuration. This is done for your convenience and
+    for backward compatibility.
+
+    If on the other hand, you assign an `ObsList` instance as value, it is
+    assumed that its `children_source` is already configured, and it won't be
+    touched. This is because `children_source` is taken to be part of the
+    data-model and not of the GUI binding.
+
+Toolkit-native identifiers
+..........................
+
+If you handle toolkit-native events yourself, you will likely need to cope with
+"toolkit native" identifiers (TKinter item id or Qt ``QModelIndex``,
+respectively). `ObsList` keeps track of the association between toolkit ID and
+actual list item for you.
 
 To identify items in the tree, the two methods :any:`ObsList.find` and
 :any:`ObsList.find_by_toolkit_id` are provided, which yield container list

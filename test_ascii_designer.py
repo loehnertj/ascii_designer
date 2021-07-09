@@ -2,6 +2,7 @@
 '''
 
 #import tkinter as tk
+from ascii_designer.tk_treeedit import TreeEdit
 import logging
 import sys
 import random
@@ -27,6 +28,7 @@ class Main(AutoFrame):
      [Boxes and embedding       ]
      [Bound values              ]
      [List view                 ]
+     [List edit                 ]
      [Tree view                 ]
      [Alignment                 ]
      [Window Menu               ]
@@ -47,6 +49,9 @@ class Main(AutoFrame):
     def list_view(self):
         ListDemo().f_show()
         
+    def list_edit(self):
+        ListEditDemo().f_show()
+
     def tree_view(self):
         TreeDemo().f_show()
 
@@ -198,13 +203,17 @@ class BoundCtlDemo(AutoFrame):
             print('%s: %s'%(name, getattr(self, name)))
             
 class RankRow:
-    def __init__(self, name, points, rank):
+    def __init__(self, name, points, rank, is_cheater=False):
         self.name = name
         self.points = points
         self.rank = rank
+        self.is_cheater = is_cheater
         
     def __str__(self):
-        return 'RR'
+        return f'{self.name} - {self.rank}'
+
+    def __repr__(self):
+        return f'RankRow(name={self.name!r}, points={self.points!r}, rank={self.rank!r}, is_cheater={self.is_cheater!r})'
             
 class ListDemo(AutoFrame):
     f_body = '''
@@ -269,6 +278,82 @@ class ListDemo(AutoFrame):
     def shopping(self, item):
         print('Buy: ', item)
     
+
+class ListEditDemo(AutoFrame):
+    f_body = '''
+        | -
+        I[= Players (Name_, Points_, Is_Cheater_, Rank)]
+         Second view of same model:
+         [= p2: (Name, Points)            ]
+    '''
+    def f_build(self, parent, body=None):
+        super().f_build(parent, body)
+        tv = self['players']
+        # Configure treeviews, takes some toolkit-specific code
+        if isinstance(tv, TreeEdit):
+            # tk / ttk toolkit (ie. ascii_designer.tk_treeedit.TreeEdit widget)
+            tv.allow = 'add, remove'
+            # binding is ascii_designer.ListBindingTk
+            binding = tv.variable
+
+            # Source setup: name, rank columns are already fine. Configure points to read points property as-is & store int(edited_value).
+            def setpoints(obj, val):
+                obj.points = int(val)
+            def set_ic(obj, val):
+                obj.is_cheater = (val.lower() in ('true', '1', 'y', 'yes', 'on'))
+            binding.sources(points=('points', setpoints), is_cheater=('is_cheater', set_ic))
+        else:
+            # qt toolkit (i.e. QTreeView)
+            # binding is ascii_designer.ListBindingQt
+            binding = tv.model()
+
+            # Sources need not be configured. Qt handles varying datatype just fine.
+        
+        binding.factory = lambda: RankRow('', 0, 0)
+
+        # init list
+        self.players = [
+            RankRow('CaptainJack', 9010, 1),
+            RankRow('MasterOfDisaster', 3010, 2),
+            RankRow('LittleDuck', 12, 3),
+        ]
+        # attach our own listeners for change events.
+        # Preferably use the ObsList's events for this. This way you will not
+        # only catch GUI-triggered but also externally induced changes.
+        self.players.on_replace += self._print_change
+        self.players.on_replace += self._check_recalc_ranks_ol
+        # FIXME: flag against infinite recursion, this smells
+        self._in_check_recalc = False
+
+        # binds same ObsList instance to second view also.
+        # Views are synchronized (sorting, mutation).
+        # Note that this is not really a supported feature right now. Will crash
+        # and burn instantly if the list has children.
+        self.p2 = self.players
+
+    def _print_change(self, toolkit_id, item):
+        if not self._in_check_recalc:
+            print('Item changed:', repr(item))
+
+    def _check_recalc_ranks_ol(self, toolkit_id, item):
+        if self._in_check_recalc:
+            # _check_recalc_ranks triggers item_mutated again. Prevent infinite recursion.
+            return
+        self._in_check_recalc = True
+        try:
+            self._check_recalc_ranks()
+        finally:
+            self._in_check_recalc = False
+
+    def _check_recalc_ranks(self):
+        print('Autoupdate rank column')
+        i = 1
+        for row in sorted(self.players, key=(lambda row: row.points), reverse=True):
+            # Note that we are not doing anything with the GUI object here. Just
+            # updating a regular old Python object. Then we just tell the list "I changed this item".
+            row.rank = i
+            self.players.item_mutated(row)
+            i += 1
 
 class TreeDemo(AutoFrame):
     f_body = '''
@@ -361,6 +446,7 @@ if __name__ == '__main__':
             'boxes': BoxesDemo, 
             'list': ListDemo,
             'tree': TreeDemo,
+            'listedit': ListEditDemo,
         }[sys.argv[2]]
     else:
         F = Main
