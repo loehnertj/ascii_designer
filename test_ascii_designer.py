@@ -203,16 +203,17 @@ class BoundCtlDemo(AutoFrame):
             print('%s: %s'%(name, getattr(self, name)))
             
 class RankRow:
-    def __init__(self, name, points, rank):
+    def __init__(self, name, points, rank, is_cheater=False):
         self.name = name
         self.points = points
         self.rank = rank
+        self.is_cheater = is_cheater
         
     def __str__(self):
         return f'{self.name} - {self.rank}'
 
     def __repr__(self):
-        return f'RankRow(name={self.name!r}, points={self.points!r}, rank={self.rank!r})'
+        return f'RankRow(name={self.name!r}, points={self.points!r}, rank={self.rank!r}, is_cheater={self.is_cheater!r})'
             
 class ListDemo(AutoFrame):
     f_body = '''
@@ -281,7 +282,7 @@ class ListDemo(AutoFrame):
 class ListEditDemo(AutoFrame):
     f_body = '''
         | -
-        I[= Players (Name_, Points_, Rank)]
+        I[= Players (Name_, Points_, Is_Cheater_, Rank)]
          Second view of same model:
          [= p2: (Name, Points)            ]
     '''
@@ -294,15 +295,20 @@ class ListEditDemo(AutoFrame):
             tv.allow = 'add, remove'
             # binding is ascii_designer.ListBindingTk
             binding = tv.variable
+
+            # Source setup: name, rank columns are already fine. Configure points to read points property as-is & store int(edited_value).
+            def setpoints(obj, val):
+                obj.points = int(val)
+            def set_ic(obj, val):
+                obj.is_cheater = (val.lower() in ('true', '1', 'y', 'yes', 'on'))
+            binding.sources(points=('points', setpoints), is_cheater=('is_cheater', set_ic))
         else:
             # qt toolkit (i.e. QTreeView)
             # binding is ascii_designer.ListBindingQt
             binding = tv.model()
 
-        # Source setup: name, rank columns are already fine. Configure points to read points property as-is & store int(edited_value).
-        def setpoints(obj, val):
-            obj.points = int(val)
-        binding.sources(points=('points', setpoints))
+            # Sources need not be configured. Qt handles varying datatype just fine.
+        
         binding.factory = lambda: RankRow('', 0, 0)
 
         # init list
@@ -327,7 +333,7 @@ class ListEditDemo(AutoFrame):
 
     def _print_change(self, toolkit_id, item):
         if not self._in_check_recalc:
-            print('Item changed:', item)
+            print('Item changed:', repr(item))
 
     def _check_recalc_ranks_ol(self, toolkit_id, item):
         if self._in_check_recalc:
