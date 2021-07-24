@@ -9,6 +9,11 @@ ASCII Designer
 
 Changelog
 ---------
+ * v0.4.1:
+
+   * Make tk_treeedit key bindings a class property (list) that can be modified.
+     Fix crash on Windows due to nonexisting Keysym.
+
  * v0.4.0:
 
    * Refactor internal implementation of List Binding. Architecture simplified

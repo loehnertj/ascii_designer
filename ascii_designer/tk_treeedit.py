@@ -72,6 +72,8 @@ Use ``treeedit.<property> += handler``to bind a handler, ``-=`` to unbind it.
 
 __all__ = ['TreeEdit',]
 
+import sys
+
 import tkinter as tk
 from tkinter.ttk import Treeview
 
@@ -79,6 +81,41 @@ from .event import EventSource
 
 class TreeEdit(Treeview):
     '''see module docs'''
+
+    list_bindings = [
+        ('<Double-Button-1>', "_dblclick"),
+        ('<F2>', 'begin_edit_row'),
+        # Scroll wheel
+        ('<4>', '_close_edit_refocus'),
+        ('<5>', '_close_edit_refocus'),
+        ('<Control-plus>', 'ins_item'),
+        ('<Insert>', 'ins_item'),
+        ('<Control-asterisk>', 'ins_child_item'),
+        ('<Control-minus>', 'del_item'),
+        ('<Delete>', 'del_item'),
+    ]
+    editbox_bindings = [
+        ('<FocusOut>', 'close_edit'),
+        ('<Return>', '_close_edit_refocus'),
+        ('<KP_Enter>', '_close_edit_refocus'),
+        ('<Escape>', '_cancel_edit_refocus'),
+        ('<Shift-Right>', 'advance_right'),
+        ('<Tab>', 'advance_right'),
+        ('<Shift-Left>', 'advance_left'),
+        ('<Shift-Tab>', 'advance_left'),
+        ('<Shift-Return>', 'advance_down'),
+        ('<Shift-KP_Enter>', 'advance_down'),
+        ('<Down>', 'advance_down'),
+        ('<Up>', 'advance_up'),
+        ('<Control-plus>', 'ins_item'),
+        ('<Control-asterisk>', 'ins_child_item'),
+        ('<Control-minus>', 'del_item'),
+    ] + (
+        [] if not sys.platform.startswith('linux') else  [
+            ('<Shift-ISO_Left_Tab>', 'advance_left'),
+        ]
+    )
+
     def __init__(self, master, allow=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self._editvar = tk.StringVar(self, '')
@@ -88,35 +125,16 @@ class TreeEdit(Treeview):
         self._all_columns = ['#0'] + list(kwargs.get('columns', []))
         for name in self._all_columns:
             self._editable[name] = False
-        self.bind('<Double-Button-1>', self._dblclick)
-        self.bind('<F2>', self.begin_edit_row)
-        # Scroll wheel
-        self.bind('<4>', self._close_edit_refocus)
-        self.bind('<5>', self._close_edit_refocus)
+
         self.bind('<Configure>', self._on_configure)
-        self.bind('<Control-plus>', self.ins_item)
-        self.bind('<Insert>', self.ins_item)
-        self.bind('<Control-asterisk>', lambda ev: self.ins_item(child=True))
-        self.bind('<Control-minus>', self.del_item)
-        self.bind('<Delete>', self.del_item)
-
-        self._editbox.bind('<FocusOut>', self.close_edit)
-        self._editbox.bind('<Return>', self._close_edit_refocus)
-        self._editbox.bind('<KP_Enter>', self._close_edit_refocus)
-        self._editbox.bind('<Escape>', lambda ev: self._close_edit_refocus(ev, cancel=True))
-        self._editbox.bind('<Shift-Right>', lambda ev: self.advance('right'))
-        self._editbox.bind('<Tab>', lambda ev: self.advance('right'))
-        self._editbox.bind('<Shift-Left>', lambda ev: self.advance('left'))
-        self._editbox.bind('<Shift-Tab>', lambda ev: self.advance('left'))
-        self._editbox.bind('<Shift-ISO_Left_Tab>', lambda ev: self.advance('left'))
-        self._editbox.bind('<Shift-Return>', lambda ev: self.advance('down'))
-        self._editbox.bind('<Shift-KP_Enter>', lambda ev: self.advance('down'))
-        self._editbox.bind('<Down>', lambda ev: self.advance('down'))
-        self._editbox.bind('<Up>', lambda ev: self.advance('up'))
-
-        self._editbox.bind('<Control-plus>', self.ins_item)
-        self._editbox.bind('<Control-asterisk>', lambda ev: self.ins_item(child=True))
-        self._editbox.bind('<Control-minus>', self.del_item)
+        for trigger, handler in self.list_bindings:
+            if isinstance(handler, str):
+                handler = getattr(self, handler)
+            self.bind(trigger, handler)
+        for trigger, handler in self.editbox_bindings:
+            if isinstance(handler, str):
+                handler = getattr(self, handler)
+            self._editbox.bind(trigger, handler)
 
         self.on_add = EventSource()
         self.on_add_child = EventSource()
@@ -185,6 +203,10 @@ class TreeEdit(Treeview):
 
     def _close_edit_refocus(self, ev=None, cancel=False):
         self.close_edit(ev, cancel)
+        self.focus_set()
+
+    def _cancel_edit_refocus(self, ev=None):
+        self.close_edit(ev, cancel=True)
         self.focus_set()
 
     def close_edit(self, ev=None, cancel=False):
@@ -264,6 +286,18 @@ class TreeEdit(Treeview):
         # to disable default behaviour
         return 'break'
 
+    def advance_left(self, ev=None):
+        return self.advance('left')
+
+    def advance_right(self, ev=None):
+        return self.advance('right')
+
+    def advance_up(self, ev=None):
+        return self.advance('up')
+
+    def advance_down(self, ev=None):
+        return self.advance('down')
+
     def _on_configure(self, ev):
         self.close_edit()
         if self._controls:
@@ -299,6 +333,10 @@ class TreeEdit(Treeview):
             new_iid = self.insert(f if child else self.parent(f), self.index(f)+1)
             self.focus(new_iid)
             self.begin_edit_row(None)
+
+    def ins_child_item(self, ev=None):
+        '''Trigger insertion of new child item'''
+        return self.ins_item(ev, child=True)
 
     def del_item(self, ev=None):
         '''Trigger deletion of focused item.'''
