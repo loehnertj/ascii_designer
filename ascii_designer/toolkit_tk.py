@@ -672,6 +672,8 @@ class ListBindingTk(ListBinding):
 
     def on_cell_modified(self, iid, columnname, val):
         item, sublist = self._item(iid)
+        if columnname == '#0':
+            columnname = ''
         self.store(item, val, columnname)
         sublist.item_mutated(item)
         return False
