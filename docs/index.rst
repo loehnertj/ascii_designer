@@ -9,6 +9,10 @@ ASCII Designer
 
 Changelog
 ---------
+ * v0.4.2:
+   
+   * Fix 2 issues in ListBindingTk related to editable lists.
+
  * v0.4.1:
 
    * Make tk_treeedit key bindings a class property (list) that can be modified.
