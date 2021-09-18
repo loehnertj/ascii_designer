@@ -682,7 +682,7 @@ class ListBindingTk(ListBinding):
 
     def on_add_cmd(self, after_iid):
         if not after_iid:
-            sublist, idx = self._list, 0
+            sublist, idx = self._list, -1
         else:
             sublist, idx = self._list.find_by_toolkit_id(after_iid)
         item = self.factory()
