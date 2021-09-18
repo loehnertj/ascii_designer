@@ -284,7 +284,7 @@ class ListEditDemo(AutoFrame):
         | -
         I[= Players (Name_, Points_, Is_Cheater_, Rank)]
          Second view of same model:
-         [= p2: (Name, Points)            ]
+         [= p2:Name_ (Points,)            ]
     '''
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
@@ -329,6 +329,9 @@ class ListEditDemo(AutoFrame):
         # Views are synchronized (sorting, mutation).
         # Note that this is not really a supported feature right now. Will crash
         # and burn instantly if the list has children.
+        self.p2.sources('name')
+        self['p2'].allow = 'add'
+        self['p2'].variable.factory = lambda: RankRow('', 0, 0)
         self.p2 = self.players
 
     def _print_change(self, toolkit_id, item):
