@@ -184,6 +184,7 @@ class TreeEdit(Treeview):
         self.close_edit()
         self.see(iid)
         self.focus(iid)
+        self.update_idletasks()
         try:
             x, y, w, h = self.bbox(iid, column=column)
         except ValueError:
