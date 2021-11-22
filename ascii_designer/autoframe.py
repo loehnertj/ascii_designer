@@ -21,6 +21,10 @@ class AutoFrame:
     Automatic frame.
 
     class name is converted to title. Override with ``f_title``.
+
+    Set window icon by giving an icon file's path in ``f_icon``. Supported
+    formats are OS-specific; recommended are ``.ico`` on Windows and ``.png`` on
+    *nix.
     
     Body definition with ``f_body``, menu definition with ``f_menu``.
     

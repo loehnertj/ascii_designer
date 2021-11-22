@@ -211,8 +211,11 @@ class ToolkitTk(ToolkitBase):
         root.title(title)
         if icon:
             try:
-                img = tk.PhotoImage(file=icon)
-                root.tk.call('wm', 'iconphoto', root._w, '-default' if is_first else '', img)
+                if icon.lower().endswith((".ico", ".xbm", ".xpm")):
+                    root.iconbitmap(icon)
+                else:
+                    img = tk.PhotoImage(file=icon)
+                    root.tk.call('wm', 'iconphoto', root._w, '-default' if is_first else '', img)
             except tk.TclError:
                 # Icon files can be unreadable for several cases, don't fuzz about it.
                 L().error('Could not set window icon from file %s', icon, exc_info=True)
