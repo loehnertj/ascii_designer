@@ -9,6 +9,16 @@ ASCII Designer
 
 Changelog
 ---------
+ * v0.4.3:
+   
+   * Fix ``f_icon`` not working on Windows (with ``.ico`` files).
+   * Tk (choice only) dropdown: fire event immediately on selection, not on
+     ``FocusOut`` / ``Return`` press
+   * Change virtual-value handling of placeholders. Placeholder "remembers" and
+     returns what was assigned to it. Also, when assigned an unbuilt AutoFrame
+     instance, it will automatically build it, reducing boilerplate for the
+     typical embedding case.
+
  * v0.4.2:
    
    * Fix 2 issues in ListBindingTk related to editable lists.
