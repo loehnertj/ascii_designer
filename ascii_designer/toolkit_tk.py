@@ -114,6 +114,18 @@ def start_mainloop_if_necessary(widget):
     if isinstance(widget, tk.Tk):
         widget.mainloop()
 
+class _ObjectVar:
+    """Simple class to match tkinter's *Var protocol"""
+    def __init__(self, value=None):
+        self._value = value
+
+    def get(self):
+        return self._value
+
+    def set(self, value):
+        self._value = value
+
+
 class ToolkitTk(ToolkitBase):
     '''
     Builds Tk widgets.
@@ -271,30 +283,42 @@ class ToolkitTk(ToolkitBase):
             raise TypeError('Cannot autoconnect %s widget. Sorry.' % type(widget).__name__)
             
     def getval(self, widget):
-        if type(widget) in (tk.Frame, ttk.Frame):
-            return widget
-        elif isinstance(widget, (tk.LabelFrame, ttk.LabelFrame)):
-            return widget.winfo_children()[0]
-        elif isinstance(widget, ScrolledText):
+        if isinstance(widget, ScrolledText):
             return widget.get(1., 'end')
         else:
             return widget.variable.get()
     
     def setval(self, widget, value):
+        from .autoframe import AutoFrame
         if type(widget) in (tk.Frame, tk.LabelFrame, ttk.Frame, ttk.LabelFrame):
-            if type(widget) in (tk.LabelFrame, ttk.LabelFrame):
-                widget = widget.winfo_children()[0]
-            # Replace the frame with the given value
-            if value.master is not widget.master:
-                raise ValueError('Replacement widget must have the same master')
-            # copy grid info
-            grid_info = widget.grid_info()
-            grid_info.pop('in', None)
-            # remove frame
-            widget.grid_forget()
-            widget.destroy()
-            # place new widget
-            value.grid(**grid_info)
+            # Replace content or frame itself.
+            # (If replacing the frame, it will be Tkinter-"destroyed" but it
+            # will still hold the .variable!)
+            oldwidget = widget.variable.get()
+            if isinstance(oldwidget, AutoFrame):
+                oldwidget = oldwidget.f_controls[""]
+                # TODO: Add a custom-cleanup hook to AutoFrame
+                for child in oldwidget.winfo_children():
+                    child.destroy()
+            if isinstance(value, AutoFrame):
+                # render the autoframe into the child frame
+                if not value.f_controls:
+                    value.f_controls[""] = oldwidget
+                    value.f_build(parent=oldwidget)
+                widget.variable.set(value)
+            else:
+                # Replace the current widget with the given value
+                if value.master is not oldwidget.master:
+                    raise ValueError('Replacement widget must have the same master')
+                # copy grid info
+                grid_info = oldwidget.grid_info()
+                grid_info.pop('in', None)
+                # remove frame
+                oldwidget.grid_forget()
+                oldwidget.destroy()
+                # place new widget
+                value.grid(**grid_info)
+                widget.variable.set(value)
         elif isinstance(widget, ScrolledText):
             widget.delete(1., 'end')
             widget.insert('end', value)
@@ -318,6 +342,10 @@ class ToolkitTk(ToolkitBase):
         widget.grid(sticky=sticky)
         
     def box(self, parent, id=None, text='', given_id=''):
+        '''Creates a TKinter frame or label frame.
+        
+        A ``.variable`` property is added just like for the other controls.
+        '''
         LabelFrame = ttk.LabelFrame if self._prefer_ttk else tk.LabelFrame
         Frame = ttk.Frame if self._prefer_ttk else tk.Frame
         id = _unique(parent, id)
@@ -327,8 +355,10 @@ class ToolkitTk(ToolkitBase):
             inner.grid(row=0, column=0, sticky='nsew')
             f.grid_rowconfigure(0, weight=1)
             f.grid_columnconfigure(0, weight=1)
+            f.variable = _ObjectVar(inner)
         else:
             f = Frame(parent, name=id)
+            f.variable = _ObjectVar(f)
         return f
         
     def label(self, parent, id=None, label_id=None, text=''):

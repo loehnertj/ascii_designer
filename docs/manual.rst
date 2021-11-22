@@ -329,7 +329,12 @@ generate yourself.
 
 A second possibility is to use the box as parent for one or more widgets that 
 you add later. For instance, you can render another AutoFrame into the box. (see 
-under Extending).
+under Extending). For your convenience, you can directly assign an AutoFrame
+subclass instance to the virtual value, which triggers building of the
+AutoFrame.
+
+In any case, you can retrieve the new widget or the AutoFrame as new virtual
+value of the placeholder.
 
 List / Tree View
 ----------------
@@ -609,6 +614,10 @@ following example showcases everything::
             af_embedded.f_build(parent=self.placeholder)
             # store away for later use    
             self._embedded = af_embedded
+
+            # # can be simplified to:
+            # self.placeholder = Embedded()
+            # # (later, get the instance from self.placeholder)
             
     class Embedded(AutoFrame):
         f_body = '''

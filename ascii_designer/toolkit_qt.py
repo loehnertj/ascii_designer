@@ -129,10 +129,8 @@ class ToolkitQt(ToolkitBase):
             
     def getval(self, widget):
         cls = widget.__class__
-        if cls is qw.QWidget: return widget
-        if cls is qw.QGroupBox: 
-            # child 0 is the layout, 1 the subwidget
-            return widget.children()[1]
+        if cls is qw.QWidget or cls is qw.QGroupBox: 
+            return widget._value
         if cls is qw.QPushButton: return widget.text()
         # FIXME: for Radio Button, return checked ID
         if cls is qw.QRadioButton: return widget.isChecked()
@@ -150,27 +148,41 @@ class ToolkitQt(ToolkitBase):
             return widget.model().list
             
     def setval(self, widget, value):
+        from .autoframe import AutoFrame
         if widget.hasFocus():
             # FIXME: check the appropriate modified indicators for the wiget
             # if not modified, go through
             return
         if type(widget) in (qw.QWidget, qw.QGroupBox):
-            if type(widget) is qw.QGroupBox:
-                # child 0 is the layout, 1 the subwidget
-                widget = widget.children()[1]
-            # Replace the frame with the given value
-            if value.parent() is not widget.parent():
-                raise ValueError('Replacement widget must have the same parent')
-            # copy grid info
-            layout = widget.parent().layout()
-            idx = layout.indexOf(widget)
-            row, col, rowspan, colspan = layout.getItemPosition(idx)
-            # remove frame
-            widget.deleteLater()
-            # place new widget
-            self.place(value, row, col, rowspan, colspan)
-            # FIXME: I could not figure out how to query the orignal widget's alignment.
-            self.anchor(value, True,True,True,True)
+            # Replace content or frame itself.
+            # (If replacing the widget, it will be Qt-"destroyed" but it
+            # will still hold the ._value!)
+            oldwidget = widget._value
+            if isinstance(oldwidget, AutoFrame):
+                raise NotImplementedError("Qt: cannot replace AutoFrame in placeholders yet.")
+                oldwidget = oldwidget.f_controls[""]
+                # TODO: clear all children, run destroy-hook
+            if isinstance(value, AutoFrame):
+                # render the autoframe into the child frame
+                if not value.f_controls:
+                    value.f_controls[""] = oldwidget
+                    value.f_build(parent=oldwidget)
+                widget._value = value
+            else:
+                # Replace the frame with the given value
+                if value.parent() is not oldwidget.parent():
+                    raise ValueError('Replacement widget must have the same parent')
+                # copy grid info
+                layout = oldwidget.parent().layout()
+                idx = layout.indexOf(oldwidget)
+                row, col, rowspan, colspan = layout.getItemPosition(idx)
+                # remove frame
+                oldwidget.deleteLater()
+                # place new widget
+                self.place(value, row, col, rowspan, colspan)
+                # FIXME: I could not figure out how to query the orignal widget's alignment.
+                self.anchor(value, True,True,True,True)
+            widget._value = value
         elif isinstance(widget, qw.QPushButton):
             widget.setText(value)
         elif isinstance(widget, (qw.QCheckBox, qw.QRadioButton)):
@@ -221,6 +233,10 @@ class ToolkitQt(ToolkitBase):
         
     # Widgets
     def box(self, parent, id=None, text='', given_id=''):
+        """Creates a QWidget or QGroupBox.
+        
+        A ``_value`` property is created, to hold AutoFrame-reassigned value.
+        """
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
         if given_id and text:
@@ -231,9 +247,11 @@ class ToolkitQt(ToolkitBase):
             inner = qw.QWidget(f)
             self.place(inner, 0, 0)
             inner.setLayout(qw.QGridLayout())
+            f._value = inner
         else:
             f = qw.QWidget(parent)
             f.setLayout(qw.QGridLayout())
+            f._value = f
         return f
         
     def label(self, parent, id=None, label_id=None, text=''):

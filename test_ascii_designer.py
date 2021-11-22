@@ -142,13 +142,14 @@ class BoxesDemo(AutoFrame):
         elif TK == 'qt':
             bm = self.box.parent()
             gbm = self.groupbox.parent()
-        self.box = self.f_toolkit.button(parent=bm, text="this replaces box")
+        b = self.box = self.f_toolkit.button(parent=bm, text="this replaces box")
+        # placeholder "value" is now the new widget
+        assert self.box is b
         self.groupbox = self.f_toolkit.button(parent=gbm, text='this fills groupbox')
         
         # Nesting
         if self._level:
-            inner = BoxesDemo(self._level-1)
-            inner.f_build(parent=self.nest_box, body=inner.f_body)
+            self.nest_box = BoxesDemo(self._level-1)
         
 class AlignmentDemo(AutoFrame):
     '''Row/Column stretch is controlled by "-" in the column head and "I" in row head
