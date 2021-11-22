@@ -254,7 +254,10 @@ class ToolkitTk(ToolkitBase):
         elif isinstance(widget, ScrolledText):
             widget.bind('<Return>', lambda ev:function(widget.get(1., 'end')))
             widget.bind('<FocusOut>', lambda ev: function(widget.get(1., 'end')))
+        elif isinstance(widget, ttk.Combobox) and widget["state"].string == "readonly":
+            widget.bind('<<ComboboxSelected>>', lambda ev:function(widget.variable.get()))
         elif isinstance(widget, (tk.Entry, ttk.Entry)):
+            # also catches non-readonly Combobox
             widget.bind('<Return>', lambda ev:function(widget.variable.get()))
             widget.bind('<FocusOut>', lambda ev: function(widget.variable.get()))
         elif isinstance(widget, (
