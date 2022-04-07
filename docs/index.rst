@@ -9,6 +9,13 @@ ASCII Designer
 
 Changelog
 ---------
+
+ * v0.4.4:
+   * Fix edit-widget placement issues in Tk Treeedit
+   * Treeedit subwidgets are now ttk (i.e. stylable)
+   * Treeedit ``autoedit_added`` property
+   * Fix icon "inheritance" on Windows
+
  * v0.4.3:
    
    * Fix ``f_icon`` not working on Windows (with ``.ico`` files).
