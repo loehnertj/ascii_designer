@@ -21,8 +21,11 @@ Package overview:
 '''
 from .autoframe import AutoFrame
 from .toolkit import set_toolkit
+from .event import EventSource, CancelEvent
 
 __all__ = [
     'AutoFrame',
     'set_toolkit',
+    'EventSource',
+    'CancelEvent',
     ]

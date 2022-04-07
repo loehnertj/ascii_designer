@@ -10,6 +10,10 @@ ASCII Designer
 Changelog
 ---------
 
+ * unreleased:
+
+   * export ``EventSource`` and ``CancelEvent`` on package-level
+
  * v0.4.4:
  
    * Fix edit-widget placement issues in Tk Treeedit
