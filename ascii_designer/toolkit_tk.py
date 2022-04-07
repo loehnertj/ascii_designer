@@ -217,15 +217,20 @@ class ToolkitTk(ToolkitBase):
                 key: tk.BitmapImage(name='::icons::%s'%key, data=_aa2xbm(data))
                 for key, data in _ICONS.items()
             }
+            # XXX: this is a string, not a bitmap image. However it is the most convenient way to keep it.
+            root.icons["_root"] = icon
             self.setup_style(root)
         else:
             root = tk.Toplevel()
         root.title(title)
+        icon = icon or _master_window.icons["_root"]
         if icon:
             try:
                 if icon.lower().endswith((".ico", ".xbm", ".xpm")):
+                    # default argument does not seem to work at least on linux.
+                    # Roll our own fallback system.
                     root.iconbitmap(icon)
-                else:
+                elif is_first or icon!= _master_window.icons["_root"]:
                     img = tk.PhotoImage(file=icon)
                     root.tk.call('wm', 'iconphoto', root._w, '-default' if is_first else '', img)
             except tk.TclError:
