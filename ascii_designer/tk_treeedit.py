@@ -75,11 +75,11 @@ __all__ = ['TreeEdit',]
 import sys
 
 import tkinter as tk
-from tkinter.ttk import Treeview
+import tkinter.ttk as ttk
 
 from .event import EventSource
 
-class TreeEdit(Treeview):
+class TreeEdit(ttk.Treeview):
     '''see module docs'''
 
     list_bindings = [
@@ -119,7 +119,7 @@ class TreeEdit(Treeview):
     def __init__(self, master, allow=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self._editvar = tk.StringVar(self, '')
-        self._editbox = tk.Entry(self, textvariable=self._editvar)
+        self._editbox = ttk.Entry(self, textvariable=self._editvar)
         self._edit_cell = None
         self._editable = {}
         self._all_columns = ['#0'] + list(kwargs.get('columns', []))
@@ -307,15 +307,15 @@ class TreeEdit(Treeview):
     def _update_controls(self):
         allow = self._allow
         if allow:
-            ctls = self._controls = tk.Frame(self)
+            ctls = self._controls = ttk.Frame(self)
             if 'add' in allow:
-                addbtn = tk.Button(ctls, text=' + ', command=lambda:self.ins_item())
+                addbtn = ttk.Button(ctls, text=' + ', command=lambda:self.ins_item())
                 addbtn.pack(side='left')
             if 'addchild' in allow:
-                addcbtn = tk.Button(ctls, text='+>', command=lambda:self.ins_item(child=True))
+                addcbtn = ttk.Button(ctls, text='+>', command=lambda:self.ins_item(child=True))
                 addcbtn.pack(side='left')
             if 'remove' in allow:
-                delbtn = tk.Button(ctls, text=' X ', command=self.del_item)
+                delbtn = ttk.Button(ctls, text=' X ', command=self.del_item)
                 delbtn.pack(side='left')
         else:
             self._controls = None
