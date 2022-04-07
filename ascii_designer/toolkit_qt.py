@@ -47,6 +47,22 @@ class ToolkitQt(ToolkitBase):
         'preferences': qg.QKeySequence.Preferences,
         'quit': qg.QKeySequence.Quit,
     }
+
+    widget_classes = {
+        "label": qw.QLabel,
+        "box": qw.QWidget,
+        "box_labeled": qw.QGroupBox,
+        "option": qw.QRadioButton,
+        "checkbox": qw.QCheckBox,
+        "slider": qw.QSlider,
+        "multiline": qw.QPlainTextEdit,
+        "textbox": qw.QLineEdit,
+        "treelist": qw.QTreeView,
+        "combo": qw.QComboBox,
+        "dropdown": qw.QComboBox,
+        "button": qw.QPushButton,
+    }
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -129,22 +145,22 @@ class ToolkitQt(ToolkitBase):
             
     def getval(self, widget):
         cls = widget.__class__
-        if cls is qw.QWidget or cls is qw.QGroupBox: 
+        if cls is qw.QWidget or issubclass(cls, qw.QGroupBox):
             return widget._value
-        if cls is qw.QPushButton: return widget.text()
+        if issubclass(cls, qw.QPushButton): return widget.text()
         # FIXME: for Radio Button, return checked ID
-        if cls is qw.QRadioButton: return widget.isChecked()
-        if cls is qw.QCheckBox: return widget.isChecked()
-        if cls is qw.QLineEdit: return widget.text()
-        if cls is qw.QPlainTextEdit: return widget.toPlainText()
-        if cls is qw.QSlider: return widget.value()
-        if cls is qw.QComboBox:
+        if issubclass(cls, qw.QRadioButton): return widget.isChecked()
+        if issubclass(cls, qw.QCheckBox): return widget.isChecked()
+        if issubclass(cls, qw.QLineEdit): return widget.text()
+        if issubclass(cls, qw.QPlainTextEdit): return widget.toPlainText()
+        if issubclass(cls, qw.QSlider): return widget.value()
+        if issubclass(cls, qw.QComboBox):
             if widget.isEditable():
                 return widget.lineEdit().text()
             else:
                 idx = widget.currentIndex()
                 return widget.itemText(idx) if idx >= 0 else None
-        if cls is qw.QTreeView:
+        if issubclass(cls, qw.QTreeView):
             return widget.model().list
             
     def setval(self, widget, value):
@@ -240,7 +256,8 @@ class ToolkitQt(ToolkitBase):
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
         if given_id and text:
-            f = qw.QGroupBox(parent=parent, title=text)
+            cls = self.widget_classes["box_labeled"]
+            f = cls(parent=parent, title=text)
             f.setLayout(qw.QGridLayout())
             self.row_stretch(f, 0, 1)
             self.col_stretch(f, 0, 1)
@@ -249,7 +266,8 @@ class ToolkitQt(ToolkitBase):
             inner.setLayout(qw.QGridLayout())
             f._value = inner
         else:
-            f = qw.QWidget(parent)
+            cls = self.widget_classes["box"]
+            f = cls(parent)
             f.setLayout(qw.QGridLayout())
             f._value = f
         return f
@@ -258,25 +276,25 @@ class ToolkitQt(ToolkitBase):
         '''label'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qw.QLabel(parent=parent, text=text)
+        return self.widget_classes["label"](parent=parent, text=text)
         
     def button(self, parent, id=None, text=''):
         '''button'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qw.QPushButton(parent=parent, text=text)
+        return self.widget_classes["button"](parent=parent, text=text)
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qw.QLineEdit(text, parent=parent)
+        return self.widget_classes["textbox"](text, parent=parent)
     
     def multiline(self, parent, id=None, text=''):
         '''multi-line text entry box'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        return qw.QPlainTextEdit(text, parent=parent)
+        return self.widget_classes["multiline"](text, parent=parent)
 
     def treelist(self, parent, id=None, text='', columns=None):
         '''treeview (also usable as plain list)
@@ -296,7 +314,7 @@ class ToolkitQt(ToolkitBase):
             keys.insert(0, '')
             columns.insert(0, text.strip())
 
-        w = qw.QTreeView(parent)
+        w = self.widget_classes["treelist"](parent)
         model = ListBindingQt(w, keys, columns)
         w.setModel(model)
 
@@ -307,11 +325,11 @@ class ToolkitQt(ToolkitBase):
 
         return w
     
-    def dropdown(self, parent, id=None, text='', values=None):
+    def dropdown(self, parent, id=None, text='', values=None, _clskey="dropdown"):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        w = qw.QComboBox(parent)
+        w = self.widget_classes[_clskey](parent)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         w.addItems(choices)
         return w
@@ -320,7 +338,7 @@ class ToolkitQt(ToolkitBase):
         '''dropdown with editable values.'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        w = self.dropdown(parent, id=id, text=text, values=values)
+        w = self.dropdown(parent, id=id, text=text, values=values, _clskey="combo")
         w.setEditable(True)
         return w
         
@@ -328,7 +346,7 @@ class ToolkitQt(ToolkitBase):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        rb = qw.QRadioButton(text, parent=parent)
+        rb = self.widget_classes["option"](text, parent=parent)
         rb.setChecked((checked=='x'))
         return rb
     
@@ -336,7 +354,7 @@ class ToolkitQt(ToolkitBase):
         '''Checkbox'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        cb = qw.QCheckBox(text, parent=parent)
+        cb = self.widget_classes["checkbox"](text, parent=parent)
         cb.setChecked((checked=='x'))
         return cb
     
@@ -344,7 +362,7 @@ class ToolkitQt(ToolkitBase):
         '''slider, integer values, from min to max'''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        s = qw.QSlider(Qt.Horizontal, parent=parent)
+        s = self.widget_classes["slider"](Qt.Horizontal, parent=parent)
         s.setMinimum(int(min))
         s.setMaximum(int(max))
         s.setTickPosition(qw.QSlider.TicksBelow)

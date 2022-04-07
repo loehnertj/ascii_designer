@@ -1,13 +1,12 @@
-'''This is a construction site...''' 
+'''TK Toolkit implementation'''
 
 import logging
 import tkinter as tk
-import tkinter.font
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
+import tkinter.font
 from .tk_treeedit import TreeEdit
 from .toolkit import ToolkitBase, ListBinding
-from .list_model import ObsList
 
 def L():
     return logging.getLogger(__name__)
@@ -162,8 +161,45 @@ class ToolkitTk(ToolkitBase):
     case of normal box the frame root, in case of group box the group box. 
     Recommendation: ``new_widget = tk.Something(master=autoframe.the_box.master)``
     '''
+    widget_classes_tk = {
+        "label": tk.Label,
+        "box": tk.Frame,
+        "box_labeled": tk.LabelFrame,
+        "option": tk.Radiobutton,
+        "checkbox": tk.Checkbutton,
+        "slider": tk.Scale,
+        "multiline": ScrolledText,
+        "textbox": tk.Entry,
+        "treelist": ttk.Treeview,
+        "treelist_editable": TreeEdit,
+        "combo": ttk.Combobox,
+        "dropdown": ttk.Combobox,
+        "button": tk.Button,
+        "scrollbar": tk.Scrollbar,
+    }
+    widget_classes_ttk = {
+        "label": ttk.Label,
+        "box": ttk.Frame,
+        "box_labeled": ttk.LabelFrame,
+        "option": ttk.Radiobutton,
+        "checkbox": ttk.Checkbutton,
+        "slider": ttk.Scale,
+        "multiline": ScrolledText,
+        "textbox": ttk.Entry,
+        "treelist": ttk.Treeview,
+        "treelist_editable": TreeEdit,
+        "combo": ttk.Combobox,
+        "dropdown": ttk.Combobox,
+        "button": ttk.Button,
+        "scrollbar": ttk.Scrollbar,
+    }
     def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', **kwargs):
         self._prefer_ttk = prefer_ttk
+        self.widget_classes = (
+            self.widget_classes_ttk.copy()
+            if prefer_ttk
+            else self.widget_classes_tk.copy()
+        )
         super().__init__(*args, **kwargs)
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
         # Find a better way of grouping (by parent maybe?)
@@ -351,8 +387,8 @@ class ToolkitTk(ToolkitBase):
         
         A ``.variable`` property is added just like for the other controls.
         '''
-        LabelFrame = ttk.LabelFrame if self._prefer_ttk else tk.LabelFrame
-        Frame = ttk.Frame if self._prefer_ttk else tk.Frame
+        LabelFrame = self.widget_classes["box_labeled"]
+        Frame = self.widget_classes["box"]
         id = _unique(parent, id)
         if given_id and text:
             f = LabelFrame(parent, name=id, text=text)
@@ -368,7 +404,7 @@ class ToolkitTk(ToolkitBase):
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
-        Label = ttk.Label if self._prefer_ttk else tk.Label
+        Label = self.widget_classes["label"]
         id = _unique(parent, id)
         var = tk.StringVar(parent, text)
         l = Label(parent, name=id, textvariable=var)
@@ -377,7 +413,7 @@ class ToolkitTk(ToolkitBase):
         
     def button(self, parent, id=None, text=''):
         '''button'''
-        Button = ttk.Button if self._prefer_ttk else tk.Button
+        Button = self.widget_classes["button"]
         id = _unique(parent, id)
         var = tk.StringVar(parent, text)
         b = Button(parent, name=id, textvariable = var)
@@ -386,7 +422,7 @@ class ToolkitTk(ToolkitBase):
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
-        Entry = ttk.Entry if self._prefer_ttk else tk.Entry
+        Entry = self.widget_classes["textbox"]
         id = _unique(parent, id)
         var = tk.StringVar(parent, text)
         e = Entry(parent, name=id, textvariable=var)
@@ -395,7 +431,7 @@ class ToolkitTk(ToolkitBase):
     
     def multiline(self, parent, id=None, text=''):
         id = _unique(parent, id)
-        t = ScrolledText(parent, name=id, height=3)
+        t = self.widget_classes["multiline"](parent, name=id, height=3)
         t.insert('end', text)
         return t
     
@@ -414,8 +450,8 @@ class ToolkitTk(ToolkitBase):
         '''
         def crop_(txt):
             return txt if not txt.endswith('_') else txt[:-1]
-        Frame = ttk.Frame if self._prefer_ttk else tk.Frame
-        Scrollbar = ttk.Scrollbar if self._prefer_ttk else tk.Scrollbar
+        Frame = self.widget_classes["box"]
+        Scrollbar = self.widget_classes["scrollbar"]
         if columns:
             columns = [txt.strip() for txt in columns.split(',')]
         else:
@@ -432,9 +468,13 @@ class ToolkitTk(ToolkitBase):
         # setup scrollable container
         frame = Frame(parent)
         if is_editable:
-            tv = TreeEdit(frame, columns=[k for k in keys if k])
+            tv = self.widget_classes["treelist_editable"](
+                frame, columns=[k for k in keys if k]
+            )
         else:
-            tv = ttk.Treeview(frame, columns=[k for k in keys if k])
+            tv = self.widget_classes["treelist"](
+                frame, columns=[k for k in keys if k]
+            )
         scb = Scrollbar(frame)
         scb.pack(side='right', fill='y')
         tv.pack(expand=1, fill='both')
@@ -483,13 +523,14 @@ class ToolkitTk(ToolkitBase):
         id = _unique(parent, id)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
         var = tk.StringVar(parent, text)
-        cbo = ttk.Combobox(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
+        cls = self.widget_classes["combo" if editable else "dropdown"]
+        cbo = cls(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
         cbo.variable = var
         return cbo
     
     def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-        Radiobutton = ttk.Radiobutton if self._prefer_ttk else tk.Radiobutton
+        Radiobutton = self.widget_classes["option"]
         if not self._radiobutton_var:
             self._radiobutton_var = tk.StringVar(parent, id)
         rb = Radiobutton(parent,
@@ -506,7 +547,7 @@ class ToolkitTk(ToolkitBase):
     
     def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
-        Checkbutton = ttk.Checkbutton if self._prefer_ttk else tk.Checkbutton
+        Checkbutton = self.widget_classes["checkbox"]
         id = _unique(parent, id)
         var = tk.BooleanVar(parent, bool(checked.strip()))
         cb = Checkbutton(
@@ -520,7 +561,7 @@ class ToolkitTk(ToolkitBase):
     
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        Scale = ttk.Scale if self._prefer_ttk else tk.Scale
+        Scale = self.widget_classes["slider"]
         id = _unique(parent, id)
         var = tk.DoubleVar(parent, min)
         s = Scale(

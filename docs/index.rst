@@ -12,6 +12,8 @@ Changelog
 
  * unreleased:
 
+   * introduce ``Toolkit.widget_classes`` attribute, allowing injection of
+     custom widget subclasses
    * export ``EventSource`` and ``CancelEvent`` on package-level
 
  * v0.4.4:

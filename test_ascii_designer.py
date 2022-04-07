@@ -27,6 +27,7 @@ class Main(AutoFrame):
      [Autoconnect               ]
      [Boxes and embedding       ]
      [Bound values              ]
+     [Custom subclass           ]
      [List view                 ]
      [List edit                 ]
      [Tree view                 ]
@@ -45,6 +46,12 @@ class Main(AutoFrame):
         
     def bound_values(self):
         BoundCtlDemo().f_show()
+
+    def custom_subclass(self):
+        if TK not in ("tk", "ttk"):
+            print("Only works under Tkinter, sorry")
+        else:
+            CustomSubclassDemo().f_show()
         
     def list_view(self):
         ListDemo().f_show()
@@ -202,6 +209,51 @@ class BoundCtlDemo(AutoFrame):
     def get_all(self):
         for name in self.bind_names:
             print('%s: %s'%(name, getattr(self, name)))
+
+class CustomSubclassDemo(AutoFrame):
+    f_body = '''
+    |                    |
+     Please see the source code to understand what happens here.
+     Custom entry field:  [_      ]
+     Converted value:     conv_value
+                          [reset]
+    '''
+    import tkinter.ttk as ttk
+
+    class MyEntry(ttk.Entry):
+        @property
+        def float_value(self):
+            v = None
+            try:
+                v = float(self.variable.get())
+            except:
+                self.state(["invalid"])
+            else:
+                self.state(["!invalid"])
+            return v
+        @float_value.setter
+        def float_value(self, val):
+            self.variable.set(f"{val:0.3f}")
+            self.state(["!invalid"])
+
+    def __init__(self):
+        super().__init__()
+        self.f_toolkit.widget_classes["textbox"] = self.MyEntry
+    
+    def on_custom_entry_field(self, text):
+        # access the special float_value property of our field
+        fval = self["custom_entry_field"].float_value
+        if fval is None:
+            self.label_conv_value = "<invalid>"
+        else:
+            # format as engineering number
+            self.label_conv_value = f"{fval:e}"
+    
+    def on_reset(self):
+        # Note how the last digits will be cut off by the format in the setter
+        self["custom_entry_field"].float_value = 1.2345678
+        self.on_custom_entry_field(None)
+
             
 class RankRow:
     def __init__(self, name, points, rank, is_cheater=False):

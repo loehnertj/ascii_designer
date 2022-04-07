@@ -628,5 +628,49 @@ following example showcases everything::
             parent = self.another_placeholder.master
             self.another_placeholder = tk.Button(parent, text='3rd-party control')
             
+Custom widget classes
+.....................
 
+The toolkit has a `widget_classes` property, listing the widget class to
+generate for each widget type (per the widget creation syntax). By changing this
+dictionary, you can make the toolkit return a custom subclass. For instance, you
+could use a ``tk.Entry`` subclass with custom functionality::
+
+    class MyEntry(tk.Entry):
+        # Just add a demonstration property here
+        special_property = True
+
+    class FrameWithCustomWidget(AutoFrame):
+        f_body = """
+          |
+           [My text_ ]
+        """
+
+        def __init__(self):
+            super().__init__()
+            self.f_toolkit.widget_classes["textbox"] = MyEntry
+            # f_build will now use the changed class (only in *this* frame!)
    
+        def on_my_text(self, val):
+            widget = self["my_text"]
+            print(widget.__class__.__name__) # "MyEntry"
+            if widget.special_property:
+                pass # do something special
+
+
+These are the names of the widget classes:
+
+* ``label``
+* ``box``
+* ``box_labeled``
+* ``option``
+* ``checkbox``
+* ``slider``
+* ``multiline``
+* ``textbox``
+* ``treelist``
+* ``treelist_editable`` (tk only)
+* ``combo``
+* ``dropdown``
+* ``button``
+* ``scrollbar`` (tk only)
