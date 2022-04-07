@@ -730,7 +730,8 @@ class ListBindingTk(ListBinding):
         sublist.insert(idx+1, item)
         iid = sublist.toolkit_ids[idx+1]
         self._tv.focus(iid)
-        self._tv.begin_edit_row(None)
+        if self._tv.autoedit_added:
+            self._tv.begin_edit_row(None)
         return False
 
     def on_add_child_cmd(self, parent_iid):
@@ -743,7 +744,8 @@ class ListBindingTk(ListBinding):
         sublist.append(item)
         iid = sublist.toolkit_ids[-1]
         self._tv.focus(iid)
-        self._tv.begin_edit_row(None)
+        if self._tv.autoedit_added:
+            self._tv.begin_edit_row(None)
         return False
 
     def on_remove_cmd(self, iid):

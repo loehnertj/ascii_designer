@@ -332,7 +332,9 @@ class ListEditDemo(AutoFrame):
         # and burn instantly if the list has children.
         self.p2.sources('name')
         self['p2'].allow = 'add'
-        self['p2'].variable.factory = lambda: RankRow('', 0, 0)
+        self['p2'].autoedit_added = False
+        binding = self["p2"].variable if isinstance(self["p2"], TreeEdit) else self["p2"].model()
+        binding.factory = lambda: RankRow('', 0, 0)
         self.p2 = self.players
 
     def _print_change(self, toolkit_id, item):
