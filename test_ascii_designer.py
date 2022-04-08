@@ -262,6 +262,7 @@ class CustomSubclassDemo(AutoFrame):
         self.on_custom_entry_field(None)
 
 class ConvertersDemo(AutoFrame):
+    f_option_tk_autovalidate = True
     f_body = """
                  |
          Float:   [ _           ]

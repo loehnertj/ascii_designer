@@ -156,6 +156,11 @@ class ToolkitTk(ToolkitBase):
             explicit choice of theme. Per default, no theme is set if
             ``prefer_ttk`` is ``False``; otherwise, ``winnative`` is used if
             available, otherwise ``clam``.
+        autovalidate (bool):
+            If True, generated widgets using ``GenericVar`` will set themselves
+            up for automatic update of widget state when validated. This
+            uses :py:obj:`.GenericVar.validated_hook`. Affects Entry and Combobox.
+            Can be changed afterwards.
 
     Box variable (placeholder): If you replace the box by setting its virtual 
     attribute, the replacement widget must have the same master as the box: in 
@@ -194,7 +199,7 @@ class ToolkitTk(ToolkitBase):
         "button": ttk.Button,
         "scrollbar": ttk.Scrollbar,
     }
-    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', **kwargs):
+    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', autovalidate:bool=False, **kwargs):
         self._prefer_ttk = prefer_ttk
         self.widget_classes = (
             self.widget_classes_ttk.copy()
@@ -204,6 +209,7 @@ class ToolkitTk(ToolkitBase):
         super().__init__(*args, **kwargs)
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
         # Find a better way of grouping (by parent maybe?)
+        self.autovalidate = autovalidate
         self._radiobutton_var = None
         self._font_size = font_size
         self._ttk_theme = ttk_theme
@@ -428,7 +434,8 @@ class ToolkitTk(ToolkitBase):
         id = _unique(parent, id)
         var = GenericVar(parent, text)
         e = Entry(parent, name=id, textvariable=var)
-        var.validated_hook = e
+        if self.autovalidate:
+            var.validated_hook = e
         e.variable = var
         return e
     
@@ -529,7 +536,8 @@ class ToolkitTk(ToolkitBase):
         cls = self.widget_classes["combo" if editable else "dropdown"]
         cbo = cls(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
         cbo.variable = var
-        var.validated_hook = cbo
+        if self.autovalidate:
+            var.validated_hook = cbo
         return cbo
     
     def option(self, parent, id=None, text='', checked=None):

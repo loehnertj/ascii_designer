@@ -41,6 +41,15 @@ class AutoFrame:
     Attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
     '''
 
+    f_option_tk_autovalidate:bool = False
+    """
+    If True, tk/ttk Entry and Combobox are set up for automatic update of widget state when validated.
+
+    I.e. when value is retrieved or handler is called, the widgets foreground color (tk) or ``invalid`` state (ttk) is updated.
+
+    Opt-in, because it might interfere with user code if not expected.
+    """
+
     def __init__(self):
         self.__dict__['f_controls'] = {}
         self.__dict__['f_toolkit'] = get_toolkit()
@@ -130,6 +139,8 @@ class AutoFrame:
         if not sliced_grid:
             sliced_grid = slice_grid(body)
         toolkit = self.f_toolkit
+        if hasattr(toolkit, "autovalidate"):
+            toolkit.autovalidate = self.f_option_tk_autovalidate
         autoframe = autoframe or self
         
         # create controls
