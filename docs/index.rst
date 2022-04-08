@@ -12,9 +12,13 @@ Changelog
 
  * unreleased:
 
+   * TK/TTK: Add ``GenericVar`` supporting automatic conversion and
+     validated-hook; opt-in automatic update of control's invalid state.
+     See :ref:`generic-var`
    * introduce ``Toolkit.widget_classes`` attribute, allowing injection of
      custom widget subclasses
-   * export ``EventSource`` and ``CancelEvent`` on package-level
+   * export ``EventSource``, ``CancelEvent``, ``Invalid``, ``nullable``,
+     ``gt0``, ``ge0``  on package-level
 
  * v0.4.4:
  

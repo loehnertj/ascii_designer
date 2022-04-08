@@ -265,8 +265,8 @@ Then, access the generated controls by using ``self["control_id"]`` or
 
 For Tk widgets, if there is an associated Variable object, which you can find it
 as ``self["control_id"].variable`` attribute on the control. For textual widgets
-(Entry, Combobox, etc) this will be a :py:obj:`.GenericVar` instance, which you
-can consider a supercharged ``StringVar``.
+(Entry, Combobox, etc) this will be a `.GenericVar` instance, which you
+can consider a supercharged ``StringVar``. See below for what features it brings.
 
 
 Event binding
@@ -336,6 +336,63 @@ AutoFrame.
 
 In any case, you can retrieve the new widget or the AutoFrame as new virtual
 value of the placeholder.
+
+
+.. _generic-var:
+
+TK Textbox / Combobox conversion + validation
+.............................................
+
+ASCII designer ships with its own supercharged Tk variable class, the
+`.GenericVar`. It is used for Entry, Combobox, Label and Button widgets.
+
+Without further setup, it behaves like a regular ``StringVar``.
+
+Type conversion is done using the `~.GenericVar.convert` property. ``convert``
+is a callback that is used within ``.get()``
+to convert the string value into something else. This also applies when
+accessing the value via the virtual attribute, or when the automatic handler is
+called.
+
+For example, you can do the following::
+
+    class ConvertingFrame(AutoFrame):
+        f_body = """
+        |
+         [entry_ ]
+        """
+
+        def f_on_build(self):
+            self.f_controls["entry"].variable.convert = int
+
+When retrieving the value via ``self.entry``, you will get a bona-fide Integer.
+
+If the converter fails, ``GenericVar.get()`` will return the special
+`.Invalid` object.
+
+For your convenience, there are also some "compositors" for common value
+restrictions. See `.nullable`, `.gt0` and `.ge0`.
+
+If needed, you can also setup a conversion in the opposite direction (Value to
+display text) using ``variable.convert_set``. In most cases, the default
+(``str``) should suffice.
+
+Conversion implies Validation of the input text: We consider the input valid if
+the converter does not raise an Exception. ``GenericVar`` allows you to couple a
+side effect to ``get()`` using the `.validated_hook` property. It might have a
+slight smell to it, but is frequently very convenient. :-)
+
+You can enable this on a per-class level by setting the
+``f_option_tk_autovalidate`` attribute of your frame class to ``True``. In this
+case, for all Entry and Combobox widgets, invalid-state will be updated whenever
+the converted value is retrieved. For non-ttk widgets, the foreground color will
+be changed to red if invalid. For ttk widgets, ``invalid`` state is set.
+
+Note that this also applies to plain-string entryboxes - they will always be
+valid, meaning that  ``invalid`` state will be reset on each access. If you want
+to do custom validation for a single control, you can "opt-out" by using:
+``self.f_controls["name"].variable.validated_hook = None``.
+
 
 List / Tree View
 ----------------

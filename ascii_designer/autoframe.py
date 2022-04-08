@@ -24,7 +24,7 @@ class AutoFrame:
 
     Set window icon by giving an icon file's path in ``f_icon``. Supported
     formats are OS-specific; recommended are ``.ico`` on Windows and ``.png`` on
-    *nix.
+    Unix.
     
     Body definition with ``f_body``, menu definition with ``f_menu``.
     

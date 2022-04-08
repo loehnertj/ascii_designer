@@ -16,6 +16,7 @@ __all__ = [
     "nullable",
 ]
 
+from typing import Callable
 import weakref
 from tkinter import Variable, Widget
 
@@ -39,23 +40,29 @@ class GenericVar(Variable):
     If ``name`` matches an existing variable and ``value`` is omitted
     then the existing value is retained.
 
-    ``convert`` gives the conversion to apply when ``get``-ting the value.
-    ``convert`` takes the string (widget content) as single argument and
-    returns a converted value. Errors will be caught (see `get`).
 
-    ``convert_set`` gives the function to apply to a value passed in to
-    ``set``. In most cases the default (``str``) will be sufficient.
     """
     _default = ""
 
     def __init__(self, master=None, value=None, name=None, convert=str, convert_set=str, validated_hook=None):
         self.convert = convert
+        """
+        Gives the conversion to apply when ``get``-ting the value.
+
+        ``convert`` takes the string (widget content) as single argument and
+        returns a converted value. Any Exceptions will be caught (see `get`).
+        """
         self.convert_set = convert_set
+        """
+        Gives the function to apply to a value passed in to ``set``.
+        
+        In most cases the default (``str``) will be sufficient.
+        """
         self.validated_hook = validated_hook
         Variable.__init__(self, master, value, name)
 
     @property
-    def validated_hook(self):
+    def validated_hook(self) -> Callable[[bool], None]:
         """If set, adds a side-effect to ``get`` depending on whether the value was valid or not.
 
         It shall be a callback taking a single bool argument ``valid``; which is
@@ -117,9 +124,9 @@ def _make_hook_for_widget(widget):
 
 
 def gt0(convert):
-    '''Applies inner_type, then raises if value is not greater than 0.
+    '''Applies ``convert``, then raises if value is not greater than 0.
     
-    inner_type shall return something number-like.
+    ``convert`` must return something number-like.
 
     >>> generic_var.convert = gt0(int)
     '''
@@ -132,9 +139,9 @@ def gt0(convert):
 
 
 def ge0(convert):
-    '''Applies inner_type, then raises if value is not greater or equal to 0.
+    '''Applies ``convert``, then raises if value is not greater or equal to 0.
     
-    inner_type shall return something number-like.
+    ``convert`` must return something number-like.
 
     >>> generic_var.convert = ge0(int)
     '''
@@ -149,7 +156,16 @@ def ge0(convert):
 def nullable(convert):
     '''Creates a converter that returns ``None`` on empty string, otherwise applies given converter.
     
-    >>> generic_var.convert = nullable(float)
+    >>> generic_var = GenericVar(tkroot, convert=nullable(float))
+    >>> generic_var.set("1.0")
+    >>> generic_var.get()
+    1.0
+    >>> generic_var.set("")
+    >>> generic_var.get()
+    None
+    >>> generic_var.set("foo")
+    >>> generic_var.get()
+    <class Invalid>
     '''
     def wrap_convert(x):
         if x == "":
