@@ -16,6 +16,7 @@ __all__ = [
     "nullable",
 ]
 
+import weakref
 from tkinter import Variable, Widget
 
 
@@ -96,14 +97,21 @@ class GenericVar(Variable):
         super().set(value)
 
 def _make_hook_for_widget(widget):
+    wwidget = weakref.ref(widget)
     if hasattr(widget, "state"):
         # TTK
         def setvalid(valid):
+            widget = wwidget()
+            if widget is None:
+                return
             widget.state(["!invalid"] if valid else ["invalid"])
     else:
         # plain Tk
         orig_color = widget["foreground"]
         def setvalid(valid):
+            widget = wwidget()
+            if widget is None:
+                return
             widget["foreground"] = orig_color if valid else "red"
     return setvalid
 
