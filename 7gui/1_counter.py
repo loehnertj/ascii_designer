@@ -8,12 +8,13 @@ class Counter(AutoFrame):
 
     def f_on_build(self):
         self["counter"]["state"] = "readonly"
-        self.counter = "0"
+        self["counter"].variable.convert = int
+        self.counter = 0
 
     def count(self):
-        self.counter = str(int(self.counter)+1)
+        self.counter = self.counter+1
 
 
 if __name__ == "__main__":
-    set_toolkit("tk")
+    set_toolkit("ttk")
     Counter().f_show()
