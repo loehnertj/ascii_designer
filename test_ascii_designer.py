@@ -7,7 +7,7 @@ import logging
 import sys
 import random
 import time
-from ascii_designer import AutoFrame, set_toolkit, ge0, Invalid
+from ascii_designer import AutoFrame, set_toolkit, nullable, ge0, Invalid
 
 
 
@@ -277,7 +277,7 @@ class ConvertersDemo(AutoFrame):
 
     def f_on_build(self):
         self.label_result = ""
-        self["float"].variable.convert = float 
+        self["float"].variable.convert = nullable(float)
         self["int"].variable.convert = ge0(int)
         def isinlist(val):
             if val not in ["a", "b", "c", "d"]:
@@ -304,8 +304,8 @@ class ConvertersDemo(AutoFrame):
             self.label_result = "some input is invalid"
         else:
             self.label_result = "setting outputs"
-            self.output1 = a
-            self.output2 = a            
+            self.output1 = a if a is not None else 99.0
+            self.output2 = a if a is not None else 99.0
 
 
 class RankRow:
