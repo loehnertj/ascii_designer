@@ -7,7 +7,7 @@ import logging
 import sys
 import random
 import time
-from ascii_designer import AutoFrame, set_toolkit
+from ascii_designer import AutoFrame, set_toolkit, nullable, ge0, Invalid
 
 
 
@@ -27,6 +27,8 @@ class Main(AutoFrame):
      [Autoconnect               ]
      [Boxes and embedding       ]
      [Bound values              ]
+     [Custom subclass           ]
+     [Converters                ]
      [List view                 ]
      [List edit                 ]
      [Tree view                 ]
@@ -45,6 +47,18 @@ class Main(AutoFrame):
         
     def bound_values(self):
         BoundCtlDemo().f_show()
+
+    def custom_subclass(self):
+        if TK not in ("tk", "ttk"):
+            print("Only works under Tkinter, sorry")
+        else:
+            CustomSubclassDemo().f_show()
+        
+    def converters(self):
+        if TK not in ("tk", "ttk"):
+            print("Only works under Tkinter, sorry")
+        else:
+            ConvertersDemo().f_show()
         
     def list_view(self):
         ListDemo().f_show()
@@ -202,7 +216,98 @@ class BoundCtlDemo(AutoFrame):
     def get_all(self):
         for name in self.bind_names:
             print('%s: %s'%(name, getattr(self, name)))
-            
+
+class CustomSubclassDemo(AutoFrame):
+    f_body = '''
+    |                    |
+     Please see the source code to understand what happens here.
+     Custom entry field:  [_      ]
+     Converted value:     conv_value
+                          [reset]
+    '''
+    import tkinter.ttk as ttk
+
+    class MyEntry(ttk.Entry):
+        @property
+        def float_value(self):
+            v = None
+            try:
+                v = float(self.variable.get())
+            except:
+                self.state(["invalid"])
+            else:
+                self.state(["!invalid"])
+            return v
+        @float_value.setter
+        def float_value(self, val):
+            self.variable.set(f"{val:0.3f}")
+            self.state(["!invalid"])
+
+    def __init__(self):
+        super().__init__()
+        self.f_toolkit.widget_classes["textbox"] = self.MyEntry
+    
+    def on_custom_entry_field(self, text):
+        # access the special float_value property of our field
+        fval = self["custom_entry_field"].float_value
+        if fval is None:
+            self.label_conv_value = "<invalid>"
+        else:
+            # format as engineering number
+            self.label_conv_value = f"{fval:e}"
+    
+    def on_reset(self):
+        # Note how the last digits will be cut off by the format in the setter
+        self["custom_entry_field"].float_value = 1.2345678
+        self.on_custom_entry_field(None)
+
+class ConvertersDemo(AutoFrame):
+    f_option_tk_autovalidate = True
+    f_body = """
+                 |
+         Float:   [ _           ]
+         Int:     [ _           ]
+         in-list: [_ (a, b, c) v]
+         instant: [ _           ]
+                  [test]
+                  result
+         output1: [ _           ]
+         output2: [ _           ]
+    """
+
+    def f_on_build(self):
+        self.label_result = ""
+        self["float"].variable.convert = nullable(float)
+        self["int"].variable.convert = ge0(int)
+        def isinlist(val):
+            if val not in ["a", "b", "c", "d"]:
+                raise ValueError()
+            return val
+        self["inlist"].variable.convert = isinlist
+        self["instant"].variable.convert = float
+        # display the same value in different formats
+        # Note that you will lose precision by this. Same effect as if you rounded.
+        self["output1"].variable.convert_set = lambda x: f"{x:0.1e}"
+        self["output2"].variable.convert_set = lambda x: f"{x:3.3f}"
+
+    def on_instant(self, val):
+        # on call of the handler, variable is retrieved and validation happens.
+        # Nothing more required.
+        pass
+
+    def test(self):
+        a = self.float
+        b = self.int
+        c = self.inlist
+        d = self.instant
+        if Invalid in [a, b, c, d]:
+            self.label_result = "some input is invalid"
+        else:
+            self.label_result = "setting outputs"
+            self.output1 = a if a is not None else 99.0
+            self.output2 = a if a is not None else 99.0
+
+
 class RankRow:
     def __init__(self, name, points, rank, is_cheater=False):
         self.name = name
@@ -332,7 +437,9 @@ class ListEditDemo(AutoFrame):
         # and burn instantly if the list has children.
         self.p2.sources('name')
         self['p2'].allow = 'add'
-        self['p2'].variable.factory = lambda: RankRow('', 0, 0)
+        self['p2'].autoedit_added = False
+        binding = self["p2"].variable if isinstance(self["p2"], TreeEdit) else self["p2"].model()
+        binding.factory = lambda: RankRow('', 0, 0)
         self.p2 = self.players
 
     def _print_change(self, toolkit_id, item):
@@ -441,12 +548,14 @@ if __name__ == '__main__':
     TK = 'tk'
     if sys.argv[1:]:
         TK = sys.argv[1]
+
     set_toolkit(TK)
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,
             'bound': BoundCtlDemo,
             'alignment': AlignmentDemo,
+            'converters': ConvertersDemo,
             'boxes': BoxesDemo, 
             'list': ListDemo,
             'tree': TreeDemo,

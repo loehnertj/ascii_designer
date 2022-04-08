@@ -9,6 +9,24 @@ ASCII Designer
 
 Changelog
 ---------
+
+ * v0.5.0:
+
+   * TK/TTK: Add ``GenericVar`` supporting automatic conversion and
+     validated-hook; opt-in automatic update of control's invalid state.
+     See :ref:`generic-var`
+   * introduce ``Toolkit.widget_classes`` attribute, allowing injection of
+     custom widget subclasses
+   * export ``EventSource``, ``CancelEvent``, ``Invalid``, ``nullable``,
+     ``gt0``, ``ge0``  on package-level
+
+ * v0.4.4:
+ 
+   * Fix edit-widget placement issues in Tk Treeedit
+   * Treeedit subwidgets are now ttk (i.e. stylable)
+   * Treeedit ``autoedit_added`` property
+   * Fix icon "inheritance" on Windows
+
  * v0.4.3:
    
    * Fix ``f_icon`` not working on Windows (with ``.ico`` files).

@@ -1,13 +1,13 @@
-'''This is a construction site...''' 
+'''TK Toolkit implementation'''
 
 import logging
 import tkinter as tk
-import tkinter.font
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
+import tkinter.font
 from .tk_treeedit import TreeEdit
+from .tk_generic_var import GenericVar
 from .toolkit import ToolkitBase, ListBinding
-from .list_model import ObsList
 
 def L():
     return logging.getLogger(__name__)
@@ -156,17 +156,60 @@ class ToolkitTk(ToolkitBase):
             explicit choice of theme. Per default, no theme is set if
             ``prefer_ttk`` is ``False``; otherwise, ``winnative`` is used if
             available, otherwise ``clam``.
+        autovalidate (bool):
+            If True, generated widgets using ``GenericVar`` will set themselves
+            up for automatic update of widget state when validated. This
+            uses :py:obj:`.GenericVar.validated_hook`. Affects Entry and Combobox.
+            Can be changed afterwards.
 
     Box variable (placeholder): If you replace the box by setting its virtual 
     attribute, the replacement widget must have the same master as the box: in 
     case of normal box the frame root, in case of group box the group box. 
     Recommendation: ``new_widget = tk.Something(master=autoframe.the_box.master)``
     '''
-    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', **kwargs):
+    widget_classes_tk = {
+        "label": tk.Label,
+        "box": tk.Frame,
+        "box_labeled": tk.LabelFrame,
+        "option": tk.Radiobutton,
+        "checkbox": tk.Checkbutton,
+        "slider": tk.Scale,
+        "multiline": ScrolledText,
+        "textbox": tk.Entry,
+        "treelist": ttk.Treeview,
+        "treelist_editable": TreeEdit,
+        "combo": ttk.Combobox,
+        "dropdown": ttk.Combobox,
+        "button": tk.Button,
+        "scrollbar": tk.Scrollbar,
+    }
+    widget_classes_ttk = {
+        "label": ttk.Label,
+        "box": ttk.Frame,
+        "box_labeled": ttk.LabelFrame,
+        "option": ttk.Radiobutton,
+        "checkbox": ttk.Checkbutton,
+        "slider": ttk.Scale,
+        "multiline": ScrolledText,
+        "textbox": ttk.Entry,
+        "treelist": ttk.Treeview,
+        "treelist_editable": TreeEdit,
+        "combo": ttk.Combobox,
+        "dropdown": ttk.Combobox,
+        "button": ttk.Button,
+        "scrollbar": ttk.Scrollbar,
+    }
+    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', autovalidate:bool=False, **kwargs):
         self._prefer_ttk = prefer_ttk
+        self.widget_classes = (
+            self.widget_classes_ttk.copy()
+            if prefer_ttk
+            else self.widget_classes_tk.copy()
+        )
         super().__init__(*args, **kwargs)
         # FIXME: global radiobutton var - all rb's created by this toolkit instance are connected.
         # Find a better way of grouping (by parent maybe?)
+        self.autovalidate = autovalidate
         self._radiobutton_var = None
         self._font_size = font_size
         self._ttk_theme = ttk_theme
@@ -204,6 +247,7 @@ class ToolkitTk(ToolkitBase):
         # Font size fixes for some widgets
         style.configure("Treeview.Heading", font=('Helvetica', self._font_size, 'bold'))
         style.configure("Treeview", rowheight=self._font_size*2)
+        style.map(".", foreground=[("invalid", "red")])
         
     # widget generators
     def root(self, title='Window', icon='', on_close=None):
@@ -217,15 +261,20 @@ class ToolkitTk(ToolkitBase):
                 key: tk.BitmapImage(name='::icons::%s'%key, data=_aa2xbm(data))
                 for key, data in _ICONS.items()
             }
+            # XXX: this is a string, not a bitmap image. However it is the most convenient way to keep it.
+            root.icons["_root"] = icon
             self.setup_style(root)
         else:
             root = tk.Toplevel()
         root.title(title)
+        icon = icon or _master_window.icons["_root"]
         if icon:
             try:
                 if icon.lower().endswith((".ico", ".xbm", ".xpm")):
+                    # default argument does not seem to work at least on linux.
+                    # Roll our own fallback system.
                     root.iconbitmap(icon)
-                else:
+                elif is_first or icon!= _master_window.icons["_root"]:
                     img = tk.PhotoImage(file=icon)
                     root.tk.call('wm', 'iconphoto', root._w, '-default' if is_first else '', img)
             except tk.TclError:
@@ -346,8 +395,8 @@ class ToolkitTk(ToolkitBase):
         
         A ``.variable`` property is added just like for the other controls.
         '''
-        LabelFrame = ttk.LabelFrame if self._prefer_ttk else tk.LabelFrame
-        Frame = ttk.Frame if self._prefer_ttk else tk.Frame
+        LabelFrame = self.widget_classes["box_labeled"]
+        Frame = self.widget_classes["box"]
         id = _unique(parent, id)
         if given_id and text:
             f = LabelFrame(parent, name=id, text=text)
@@ -363,34 +412,36 @@ class ToolkitTk(ToolkitBase):
         
     def label(self, parent, id=None, label_id=None, text=''):
         '''label'''
-        Label = ttk.Label if self._prefer_ttk else tk.Label
+        Label = self.widget_classes["label"]
         id = _unique(parent, id)
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         l = Label(parent, name=id, textvariable=var)
         l.variable = var
         return l
         
     def button(self, parent, id=None, text=''):
         '''button'''
-        Button = ttk.Button if self._prefer_ttk else tk.Button
+        Button = self.widget_classes["button"]
         id = _unique(parent, id)
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         b = Button(parent, name=id, textvariable = var)
         b.variable = var
         return b
     
     def textbox(self, parent, id=None, text=''):
         '''single-line text entry box'''
-        Entry = ttk.Entry if self._prefer_ttk else tk.Entry
+        Entry = self.widget_classes["textbox"]
         id = _unique(parent, id)
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         e = Entry(parent, name=id, textvariable=var)
+        if self.autovalidate:
+            var.validated_hook = e
         e.variable = var
         return e
     
     def multiline(self, parent, id=None, text=''):
         id = _unique(parent, id)
-        t = ScrolledText(parent, name=id, height=3)
+        t = self.widget_classes["multiline"](parent, name=id, height=3)
         t.insert('end', text)
         return t
     
@@ -409,8 +460,8 @@ class ToolkitTk(ToolkitBase):
         '''
         def crop_(txt):
             return txt if not txt.endswith('_') else txt[:-1]
-        Frame = ttk.Frame if self._prefer_ttk else tk.Frame
-        Scrollbar = ttk.Scrollbar if self._prefer_ttk else tk.Scrollbar
+        Frame = self.widget_classes["box"]
+        Scrollbar = self.widget_classes["scrollbar"]
         if columns:
             columns = [txt.strip() for txt in columns.split(',')]
         else:
@@ -427,9 +478,13 @@ class ToolkitTk(ToolkitBase):
         # setup scrollable container
         frame = Frame(parent)
         if is_editable:
-            tv = TreeEdit(frame, columns=[k for k in keys if k])
+            tv = self.widget_classes["treelist_editable"](
+                frame, columns=[k for k in keys if k]
+            )
         else:
-            tv = ttk.Treeview(frame, columns=[k for k in keys if k])
+            tv = self.widget_classes["treelist"](
+                frame, columns=[k for k in keys if k]
+            )
         scb = Scrollbar(frame)
         scb.pack(side='right', fill='y')
         tv.pack(expand=1, fill='both')
@@ -477,14 +532,17 @@ class ToolkitTk(ToolkitBase):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
         id = _unique(parent, id)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
-        var = tk.StringVar(parent, text)
-        cbo = ttk.Combobox(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
+        var = GenericVar(parent, text)
+        cls = self.widget_classes["combo" if editable else "dropdown"]
+        cbo = cls(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
         cbo.variable = var
+        if self.autovalidate:
+            var.validated_hook = cbo
         return cbo
     
     def option(self, parent, id=None, text='', checked=None):
         '''Option button. Prefix 'O' for unchecked, '0' for checked.'''
-        Radiobutton = ttk.Radiobutton if self._prefer_ttk else tk.Radiobutton
+        Radiobutton = self.widget_classes["option"]
         if not self._radiobutton_var:
             self._radiobutton_var = tk.StringVar(parent, id)
         rb = Radiobutton(parent,
@@ -501,7 +559,7 @@ class ToolkitTk(ToolkitBase):
     
     def checkbox(self, parent, id=None, text='', checked=None):
         '''Checkbox'''
-        Checkbutton = ttk.Checkbutton if self._prefer_ttk else tk.Checkbutton
+        Checkbutton = self.widget_classes["checkbox"]
         id = _unique(parent, id)
         var = tk.BooleanVar(parent, bool(checked.strip()))
         cb = Checkbutton(
@@ -515,7 +573,7 @@ class ToolkitTk(ToolkitBase):
     
     def slider(self, parent, id=None, min=None, max=None):
         '''slider, integer values, from min to max'''
-        Scale = ttk.Scale if self._prefer_ttk else tk.Scale
+        Scale = self.widget_classes["slider"]
         id = _unique(parent, id)
         var = tk.DoubleVar(parent, min)
         s = Scale(
@@ -725,7 +783,8 @@ class ListBindingTk(ListBinding):
         sublist.insert(idx+1, item)
         iid = sublist.toolkit_ids[idx+1]
         self._tv.focus(iid)
-        self._tv.begin_edit_row(None)
+        if self._tv.autoedit_added:
+            self._tv.begin_edit_row(None)
         return False
 
     def on_add_child_cmd(self, parent_iid):
@@ -738,7 +797,8 @@ class ListBindingTk(ListBinding):
         sublist.append(item)
         iid = sublist.toolkit_ids[-1]
         self._tv.focus(iid)
-        self._tv.begin_edit_row(None)
+        if self._tv.autoedit_added:
+            self._tv.begin_edit_row(None)
         return False
 
     def on_remove_cmd(self, iid):

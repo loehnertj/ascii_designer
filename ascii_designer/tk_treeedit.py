@@ -142,6 +142,7 @@ class TreeEdit(ttk.Treeview):
         self.on_cell_edit = EventSource()
         self.on_cell_modified = EventSource()
         self.allow = allow
+        self.autoedit_added = True
 
     @property
     def allow(self):
@@ -163,6 +164,14 @@ class TreeEdit(ttk.Treeview):
             raise ValueError('Unknown allow entries: %s' % (bad_items,))
         self._allow = allow
         self._update_controls()
+
+    @property
+    def autoedit_added(self) -> bool:
+        '''Automatically begin editing added items yes/no''' 
+        return self._autoedit_added
+    @autoedit_added.setter
+    def autoedit_added(self, val: bool):
+        self._autoedit_added = bool(val)
     
     def editable(self, column, editable=None):
         '''Query or specify whether the column is editable.
@@ -333,7 +342,8 @@ class TreeEdit(ttk.Treeview):
         if result is None or result:
             new_iid = self.insert(f if child else self.parent(f), self.index(f)+1)
             self.focus(new_iid)
-            self.begin_edit_row(None)
+            if self.autoedit_added:
+                self.begin_edit_row(None)
 
     def ins_child_item(self, ev=None):
         '''Trigger insertion of new child item'''

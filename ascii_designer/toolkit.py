@@ -108,10 +108,38 @@ class ToolkitBase:
         'find': 'C-F',
         'refresh': 'F5',
     }
+
+    widget_classes = {
+        "label": None,
+        "box": None,
+        "box_labeled": None,
+        "option": None,
+        "checkbox": None,
+        "slider": None,
+        "multiline": None,
+        "textbox": None,
+        "treelist": None,
+        "treelist_editable": None,
+        "combo": None,
+        "dropdown": None,
+        "button": None
+    }
+    """Actual class to use for each widget type.
+    
+    This allows you to override the actual widget with a custom subclass, if
+    desired.
+
+    Obviously, this should be done *before* building the frame, e.g. in ``__init__``.
+
+    The replacement must have the same init signature as the original widget
+    class.
+    """
     
     def __init__(self):
+        # Make a local copy, so that mutating on an instance won't have global side effects.
+        self.widget_classes = self.widget_classes.copy()
         self._last_label_id = ''
-        
+
     def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget. Optionally you can give a close handler.'''
         
