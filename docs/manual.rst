@@ -263,9 +263,10 @@ Then, access the generated controls by using ``self["control_id"]`` or
 ``self.f_controls["control_id"]``. The result is a toolkit-native widget, i.e. a 
 ``QWidget`` subclass in Qt case, a ``tkinter`` widget in Tk case.
 
-For Tk widgets, if there is an associated Variable object (``StringVar`` or 
-similar), you can find it as ``self["control_id"].variable`` attribute on the 
-control.
+For Tk widgets, if there is an associated Variable object, which you can find it
+as ``self["control_id"].variable`` attribute on the control. For textual widgets
+(Entry, Combobox, etc) this will be a :py:obj:`.GenericVar` instance, which you
+can consider a supercharged ``StringVar``.
 
 
 Event binding

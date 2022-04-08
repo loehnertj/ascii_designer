@@ -6,6 +6,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk
 import tkinter.font
 from .tk_treeedit import TreeEdit
+from .tk_generic_var import GenericVar
 from .toolkit import ToolkitBase, ListBinding
 
 def L():
@@ -240,6 +241,7 @@ class ToolkitTk(ToolkitBase):
         # Font size fixes for some widgets
         style.configure("Treeview.Heading", font=('Helvetica', self._font_size, 'bold'))
         style.configure("Treeview", rowheight=self._font_size*2)
+        style.map(".", foreground=[("invalid", "red")])
         
     # widget generators
     def root(self, title='Window', icon='', on_close=None):
@@ -406,7 +408,7 @@ class ToolkitTk(ToolkitBase):
         '''label'''
         Label = self.widget_classes["label"]
         id = _unique(parent, id)
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         l = Label(parent, name=id, textvariable=var)
         l.variable = var
         return l
@@ -415,7 +417,7 @@ class ToolkitTk(ToolkitBase):
         '''button'''
         Button = self.widget_classes["button"]
         id = _unique(parent, id)
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         b = Button(parent, name=id, textvariable = var)
         b.variable = var
         return b
@@ -424,8 +426,9 @@ class ToolkitTk(ToolkitBase):
         '''single-line text entry box'''
         Entry = self.widget_classes["textbox"]
         id = _unique(parent, id)
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         e = Entry(parent, name=id, textvariable=var)
+        var.validated_hook = e
         e.variable = var
         return e
     
@@ -522,10 +525,11 @@ class ToolkitTk(ToolkitBase):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
         id = _unique(parent, id)
         choices = [v.strip() for v in (values or '').split(',') if v.strip()]
-        var = tk.StringVar(parent, text)
+        var = GenericVar(parent, text)
         cls = self.widget_classes["combo" if editable else "dropdown"]
         cbo = cls(parent, name=id, values=choices, textvariable=var, state='normal' if editable else 'readonly')
         cbo.variable = var
+        var.validated_hook = cbo
         return cbo
     
     def option(self, parent, id=None, text='', checked=None):

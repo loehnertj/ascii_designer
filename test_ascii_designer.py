@@ -7,7 +7,7 @@ import logging
 import sys
 import random
 import time
-from ascii_designer import AutoFrame, set_toolkit
+from ascii_designer import AutoFrame, set_toolkit, ge0, Invalid
 
 
 
@@ -28,6 +28,7 @@ class Main(AutoFrame):
      [Boxes and embedding       ]
      [Bound values              ]
      [Custom subclass           ]
+     [Converters                ]
      [List view                 ]
      [List edit                 ]
      [Tree view                 ]
@@ -52,6 +53,12 @@ class Main(AutoFrame):
             print("Only works under Tkinter, sorry")
         else:
             CustomSubclassDemo().f_show()
+        
+    def converters(self):
+        if TK not in ("tk", "ttk"):
+            print("Only works under Tkinter, sorry")
+        else:
+            ConvertersDemo().f_show()
         
     def list_view(self):
         ListDemo().f_show()
@@ -254,7 +261,52 @@ class CustomSubclassDemo(AutoFrame):
         self["custom_entry_field"].float_value = 1.2345678
         self.on_custom_entry_field(None)
 
-            
+class ConvertersDemo(AutoFrame):
+    f_body = """
+                 |
+         Float:   [ _           ]
+         Int:     [ _           ]
+         in-list: [_ (a, b, c) v]
+         instant: [ _           ]
+                  [test]
+                  result
+         output1: [ _           ]
+         output2: [ _           ]
+    """
+
+    def f_on_build(self):
+        self.label_result = ""
+        self["float"].variable.convert = float 
+        self["int"].variable.convert = ge0(int)
+        def isinlist(val):
+            if val not in ["a", "b", "c", "d"]:
+                raise ValueError()
+            return val
+        self["inlist"].variable.convert = isinlist
+        self["instant"].variable.convert = float
+        # display the same value in different formats
+        # Note that you will lose precision by this. Same effect as if you rounded.
+        self["output1"].variable.convert_set = lambda x: f"{x:0.1e}"
+        self["output2"].variable.convert_set = lambda x: f"{x:3.3f}"
+
+    def on_instant(self, val):
+        # on call of the handler, variable is retrieved and validation happens.
+        # Nothing more required.
+        pass
+
+    def test(self):
+        a = self.float
+        b = self.int
+        c = self.inlist
+        d = self.instant
+        if Invalid in [a, b, c, d]:
+            self.label_result = "some input is invalid"
+        else:
+            self.label_result = "setting outputs"
+            self.output1 = a
+            self.output2 = a            
+
+
 class RankRow:
     def __init__(self, name, points, rank, is_cheater=False):
         self.name = name
@@ -495,12 +547,14 @@ if __name__ == '__main__':
     TK = 'tk'
     if sys.argv[1:]:
         TK = sys.argv[1]
+
     set_toolkit(TK)
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,
             'bound': BoundCtlDemo,
             'alignment': AlignmentDemo,
+            'converters': ConvertersDemo,
             'boxes': BoxesDemo, 
             'list': ListDemo,
             'tree': TreeDemo,
