@@ -10,7 +10,7 @@ ASCII Designer
 Changelog
 ---------
 
- * unreleased:
+ * v0.5.0:
 
    * TK/TTK: Add ``GenericVar`` supporting automatic conversion and
      validated-hook; opt-in automatic update of control's invalid state.
