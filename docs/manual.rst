@@ -537,6 +537,23 @@ all get expanders initially.
 
 The ``children`` property, if retrieved, is again a special list like the "root" one.
 
+The list object now stores *two* things for each index: The item at this index,
+and the list of the item's children. This is a bit different to how trees are
+usually implemented. Particularly, there is no single "root" item, instead we
+have a root list.
+
+To index within the tree, use index tuples:
+
+* ``tree[1]`` gives you the second item of the root list.
+* ``tree[1, 2]`` gives you the third item in the child list of the second item.
+* ``tree[1, 2, 44, 21]`` goes 4 levels deep
+* ``tree[1, None]`` gives you the *child list*  of the second item. This is a
+  separate `.ObsList` instance.
+* Again, ``tree[1, 2, 44, None]`` to retrieve a "deeper" level.
+
+You can only access subitems that have been lazy-loaded already. Use
+`.Obslist.get_children` to ensure loading.
+
 .. note::
     If you assign a non-`ObsList` value to a ListView virtual-value, it is
     converted into an `ObsList`. The ``children_source`` is taken over from the

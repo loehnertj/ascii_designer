@@ -14,6 +14,7 @@ Changelog
 
    * TK: add ``add_setup`` toolkit option (similar to ``setup_style`` but keeps
      the defaults)
+   * ``ObsList``: add tuple indexing (experimental).
 
  * v0.5.0:
 

@@ -505,7 +505,11 @@ class TreeDemo(AutoFrame):
     def test_find(self):
         item = self.files.selection[0]
         print('Find', item)
-        print('REsult:', self.files.find(item))
+        idx = self.files.find2(item)
+        print('Result:', idx)
+        print("retrieving it back:", self.files[idx])
+        sib_idx = idx[:-1] + (None,)
+        print("which is contained in:", self.files[sib_idx])
         
 
 class MenuDemo(AutoFrame):

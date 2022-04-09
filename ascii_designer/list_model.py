@@ -109,6 +109,15 @@ class ObsList(MutableSequence):
     Behaves mostly like a list, except that:
      * it maintains a list of expected attributes (columns)
      * it provides notification when items are added or removed
+     * it can be made into a tree by means of the ``children_source`` setting (see there).
+
+    If configured as tree, indexing happens via tuples:
+
+     * ``mylist[8]`` returns the 8th item at toplevel, as usual
+     * ``mylist[3, 2]`` returns the 2nd item of the 3rd items' children.
+     * ``mylist[3, 2, 12, 0]`` goes 4 levels deep
+     * ``mylist[3, None]`` can be used to retreive the list of children of item
+       3, instead of a specific child item.
      
     Attributes:
         toolkit_ids: can be indexed in the same way as the nodelist,
@@ -226,13 +235,14 @@ class ObsList(MutableSequence):
             return False
         return retrieve(item, self._has_children_source)
 
-    def load_children(self, idx):
+    def load_children(self, idx_tuple):
         '''Retrieves the childlist of item at given idx.
         '''
         source = self._children_source
         if not source: # not a tree
             return
-        item = self._nodes[idx]
+        lst, idx = self._list_idx(idx_tuple) 
+        item = lst._nodes[idx]
         childlist = retrieve(item, source)
         childlist = ObsList(childlist, toolkit_parent_id=self.toolkit_ids[idx])
         # Child SHARES event handlers and child source
@@ -244,14 +254,15 @@ class ObsList(MutableSequence):
         childlist.on_load_children = self.on_load_children
         childlist.on_sort = self.on_sort
         childlist.on_get_selection = self.on_get_selection
-        self._childlists[idx] = childlist
-        self.on_load_children(childlist)
+        lst._childlists[idx] = childlist
+        lst.on_load_children(childlist)
 
-    def get_children(self, idx):
+    def get_children(self, idx_tuple):
         '''Get childlist of item at given idx, loading it if not already loaded.'''
-        if self._childlists[idx] is None:
-            self.load_children(idx)
-        return self._childlists[idx]
+        lst, idx = self._list_idx(idx_tuple)
+        if lst._childlists[idx_tuple] is None:
+            self.load_children(idx_tuple)
+        return lst._childlists[idx]
 
     def sort(self, key=None, reverse=False, info=None, restore=False):
         '''Sort the list.
@@ -281,85 +292,111 @@ class ObsList(MutableSequence):
     def find(self, item):
         '''Finds the sublist and index of the item.
 
-        Returns ``(sublist: ObsList, idx:int)``.
+        Returns ``(sublist: ObsList, idx: int)``.
 
-        If not found, raises ValueError.
-        
-        Scans the whole tree for the item.
+        If not found, raises ValueError.  Scans the whole tree for the item.
         '''
-        try:
-            idx = self._nodes.index(item)
-            # if we got here, we found it
-            return self, idx
-        except ValueError:
-            # Not in own items, search children
-            for childlist in self._childlists:
-                if childlist is None:
-                    continue
-                try:
-                    return childlist.find(item)
-                except ValueError:
-                    continue
-        # not found
-        raise ValueError('Item not in tree', item)
+        return self._find(item, False, False)
+
+    def find2(self, item):
+        '''Finds the tuple-index of the item.
+
+        Returns ``idx: Tuple[int]``.
+
+        If not found, raises ValueError.  Scans the whole tree for the item.
+        '''
+        return self._find(item, False, True)
 
     def find_by_toolkit_id(self, toolkit_id):
         '''finds the sublist and index of the item having the given toolkit id.
         
-        Returns ``(sublist: ObsList, idx: int)``
+        Returns ``(sublist: ObsList, idx: int)``.
 
-        If not found, raises ValueError.
-
-        Scans the whole tree for the item.
+        If not found, raises ValueError.  Scans the whole tree for the item.
         '''
+        return self._find(toolkit_id, True, False)
+
+    def find_by_toolkit_id2(self, item):
+        '''Finds the tuple-index of the item having the given toolkit id.
+
+        Returns ``idx: Tuple[int]``.
+
+        If not found, raises ValueError.  Scans the whole tree for the item.
+        '''
+        return self._find(item, True, True)
+
+    def _find(self, needle, is_tkid, return_idx_tuple):
+        """Implementation of find."""
+        lst = self.toolkit_ids if is_tkid else self._nodes
         try:
-            idx = self.toolkit_ids.index(toolkit_id)
+            idx = lst.index(needle)
             # if we got here, we found it
-            return self, idx
+            if return_idx_tuple:
+                return (idx,)
+            else:
+                return self, idx
         except ValueError:
             # Not in own items, search children
-            for childlist in self._childlists:
+            for n, childlist in enumerate(self._childlists):
                 if childlist is None:
                     continue
                 try:
-                    return childlist.find_by_toolkit_id(toolkit_id)
+                    result = childlist._find(needle, is_tkid, return_idx_tuple)
                 except ValueError:
                     continue
+                else:
+                    if return_idx_tuple:
+                        return (n,) + result
+                    else:
+                        return result
         # not found
-        raise ValueError('Toolkit ID not in tree', toolkit_id)
+        raise ValueError(f'{"Toolkit ID " if is_tkid else "Item"} not in tree', needle)
 
-    def __getitem__(self, idx):
-        return self._nodes[idx]
+    def _list_idx(self, idx_tuple):
+        if isinstance(idx_tuple, tuple):
+            lst = self
+            for idx in idx_tuple[:-1]:
+                lst = lst._childlists[idx]
+            return lst, idx_tuple[-1]
+        else:
+            return self, idx_tuple
+
+    def __getitem__(self, idx_tuple):
+        lst, idx = self._list_idx(idx_tuple)
+        return lst if idx is None else lst._nodes[idx]
         
     def __len__(self):
         return len(self._nodes)
     
-    def __setitem__(self, idx, item):
-        self._nodes[idx] = item
+    def __setitem__(self, idx_tuple, item):
+        lst, idx = self._list_idx(idx_tuple)
+        lst._nodes[idx] = item
         # collapse
-        self._childlists[idx] = None
-        self.sorted = False
-        self.on_replace(self.toolkit_ids[idx], item)
+        lst._childlists[idx] = None
+        lst.sorted = False
+        lst.on_replace(self.toolkit_ids[idx], item)
         
-    def __delitem__(self, idx):
-        del self._nodes[idx]
-        self._childlists.pop(idx)
-        tkid = self.toolkit_ids.pop(idx)
-        self.on_remove(tkid)
+    def __delitem__(self, idx_tuple):
+        lst, idx = self._list_idx(idx_tuple)
+        del lst._nodes[idx]
+        lst._childlists.pop(idx)
+        tkid = lst.toolkit_ids.pop(idx)
+        lst.on_remove(tkid)
         
-    def insert(self, idx, item):
-        N = len(self._nodes)
+    def insert(self, idx_tuple, item):
+        lst, idx = self._list_idx(idx_tuple)
+        N = len(lst._nodes)
         if idx<0:
             idx += N
             if idx<0: idx = 0
         else:
             if idx > N: idx = N
-        self._nodes.insert(idx, item)
+        lst._nodes.insert(idx, item)
         # cannot use "truthy" value since list might be empty
-        self._childlists.insert(idx, None)
-        self.sorted = False
-        tkid = self.on_insert(idx, item, self.toolkit_parent_id)
-        self.toolkit_ids.insert(idx, tkid)
+        lst._childlists.insert(idx, None)
+        lst.sorted = False
+        tkid = lst.on_insert(idx, item, self.toolkit_parent_id)
+        lst.toolkit_ids.insert(idx, tkid)
         return idx, item
 
     def item_mutated(self, item):
