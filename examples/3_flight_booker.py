@@ -21,20 +21,6 @@ class FlightBooker(AutoFrame):
 
     def f_on_build(self):
         self["kind"]["values"] = ["one-way flight", "return flight"]
-        # XXX: This is not the right place for style setup. TBD: make it
-        # possible to extend the styles in set_toolkit, without losing the
-        # defaults.
-        style = ttk.Style()
-        style.map(
-            "TEntry", 
-            # Order matters: earlier entries take precedence.
-            fieldbackground=[("disabled", "#d0d0d0"), ("invalid", "red")],
-            foreground=[("disabled", "#808080"), ("invalid", "black")]
-        )
-        style.map(
-            "TButton",
-            foreground=[("disabled", "#808080")]
-        )
         self["t1"].variable.convert = str2date
         self["t2"].variable.convert = str2date
         self["t1"].variable.convert_set = date2str
@@ -88,6 +74,15 @@ class FlightBooker(AutoFrame):
             raise ValueError("Unexpected flight kind")
         showinfo("Booking successfull", message)
 
+def setup_style(root):
+    style = ttk.Style()
+    style.map(
+        "TEntry", 
+        # Order matters: earlier entries take precedence.
+        fieldbackground=[("disabled", "#d0d0d0"), ("invalid", "red")],
+        foreground=[("disabled", "#808080"), ("invalid", "black")]
+    )
+
 if __name__ == "__main__":
-    set_toolkit("ttk")
+    set_toolkit("ttk", {"add_setup": setup_style})
     FlightBooker().f_show()
