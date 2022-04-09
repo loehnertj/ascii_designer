@@ -151,6 +151,9 @@ class ToolkitTk(ToolkitBase):
             custom callback for setting up style of the Tk windows (font size,
             themes). If not set, some sensible defaults are applied; see the
             other options, and source of :py:meth:`setup_style`.
+        add_setup (fn(root_widget) -> None):
+            custom callback for additional setup. In contrast to ``setup_style``
+            this will not replace but extend the default setup function.
         font_size (int): controls default font size of all widgets.
         ttk_theme (str): 
             explicit choice of theme. Per default, no theme is set if
@@ -199,7 +202,7 @@ class ToolkitTk(ToolkitBase):
         "button": ttk.Button,
         "scrollbar": ttk.Scrollbar,
     }
-    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, font_size:int=10, ttk_theme:str='', autovalidate:bool=False, **kwargs):
+    def __init__(self, *args, prefer_ttk:bool=False, setup_style=None, add_setup=None, font_size:int=10, ttk_theme:str='', autovalidate:bool=False, **kwargs):
         self._prefer_ttk = prefer_ttk
         self.widget_classes = (
             self.widget_classes_ttk.copy()
@@ -215,6 +218,7 @@ class ToolkitTk(ToolkitBase):
         self._ttk_theme = ttk_theme
         if setup_style is not None:
             self.setup_style = setup_style
+        self.add_setup = add_setup
 
     def setup_style(self, root):
         '''Setup some default styling (dpi, font, ttk theme).
@@ -264,6 +268,8 @@ class ToolkitTk(ToolkitBase):
             # XXX: this is a string, not a bitmap image. However it is the most convenient way to keep it.
             root.icons["_root"] = icon
             self.setup_style(root)
+            if self.add_setup is not None:
+                self.add_setup(root)
         else:
             root = tk.Toplevel()
         root.title(title)
