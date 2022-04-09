@@ -10,6 +10,11 @@ ASCII Designer
 Changelog
 ---------
 
+ * unreleased:
+
+   * TK: add ``add_setup`` toolkit option (similar to ``setup_style`` but keeps
+     the defaults)
+
  * v0.5.0:
 
    * TK/TTK: Add ``GenericVar`` supporting automatic conversion and
