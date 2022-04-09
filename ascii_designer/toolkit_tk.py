@@ -251,7 +251,9 @@ class ToolkitTk(ToolkitBase):
         # Font size fixes for some widgets
         style.configure("Treeview.Heading", font=('Helvetica', self._font_size, 'bold'))
         style.configure("Treeview", rowheight=self._font_size*2)
-        style.map(".", foreground=[("invalid", "red")])
+        fg = style.map(".").get("foreground", [])
+        fg.append(("invalid", "red"))
+        style.map(".", foreground=fg)
         
     # widget generators
     def root(self, title='Window', icon='', on_close=None):
