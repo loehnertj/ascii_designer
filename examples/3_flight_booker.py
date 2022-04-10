@@ -3,11 +3,14 @@ import tkinter.ttk as ttk
 from tkinter.messagebox import showinfo
 from ascii_designer import set_toolkit, AutoFrame, Invalid
 
+
 def str2date(s):
     return datetime.strptime(s, "%d.%m.%Y").date()
 
+
 def date2str(dt):
     return dt.strftime("%d.%m.%Y")
+
 
 class FlightBooker(AutoFrame):
     f_body = """
@@ -74,14 +77,16 @@ class FlightBooker(AutoFrame):
             raise ValueError("Unexpected flight kind")
         showinfo("Booking successfull", message)
 
+
 def setup_style(root):
     style = ttk.Style()
     style.map(
-        "TEntry", 
+        "TEntry",
         # Order matters: earlier entries take precedence.
         fieldbackground=[("disabled", "#d0d0d0"), ("invalid", "red")],
-        foreground=[("disabled", "#808080"), ("invalid", "black")]
+        foreground=[("disabled", "#808080"), ("invalid", "black")],
     )
+
 
 if __name__ == "__main__":
     set_toolkit("ttk", {"add_setup": setup_style})

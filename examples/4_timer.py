@@ -21,6 +21,7 @@ import tkinter.ttk as ttk
 from threading import Thread, Event, Lock
 from ascii_designer import set_toolkit, AutoFrame
 
+
 class Timer(AutoFrame):
     f_body = """
         |               |    -                  |
@@ -40,7 +41,7 @@ class Timer(AutoFrame):
 
     def f_on_build(self):
         v = tk.DoubleVar(self[""], 0.0)
-        pbar = ttk.Progressbar(self[""], maximum=1, mode='determinate', variable = v)
+        pbar = ttk.Progressbar(self[""], maximum=1, mode="determinate", variable=v)
         pbar.variable = v
         # Replace placeholder and remember control
         self.elapsed_pbar = pbar
@@ -69,10 +70,10 @@ class Timer(AutoFrame):
             # XXX: This might be unsafe access
             duration = self.duration
             with self._xthread_lock:
-                elapsed = self._elapsed_time_s + (t-last_tick_time)
+                elapsed = self._elapsed_time_s + (t - last_tick_time)
                 elapsed = min(elapsed, duration)
                 self._elapsed_time_s = elapsed
-            last_tick_time= t
+            last_tick_time = t
             # Crossthread post of timer update
             tkroot.event_generate("<<TimerTick>>", when="tail")
             # Event.wait's timeout is used as rate-limiter.
