@@ -6,14 +6,11 @@ real ORM.
 For a real application, it might be preferable to have individual files for each
 class, but let's keep it together here.
 
-The GUI is split up into a "parent frame" and 3 subframes for the individual areas.
 """
 
-from tkinter.messagebox import showerror
 import itertools as it
 import dataclasses as dc
-from multiprocessing import Event
-from ascii_designer import set_toolkit, AutoFrame, Invalid, EventSource
+from ascii_designer import set_toolkit, AutoFrame, Invalid
 
 
 #== Model ========================================
@@ -105,184 +102,119 @@ def nonempty(s):
 class CRUD(AutoFrame):
     f_title = "CRUD"
 
-    # The layout is easier to do by using sub-frames for each area.
-    # Usually this coincides with "separation of concerns" in the code, that you
-    # should do anyways.
+    # The layout is easier to do by using subframes for editor and actions areas.
     f_body = """
         |               |  -   |        |
          Filter prefix:  [_   ]
-         <person_list   ~     > <editor>
+        I[= Persons     ~     ] <editor>
          <actions       ~      ~       >
     """
-
-    def __init__(self, db_interface):
-        super().__init__()
-        self.db = db_interface
-
-    def f_on_build(self):
-        self.person_list = PersonList()
-        self.editor = PersonEditor()
-        self.actions = CrudActions(self.db, self.editor)
-
-        # Event wireup
-        self.person_list.person_selected += self._on_person_select
-        self.actions.on_created += self.person_list.add_person
-        self.actions.on_updated += self.person_list.update_person
-        self.actions.on_deleted += self.person_list.delete_person
-
-        self["filter_prefix"].bind("<KeyRelease>", lambda _: self._filter_changed())
-        # init list
-        self._filter_changed()
-
-    def _filter_changed(self):
-        persons = self.db.filter_persons(surname_prefix=self.filter_prefix)
-        self.person_list.set_list(persons)
-
-    def _on_person_select(self, person):
-        person = person or Person(0, "", "")
-        self.editor.person = person
-        self.actions.update_ctls(self.editor.person)
-
-class PersonList(AutoFrame):
-    f_body = """
-        |       -
-        I[= Persons         ]
-    """
-    def __init__(self):
-        super().__init__()
-        self.person_selected: EventSource = EventSource()
-        """person_selected(person): when a person is selected in the table.
-        
-        On deselection, person is ``None``.
-        """
-
-    def f_on_build(self):
-        self["persons"]["selectmode"] = "browse"
-
-    def set_list(self, persons):
-        self.persons = persons
-
-    def on_persons(self, person):
-        self.person_selected(person)
-
-    def add_person(self, person, autoselect=True):
-        """Append person to the list"""
-        self.persons.append(person)
-        if autoselect:
-            tkid = self.persons.toolkit_ids[-1]
-            self["persons"].focus(tkid)
-            self["persons"].selection_set(tkid)
-            self.person_selected(person)
-
-    def _find_idxs(self, person_id):
-        return [n for n, p in enumerate(self.persons) if p.id == person_id]
-
-    def update_person(self, person):
-        for idx in self._find_idxs(person.id):
-            self.persons[idx] = person
-
-    def delete_person(self, person_id):
-        for idx in self._find_idxs(person_id)[::-1]:
-            self.persons.pop(idx)
-        focus = self["persons"].focus()
-        if focus == "":
-            self.person_selected(None)
-        else:
-            idx = self.persons.find_by_toolkit_id2(focus)
-            self.person_selected(self.persons[idx])
-
-
-class PersonEditor(AutoFrame):
-    f_body = """
+    # Subframes, these are "nonstandard" attributes
+    f_body_editor = """
         |         |      |
          Name:     [_   ]
          Surname:  [_   ]
     """
-    def __init__(self):
+    f_body_actions = """
+        |        |        |        |
+         [Create] [Update] [Delete]
+    """
+
+    def __init__(self, db_interface: DBInterface):
         super().__init__()
+        self.db = db_interface
+        # active person
         self._person = Person(0, "", "")
-        self.person_changed:EventSource = EventSource()
-        """person_changed(person): whenever edits were done."""
-
-    @property
-    def person(self):
-        """Currently edited person.
-        
-        Returns Invalid if field content is invalid.
-        """
-        return self._edited_person()
-
-    @person.setter
-    def person(self, val):
-        self._person = val
-        self._update_ctls()
 
     def f_on_build(self):
+        self.f_add_widgets(self.editor, body=self.f_body_editor, autoframe=self)
+        self.f_add_widgets(self.actions, body=self.f_body_actions, autoframe=self)
+
+        # Setup widgets
+        self["persons"]["selectmode"] = "browse"
         self["name"].variable.convert = nonempty
         self["surname"].variable.convert = nonempty
 
-    def _update_ctls(self):
-        self.name = self._person.name
-        self.surname =self._person.surname
-    
+        # Find-as-you-type
+        self["filter_prefix"].bind("<KeyRelease>", lambda _: self._filter_changed())
+        self._filter_changed()  # to populate listview
+        self.update_action_ctls()
+
+    #-- Person list ----------------------------------------
+
+    def _filter_changed(self):
+        self.persons = self.db.filter_persons(surname_prefix=self.filter_prefix)
+
+    def on_persons(self, person):
+        person = person or Person(0, "", "")
+        self._person = person
+        self.name = person.name
+        self.surname = person.surname
+        self.update_action_ctls()
+
+    def _find_idxs(self, person_id):
+        return [n for n, p in enumerate(self.persons) if p.id == person_id]
+
+    #-- Editor ----------------------------------------
+
+    def on_name(self, _):
+        self.update_action_ctls()
+
+    def on_surname(self, _):
+        self.update_action_ctls()
+
     def _edited_person(self):
-        name =self.name
-        surname= self.surname
+        '''Create Person record with changed fields according to current input.
+        
+        Returns ``Invalid`` if validation failed.
+        '''
+        name = self.name
+        surname = self.surname
         if Invalid in (name, surname):
             return Invalid
         return dc.replace(self._person, name=name, surname=surname)
 
-    def on_name(self, _):
-        self.person_changed(self.person)
+    #-- Actions ----------------------------------------
 
-    def on_surname(self, _):
-        self.person_changed(self.person)
-
-
-class CrudActions(AutoFrame):
-    f_body = """
-        |        |        |        |
-         [Create] [Update] [Delete]
-    """
-    def __init__(self, db_interface, editor):
-        super().__init__()
-        self._db = db_interface
-        self._editor = editor
-        self._editor.person_changed += self.update_ctls
-
-        self.on_created: EventSource = EventSource()
-        """on_created(stored_person)"""
-        self.on_updated: EventSource = EventSource()
-        """on_updated(stored_person)"""
-        self.on_deleted: EventSource = EventSource()
-        """on_deleted(person_id)"""
-
-    def f_on_build(self):
-        self.update_ctls(self._editor.person)
-
-    def update_ctls(self, edited_person):
+    def update_action_ctls(self):
         def enbl(name, enbl):
             self[name].state(["!disabled"] if enbl else ["disabled"])
-        person = edited_person
+        person = self._edited_person()
         enbl("create", person is not Invalid)
         enbl("update", person is not Invalid and person.id>0)
         enbl("delete", person is not Invalid and person.id>0)
 
     def create(self):
-        person = dc.replace(self._editor.person, id=0)
-        person = self._db.upsert(person)
-        self.on_created(person)
+        person = dc.replace(self._edited_person(), id=0)
+        person = self.db.upsert(person)
+
+        # Add to list view and focus
+        # XXX: We always add the person, regardless whether it meets the filter
+        # or not, to indicate that creation was successful.
+        self.persons.append(person)
+        tkid = self.persons.toolkit_ids[-1]
+        self["persons"].focus(tkid)
+        self["persons"].selection_set(tkid)
+        self.on_persons(person)
     
     def update(self):
-        person = self._editor.person
-        self._db.upsert(person)
-        self.on_updated(person)
+        person = self._edited_person()
+        person = self.db.upsert(person)
+        
+        # Update in list.
+        for idx in self._find_idxs(person.id):
+            self.persons[idx] = person
     
     def delete(self):
-        person = self._editor.person
-        self._db.delete(person)
-        self.on_deleted(person.id)
-
+        person = self._edited_person()
+        self.db.delete(person)
+        
+        # Remove from list and clear focus
+        # XXX: In theory a record cannot appear multiple times, but we're
+        # prepared in case it does --> go in reverse.
+        for idx in reversed(self._find_idxs(person.id)):
+            self.persons.pop(idx)
+        self.on_persons(None)
 
 if __name__ == "__main__":
     set_toolkit("ttk")
