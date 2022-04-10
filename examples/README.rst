@@ -13,7 +13,7 @@ The 7 tasks are:
 2. Temperature converter: Bidirectional converter between Celsius and Fahrenheit.
 3. Flight booker: travel- and return-date entry, shows interacting constraints.
 4. Timer: Shows concurrency and crossthread communication.
-5. CRUD (TBD): Exemplary database-table-editor form.
+5. CRUD: Exemplary database-table-editor form.
 6. Circle Drawer\*: draws multiple circles, with Undo feature.
 7. Spreadsheet\*: Basic spreadsheet application.
 
