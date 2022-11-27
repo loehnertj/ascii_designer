@@ -50,6 +50,18 @@ class AutoFrame:
     Opt-in, because it might interfere with user code if not expected.
     """
 
+    f_translations = None
+    """Translation dictionary.
+    
+    This can be set per-form or globally on the AutoFrame class. We only
+    actually need the ``.get(key, default)`` method.
+    
+    Translation keys are formed as ``<Class name>.<Widget ID>``.
+
+    Translations are used in ``f_build`` and ``f_build_menu`` functions.
+    Currently there is no facility to retranslate after building the form.
+    """
+
     def __init__(self):
         self.__dict__['f_controls'] = {}
         self.__dict__['f_toolkit'] = get_toolkit()
@@ -133,7 +145,13 @@ class AutoFrame:
         toolkit = self.f_toolkit
 
         mroot = toolkit.menu_root(parent)
-        toolkit.parse_menu(mroot, menudef, self)
+        toolkit.parse_menu(
+            mroot, 
+            menudef, 
+            self,
+            translations=self.f_translations,
+            translation_prefix = self.__class__.__qualname__ + "."
+        )
 
     def f_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
         if not sliced_grid:
@@ -142,12 +160,18 @@ class AutoFrame:
         if hasattr(toolkit, "autovalidate"):
             toolkit.autovalidate = self.f_option_tk_autovalidate
         autoframe = autoframe or self
+        translation_prefix = self.__class__.__qualname__ + "."
         
         # create controls
         for grid_element in merged_cells(sliced_grid):
             if not grid_element.text.strip():
                 continue
-            id, widget = toolkit.parse(parent, grid_element.text)
+            id, widget = toolkit.parse(
+                parent,
+                grid_element.text,
+                translations=self.f_translations,
+                translation_prefix=translation_prefix
+            )
                 
             # place on the grid
             e = grid_element

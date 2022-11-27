@@ -188,6 +188,10 @@ class AlignmentDemo(AutoFrame):
             self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
 class BoundCtlDemo(AutoFrame):
+    """creates all controls (except Treelist),
+    also test out translations.
+    """
+
     f_body = '''
     |               |  <->                                            ~
      Textbox:        [ _ ]
@@ -324,7 +328,7 @@ class RankRow:
 class ListDemo(AutoFrame):
     f_body = '''
     |             |     |         |        |<->          |
-    |Simple List   List with named columns~~        
+    |Simple List   List with named~columns~~        
     I[= Shopping ] [= Players  (Name, Points, Rank)     ]
                    [Add] [Replace] [Mutate] [Remove] ~                 
     '''
@@ -554,6 +558,25 @@ if __name__ == '__main__':
         TK = sys.argv[1]
 
     set_toolkit(TK)
+    AutoFrame.f_translations = {
+        "BoundCtlDemo.label_textbox": "TEXTBOX:",
+        "BoundCtlDemo.choose": "CHOOSE",
+        "BoundCtlDemo.option_a": "OPTION A",
+        "BoundCtlDemo.label_slider": "SLIDER:",
+        "BoundCtlDemo.slider": "(ignored, slider has no text)",
+        "BoundCtlDemo.get_all": "GET ALL",
+
+        "ListDemo.players": "PLAYERS",
+        "ListDemo.players.rank": "RANK",
+
+        "MenuDemo.open": "OPEN",
+        "MenuDemo.nested": "NESTED",
+        "MenuDemo.subitem_1": "SUBITEM &1",
+        "MenuDemo.submenu_3": "SUB&MENU 3",
+        "MenuDemo.about": "ABOUT",
+
+        "arbitrary additional key": "whatever",
+    }
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,
@@ -564,6 +587,7 @@ if __name__ == '__main__':
             'list': ListDemo,
             'tree': TreeDemo,
             'listedit': ListEditDemo,
+            'menu': MenuDemo,
         }[sys.argv[2]]
     else:
         F = Main

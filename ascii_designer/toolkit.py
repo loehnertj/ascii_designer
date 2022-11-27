@@ -67,16 +67,18 @@ class TreelistColumn(
 ):
     """Tree/listview column definition"""
 
-def _split_columns(columns):
+def _split_columns(columns, translations, translation_prefix):
     """Convert treelist column string to list of TreelistColumn's."""
     columns = columns or ''
     columns = [txt.strip() for txt in columns.split(',') if txt.strip()]
-    def crop_(txt):
-        return txt if not txt.endswith('_') else txt[:-1]
-    return [
-        TreelistColumn(auto_id('', crop_(txt)), crop_(txt), editable=(txt.endswith('_')))
-        for txt in columns
-    ]
+    def make_column(txt):
+        editable = txt.endswith("_")
+        if editable:
+            txt = txt[:-1]
+        id = auto_id('', txt)
+        txt = translations.get(translation_prefix+id, txt)
+        return TreelistColumn(id, txt, editable)
+    return [ make_column(txt) for txt in columns ]
 
 
 class ToolkitBase:
@@ -161,7 +163,7 @@ class ToolkitBase:
     def root(self, title='Window', icon='', on_close=None):
         '''make a root (window) widget. Optionally you can give a close handler.'''
         
-    def parse(self, parent, text):
+    def parse(self, parent, text, translations=None, translation_prefix=""):
         '''Returns the widget id and widget generated from the textual definition.
         
         Autogenerates id:
@@ -176,7 +178,21 @@ class ToolkitBase:
           - The id will be remembered and used on the next widget, if it has no id.
         
         If nothing matched, return None, None.
+
+        Supports automatic translation of widgets.
+
+        - translations is a dict-like object. We will use ``.get(key, default)``
+          to retrieve values.
+        - ``translation_prefix`` is a global prefix, so that you can use the
+          same dict for multiple forms.
+        - For each widget that has ``text``, we look up
+          ``<translation_prefix><id>`` in the dict. If present, the content will
+          be used instead of original ``text``.
+        - For treelist, we will also look up
+          ``<translation_prefix><id>.<column_id>`` and use it as column name, if
+          found.
         '''
+        translations = translations or {}
         mangled_text = text.replace("~", ' ').strip()
         for name, regex, _ in self.grammar:
             m = re.match(regex, mangled_text)
@@ -192,15 +208,17 @@ class ToolkitBase:
                     d['id'] = d.pop('given_id', '') or 'label_'+d['id']
                 else:
                     self._last_label_id = ''
-                if 'text' in d:
-                    d['text'] = (d['text'] or '').strip()
                 # Special treatment for treelist
                 if name == 'treelist':
-                    text = d.get('text', '')
+                    text = d.get('text', '').strip()
                     editable = d['first_column_editable'] = text.endswith('_')
                     if editable:
                         d['text'] = text[:-1]
-                    d['columns'] = _split_columns(d.get('columns', ''))
+                    prefix = translation_prefix + d["id"] + "."
+                    d['columns'] = _split_columns(d.get('columns', ''), translations, prefix)
+                if 'text' in d:
+                    text = (d['text'] or '').strip()
+                    d['text'] = translations.get(translation_prefix+d['id'], text)
                 L().debug('%r --> %s %r', text, name, d)
                 widget = getattr(self, name)(parent, **d)
                 if widget is None:
@@ -209,8 +227,11 @@ class ToolkitBase:
                 return d['id'], widget
         raise ValueError('Could not convert widget: %r'%(text,))
 
-    def parse_menu(self, parent, menudef, handlers):
-        '''Parse menu definition list and attach to the handlers'''
+    def parse_menu(self, parent, menudef, handlers, translations=None, translation_prefix=""):
+        '''Parse menu definition list and attach to the handlers.
+        
+        Translations work the same as for `.parse`.'''
+        translations = translations or {}
         menudef = menudef[:]
         while menudef:
             item = menudef.pop(0)
@@ -220,11 +241,13 @@ class ToolkitBase:
                     d = m.groupdict()
                     d['id'] = auto_id(d['id'], d.get('text', ''))
                     if 'text' in d:
-                        d['text'] = (d['text'] or '').strip()
+                        text = (d['text'] or '').strip()
+                        print(translation_prefix+d["id"])
+                        d['text'] = translations.get(translation_prefix+d['id'], text)
                     L().debug('Menuentry %r --> %s %r', item, name, d)
                     if name == 'sub':
                         submenu = self.menu_sub(parent, **d)
-                        self.parse_menu(submenu, menudef.pop(0), handlers)
+                        self.parse_menu(submenu, menudef.pop(0), handlers, translations, translation_prefix)
                     elif name == 'command':
                         if d['shortcut'] is None and d['id'] in self.default_shortcuts:
                             d['shortcut'] = self.default_shortcuts[d['id']]
