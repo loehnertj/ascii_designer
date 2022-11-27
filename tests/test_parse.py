@@ -1,5 +1,5 @@
 import pytest
-from ascii_designer.toolkit import ToolkitBase
+from ascii_designer.toolkit import ToolkitBase, TreelistColumn
 from unittest.mock import Mock
 
 def _returns_method_args_kwargs(methodname):
@@ -24,6 +24,10 @@ def toolkit():
 
 class Parent:
     '''Parent singleton object'''
+
+def tlc(id):
+    '''shorthand for simple TreelistColumn'''
+    return TreelistColumn(id, id, False)
 
 @pytest.mark.parametrize('wdef,expect_result', [
     # '' key is the widget type (called function)
@@ -58,9 +62,13 @@ class Parent:
     ('[Test_ v]', {'': 'combo', 'id': 'test', 'text': 'Test', 'values': None}),
     ('[Test v]', {'': 'dropdown', 'id': 'test', 'text': 'Test', 'values':None}),
     ('[Test (a, b, c) v]', {'': 'dropdown', 'id': 'test', 'text': 'Test', 'values':'a, b, c'}),
-    ('[= Test]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':None}),
-    ('[= Test (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':'a, b, c'}),
-    ('[= test: (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': '', 'columns':'a, b, c'}),
+    ('[= Test]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':[], 'first_column_editable': False}),
+    ('[= Test (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':[
+        tlc('a'), tlc('b'), tlc('c')
+    ], 'first_column_editable': False}),
+    ('[= test: (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': '', 'columns':[
+        tlc('a'), tlc('b'), tlc('c')
+    ], 'first_column_editable': False}),
     ('[Test]', {'': 'button', 'id': 'test', 'text': 'Test'}),
 ]
 )
