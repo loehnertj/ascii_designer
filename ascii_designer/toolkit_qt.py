@@ -296,7 +296,7 @@ class ToolkitQt(ToolkitBase):
             parent = parent.centralWidget()
         return self.widget_classes["multiline"](text, parent=parent)
 
-    def treelist(self, parent, id=None, text='', columns=None):
+    def treelist(self, parent, id=None, text='', columns=None, first_column_editable=False):
         '''treeview (also usable as plain list)
         
         Qt notes: The model does no caching on its own, but retrieves
@@ -305,17 +305,17 @@ class ToolkitQt(ToolkitBase):
         '''
         if isinstance(parent, qw.QMainWindow):
             parent = parent.centralWidget()
-        if columns:
-            columns = [txt.strip() for txt in columns.split(',')]
-        else:
-            columns = []
-        keys = [name.strip('_').lower() for name in columns]
         if text:
-            keys.insert(0, '')
-            columns.insert(0, text.strip())
+            t = text
+            # make anonymous object
+            class first_column:
+                id = ""
+                text = t
+                editable = first_column_editable
+            columns.insert(0, first_column)
 
         w = self.widget_classes["treelist"](parent)
-        model = ListBindingQt(w, keys, columns)
+        model = ListBindingQt(w, columns)
         w.setModel(model)
 
         # connect events
@@ -398,9 +398,11 @@ class ToolkitQt(ToolkitBase):
         parent.addAction(action)
     
 class ListBindingQt(QAbstractItemModel, ListBinding):
-    def __init__(self, parent, keys, captions, **kwargs):
+    def __init__(self, parent, columns, **kwargs):
+        keys = [c.id for c in columns]
         super().__init__(parent=parent, keys=keys, **kwargs)
-        self._captions = captions
+        self._captions = [c.text for c in columns]
+        self._editable = [c.editable for c in columns]
         self._list.toolkit_parent_id = QModelIndex()
         self._tv = parent
 
@@ -415,11 +417,9 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
         return len(self.keys)
 
     def headerData(self, section, orientation, role):
-        def _crop(txt):
-            return txt if not txt.endswith('_') else txt[:-1]
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return _crop(self._captions[section])
+                return self._captions[section]
         return None
 
     def _idx2sl(self, model_index):
@@ -483,8 +483,7 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
 
     def setData(self, index, value, role):
         if not index.isValid(): return False
-        if not self._captions[index.column()].endswith('_'):
-            # Not editable
+        if not self._editable[index.column()]:
             return False
         if role != Qt.EditRole: return None
 
@@ -499,7 +498,7 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
 
     def flags(self, index):
         if not index.isValid(): return Qt.NoItemFlags
-        is_editable = self._captions[index.column()].endswith('_')
+        is_editable = self._editable[index.column()]
         result = Qt.ItemIsEnabled | Qt.ItemIsSelectable
         if is_editable:
             result |= Qt.ItemIsEditable

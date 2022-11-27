@@ -1,5 +1,6 @@
 import logging
 import re
+from collections import namedtuple
 import itertools as it
 from . import list_model
 
@@ -60,6 +61,23 @@ def auto_id(id, text=None, last_label_id=''):
     return id
 
 _re_maybe_id_text = r'(?:\s*(?P<id>[a-zA-Z0-9_]+)\s*\:)?\s*(?P<text>[^(]*?)?\s*'
+
+class TreelistColumn(
+    namedtuple("TreelistColumnBase", "id text editable")
+):
+    """Tree/listview column definition"""
+
+def _split_columns(columns):
+    """Convert treelist column string to list of TreelistColumn's."""
+    columns = columns or ''
+    columns = [txt.strip() for txt in columns.split(',') if txt.strip()]
+    def crop_(txt):
+        return txt if not txt.endswith('_') else txt[:-1]
+    return [
+        TreelistColumn(auto_id('', crop_(txt)), crop_(txt), editable=(txt.endswith('_')))
+        for txt in columns
+    ]
+
 
 class ToolkitBase:
     # (name, regex, human-readable explanation)
@@ -176,6 +194,13 @@ class ToolkitBase:
                     self._last_label_id = ''
                 if 'text' in d:
                     d['text'] = (d['text'] or '').strip()
+                # Special treatment for treelist
+                if name == 'treelist':
+                    text = d.get('text', '')
+                    editable = d['first_column_editable'] = text.endswith('_')
+                    if editable:
+                        d['text'] = text[:-1]
+                    d['columns'] = _split_columns(d.get('columns', ''))
                 L().debug('%r --> %s %r', text, name, d)
                 widget = getattr(self, name)(parent, **d)
                 if widget is None:
@@ -269,8 +294,10 @@ class ToolkitBase:
         '''single-line text entry box'''
     def multiline(self, parent, id=None, text=''):
         '''multiline text entry box'''
-    def treelist(self, parent, id=None, text='', columns=None):
-        '''treeview (also usable as plain list)'''
+    def treelist(self, parent, id=None, text='', columns=None, first_column_editable=False):
+        '''treeview (also usable as plain list)
+        Column is a list of column definitions: something with .id, .text, .editable attrs.
+        '''
     def dropdown(self, parent, id=None, text='', values=None):
         '''dropdown box; values is the raw string between the parens. Only preset choices allowed.'''
     def combo(self, parent, id=None, text='', values=None):
