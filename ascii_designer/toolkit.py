@@ -192,7 +192,8 @@ class ToolkitBase:
           ``<translation_prefix><id>.<column_id>`` and use it as column name, if
           found.
         '''
-        translations = translations or {}
+        if translations is None:
+            translations = {}
         mangled_text = text.replace("~", ' ').strip()
         for name, regex, _ in self.grammar:
             m = re.match(regex, mangled_text)
@@ -231,7 +232,8 @@ class ToolkitBase:
         '''Parse menu definition list and attach to the handlers.
         
         Translations work the same as for `.parse`.'''
-        translations = translations or {}
+        if translations is None:
+            translations = {}
         menudef = menudef[:]
         while menudef:
             item = menudef.pop(0)
