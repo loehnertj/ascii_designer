@@ -50,7 +50,7 @@ class AutoFrame:
     Opt-in, because it might interfere with user code if not expected.
     """
 
-    f_translations = None
+    f_translations = {}
     """Translation dictionary.
     
     This can be set per-form or globally on the AutoFrame class. We only
@@ -81,7 +81,12 @@ class AutoFrame:
     def f_show(self):
         '''Bring the frame on the screen.'''
         if not self.f_controls:
-            root = self.f_controls[''] = self.f_toolkit.root(title=self.f_title, icon=self.f_icon, on_close=self.close)
+            prefix = self.__class__.__qualname__ + "."
+            root = self.f_controls[''] = self.f_toolkit.root(
+                title=self.f_translations.get(prefix+"f_title", self.f_title),
+                icon=self.f_icon,
+                on_close=self.close
+            )
             self.f_build(root, self.f_body)
             self.f_build_menu(root, self.f_menu)
         self.f_on_show()
