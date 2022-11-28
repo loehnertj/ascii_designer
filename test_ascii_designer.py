@@ -7,7 +7,13 @@ import logging
 import sys
 import random
 import time
-from ascii_designer import AutoFrame, set_toolkit, nullable, ge0, Invalid
+from ascii_designer import (
+    AutoFrame, set_toolkit, nullable, ge0, Invalid, 
+    load_translations_json, save_translations_json
+)
+
+from pathlib import Path
+I18N_PATH = Path(__file__).with_name("test_ascii_designer_i18n")
 
 
 
@@ -95,6 +101,15 @@ class AutoconnectDemo(AutoFrame):
                         this appears twice
                         this appears twice
         '''
+
+    def f_on_build(self):
+        # How to use custom translations.
+        # Use .get(key, default) to retrieve translations! Required if you want
+        # to have .recording and .mark_missing work properly.
+        prefix = "Color."
+        tr = self.f_translations.get
+        self["choose"]["values"] = [tr(prefix+value, value) for value in self["choose"]["values"]]
+        self["color"]["values"] = [tr(prefix+value, value) for value in self["color"]["values"]]
         
     def close(self):
         print('Closing now.')
@@ -558,25 +573,14 @@ if __name__ == '__main__':
         TK = sys.argv[1]
 
     set_toolkit(TK)
-    AutoFrame.f_translations = {
-        "BoundCtlDemo.label_textbox": "TEXTBOX:",
-        "BoundCtlDemo.choose": "CHOOSE",
-        "BoundCtlDemo.option_a": "OPTION A",
-        "BoundCtlDemo.label_slider": "SLIDER:",
-        "BoundCtlDemo.slider": "(ignored, slider has no text)",
-        "BoundCtlDemo.get_all": "GET ALL",
 
-        "ListDemo.players": "PLAYERS",
-        "ListDemo.players.rank": "RANK",
+    t = AutoFrame.f_translations = load_translations_json(I18N_PATH)
+    # Set this to update f_translation if "missing" keys are queried. Need to
+    # save afterwards. Probably should load "language=default" when doing this.
+    #t.recording = True
+    # Set this to have untranslated strings prepended by "$" dollar sign in the ui.
+    t.mark_missing = True
 
-        "MenuDemo.open": "OPEN",
-        "MenuDemo.nested": "NESTED",
-        "MenuDemo.subitem_1": "SUBITEM &1",
-        "MenuDemo.submenu_3": "SUB&MENU 3",
-        "MenuDemo.about": "ABOUT",
-
-        "arbitrary additional key": "whatever",
-    }
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,
@@ -593,3 +597,8 @@ if __name__ == '__main__':
         F = Main
     frm = F()
     frm.f_show()
+
+    # Uncomment if using recording mode.
+    # !! will overwrite the used translation file
+    #path = save_translations_json(t, I18N_PATH)
+    #print("Saved translations:", path)
