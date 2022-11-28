@@ -22,6 +22,7 @@ Package overview:
 from .autoframe import AutoFrame
 from .toolkit import set_toolkit
 from .event import EventSource, CancelEvent
+from .i18n import Translations, load_translations_json, save_translations_json
 from .tk_generic_var import Invalid, nullable, gt0, ge0
 
 __all__ = [
@@ -33,4 +34,7 @@ __all__ = [
     'nullable',
     'gt0',
     'ge0',
+    'Translations',
+    'load_translations_json',
+    'save_translations_json',
     ]
