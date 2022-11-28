@@ -10,6 +10,10 @@ ASCII Designer
 Changelog
 ---------
 
+ * v0.5.2:
+
+   * Add translation support. TBD: Howto-document. Maybe also review the other docs when at it.
+
  * v0.5.1:
 
    * TK: add ``add_setup`` toolkit option (similar to ``setup_style`` but keeps
