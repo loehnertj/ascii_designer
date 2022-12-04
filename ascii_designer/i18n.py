@@ -32,10 +32,10 @@ class Translations(dict):
 
     The class has the two additional properties `.recording` and `.mark_missing`.
 
-    * If `recording` is set to True, calls of `.get` will add missing entries
-      (i.e. `.get` does the same as `.setdefault`). By setting it and opening
+    * If `recording` is set to True, calls of `~.Translations.get` will add missing entries
+      (i.e. `~.Translations.get` does the same as `.setdefault`). By setting it and opening
       all forms once, you can collect all translation keys and default strings.
-    * If `mark_missing` is set and `.get` finds a missing key, the given default
+    * If `mark_missing` is set and `~.Translations.get` finds a missing key, the given default
       value is prefixed with a ``$`` sign.
     """
 

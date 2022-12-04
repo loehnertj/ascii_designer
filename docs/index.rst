@@ -5,6 +5,7 @@ ASCII Designer
    :maxdepth: 3
    
    manual
+   translating
    api
 
 Changelog
@@ -12,7 +13,7 @@ Changelog
 
  * v0.5.2:
 
-   * Add translation support. TBD: Howto-document. Maybe also review the other docs when at it.
+   * Add translation support.
 
  * v0.5.1:
 
