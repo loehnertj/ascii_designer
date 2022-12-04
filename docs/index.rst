@@ -5,10 +5,15 @@ ASCII Designer
    :maxdepth: 3
    
    manual
+   translating
    api
 
 Changelog
 ---------
+
+ * v0.5.2:
+
+   * Add translation support.
 
  * v0.5.1:
 

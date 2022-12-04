@@ -453,7 +453,7 @@ class ToolkitTk(ToolkitBase):
         t.insert('end', text)
         return t
     
-    def treelist(self, parent, id=None, text='', columns=None):
+    def treelist(self, parent, id=None, text='', columns=None, first_column_editable=False):
         '''treeview (also usable as plain list)
         
         Implementation note: Uses a ttk.TreeView, and wraps it into a frame
@@ -466,32 +466,22 @@ class ToolkitTk(ToolkitBase):
         
         Returns the treeview widget (within the frame).
         '''
-        def crop_(txt):
-            return txt if not txt.endswith('_') else txt[:-1]
         Frame = self.widget_classes["box"]
         Scrollbar = self.widget_classes["scrollbar"]
-        if columns:
-            columns = [txt.strip() for txt in columns.split(',')]
-        else:
-            columns = []
         text = text.strip()
         id = _unique(parent, id)
-        is_editable = text.endswith('_') or any(name.endswith('_') for name in columns)
-        keys = [crop_(name.lower()) for name in columns]
+        is_editable = first_column_editable or any(column.editable for column in columns)
         has_first_column = bool(text)
-        if has_first_column:
-            keys.insert(0, '')
-            columns.insert(0, crop_(text))
 
         # setup scrollable container
         frame = Frame(parent)
         if is_editable:
             tv = self.widget_classes["treelist_editable"](
-                frame, columns=[k for k in keys if k]
+                frame, columns=[c.id for c in columns]
             )
         else:
             tv = self.widget_classes["treelist"](
-                frame, columns=[k for k in keys if k]
+                frame, columns=[c.id for c in columns]
             )
         scb = Scrollbar(frame)
         scb.pack(side='right', fill='y')
@@ -503,22 +493,25 @@ class ToolkitTk(ToolkitBase):
         tv.place = frame.place
         tv.grid = frame.grid
         
+        keys = [column.id for column in columns]
+        if has_first_column:
+            keys.insert(0, "")
         tv.variable = ListBindingTk(tv, keys)
         
         # configure tree view
         if has_first_column:
-            tv.heading('#0', text=crop_(text), command=lambda: tv.variable.on_heading_click(''))
-            if text.endswith('_'):
+            tv.heading('#0', text=text, command=lambda: tv.variable.on_heading_click(''))
+            if first_column_editable:
                 tv.editable('#0', True)
         else:
             # hide first column
             tv['show'] = 'headings'
-        for key, heading in zip(keys, columns):
-            if not key:
+        for column in columns:
+            if not column.id:
                 continue
-            tv.heading(key, text=crop_(heading), command=lambda key=key: tv.variable.on_heading_click(key))
-            if heading.endswith('_'):
-                tv.editable(key, True)
+            tv.heading(column.id, text=column.text, command=lambda key=column.id: tv.variable.on_heading_click(key))
+            if column.editable:
+                tv.editable(column.id, True)
         if is_editable:
             tv.on_cell_modified += tv.variable.on_cell_modified
             tv.on_add += tv.variable.on_add_cmd

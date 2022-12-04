@@ -7,8 +7,10 @@ import logging
 import sys
 import random
 import time
-from ascii_designer import AutoFrame, set_toolkit, nullable, ge0, Invalid
-
+from ascii_designer import (
+    AutoFrame, set_toolkit, nullable, ge0, Invalid, 
+    load_translations_json, save_translations_json
+)
 
 
 # Idea for later
@@ -95,6 +97,15 @@ class AutoconnectDemo(AutoFrame):
                         this appears twice
                         this appears twice
         '''
+
+    def f_on_build(self):
+        # How to use custom translations.
+        # Use .get(key, default) to retrieve translations! Required if you want
+        # to have .recording and .mark_missing work properly.
+        prefix = "Color."
+        tr = self.f_translations.get
+        self["choose"]["values"] = [tr(prefix+value, value) for value in self["choose"]["values"]]
+        self["color"]["values"] = [tr(prefix+value, value) for value in self["color"]["values"]]
         
     def close(self):
         print('Closing now.')
@@ -188,6 +199,10 @@ class AlignmentDemo(AutoFrame):
             self['right'].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
 class BoundCtlDemo(AutoFrame):
+    """creates all controls (except Treelist),
+    also test out translations.
+    """
+
     f_body = '''
     |               |  <->                                            ~
      Textbox:        [ _ ]
@@ -324,7 +339,7 @@ class RankRow:
 class ListDemo(AutoFrame):
     f_body = '''
     |             |     |         |        |<->          |
-    |Simple List   List with named columns~~        
+    |Simple List   List with named~columns~~        
     I[= Shopping ] [= Players  (Name, Points, Rank)     ]
                    [Add] [Replace] [Mutate] [Remove] ~                 
     '''
@@ -554,6 +569,14 @@ if __name__ == '__main__':
         TK = sys.argv[1]
 
     set_toolkit(TK)
+
+    t = AutoFrame.f_translations = load_translations_json("test_ascii_designer_i18n")
+    # Set this to update f_translation if "missing" keys are queried. Need to
+    # save afterwards. Probably should load ``language=""`` when doing this.
+    #t.recording = True
+    # Set this to have untranslated strings prepended by "$" dollar sign in the ui.
+    t.mark_missing = True
+
     if sys.argv[2:]:
         F = {
             'autoconnect': AutoconnectDemo,
@@ -564,8 +587,14 @@ if __name__ == '__main__':
             'list': ListDemo,
             'tree': TreeDemo,
             'listedit': ListEditDemo,
+            'menu': MenuDemo,
         }[sys.argv[2]]
     else:
         F = Main
     frm = F()
     frm.f_show()
+
+    # Uncomment if using recording mode.
+    # !! will overwrite the used translation file
+    #path = save_translations_json(t, "test_ascii_designer_i18n/default.json")
+    #print("Saved translations:", path)
