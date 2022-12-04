@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 setup(name='ascii_designer',
-      version='0.5.1',
+      version='0.5.2',
       description='Builds dialogs from ASCII art definition.',
       long_description=Path('README.rst').read_text(),
       long_description_content_type='text/x-rst',
@@ -12,7 +12,7 @@ setup(name='ascii_designer',
       author_email='loehnert.kde@gmx.de',
       license='MIT',
       classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development :: User Interfaces',
