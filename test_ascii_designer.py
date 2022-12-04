@@ -12,10 +12,6 @@ from ascii_designer import (
     load_translations_json, save_translations_json
 )
 
-from pathlib import Path
-I18N_PATH = Path(__file__).with_name("test_ascii_designer_i18n")
-
-
 
 # Idea for later
 toolbar = '''
@@ -574,9 +570,9 @@ if __name__ == '__main__':
 
     set_toolkit(TK)
 
-    t = AutoFrame.f_translations = load_translations_json(I18N_PATH)
+    t = AutoFrame.f_translations = load_translations_json("test_ascii_designer_i18n")
     # Set this to update f_translation if "missing" keys are queried. Need to
-    # save afterwards. Probably should load "language=default" when doing this.
+    # save afterwards. Probably should load ``language=""`` when doing this.
     #t.recording = True
     # Set this to have untranslated strings prepended by "$" dollar sign in the ui.
     t.mark_missing = True
@@ -600,5 +596,5 @@ if __name__ == '__main__':
 
     # Uncomment if using recording mode.
     # !! will overwrite the used translation file
-    #path = save_translations_json(t, I18N_PATH)
+    #path = save_translations_json(t, "test_ascii_designer_i18n/default.json")
     #print("Saved translations:", path)

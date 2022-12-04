@@ -7,15 +7,19 @@ save translation files.
 """
 __all__ = [
     "Translations",
+    "load_translations_json",
+    "save_translations_json",
 ]
 
-from pathlib import Path
+from pathlib import Path, PurePath
+import importlib.resources as resources
 import sys
 import os
 import json
 import ctypes
 import locale
 import logging
+
 
 def L():
     return logging.getLogger(__name__)
@@ -47,32 +51,65 @@ class Translations(dict):
             return super().get(key, default)
 
 
-def load_translations_json(dir="locale", prefix="", language=""):
+def load_translations_json(package_or_dir="locale", prefix="", language=None):
     """Locate and load translations from JSON file.
 
     JSON file format is a simple key value store.
 
-    The file is located due to certain rules, see `.find_json_path`.
+    If given a package name, use the resource loading system. If given a
+    dir, use file access.
+
+    The argument is interpreted as dir if:
+
+    * the string contains ``/`` or ``\\``
+    * the argument is a ``pathlib.PurePath`` instance.
+
+    Resource name is formed by the rule "<prefix>.<language>.json" (first dot is
+    ommited if one of both is empty). If both prefix and language are empty, we look
+    for ``default.json``.
+
+    If the language is not given, the OS's UI language is used.
+
+    With the given or guessed language we look for an existing file:
+
+    * First we look for the exact language string (e.g. "de_DE.json")
+    * then we look for the first two letters of the language string ("de.json")
+    * then we look for emtpy language (i.e. default set).
+
+    If none of these exists, empty ``Translations`` object is returned.
     """
-    path = find_json_path(dir, prefix, language, fallback_logic=True)
+    if (
+        isinstance(package_or_dir, PurePath)
+        or "/" in package_or_dir
+        or "\\" in package_or_dir
+    ):
+        # filesystem path
+        path = find_json_path(package_or_dir, prefix, language)
+        openfunc = lambda: path.open("r")
+        type = "file"
+    else:
+        # resource dir
+        path = find_resource(package_or_dir, prefix, language)
+        openfunc = lambda: resources.open_text(package_or_dir, path)
+        type = "resource"
     # Not found
     if path is None:
         L().debug("No translations found")
         return Translations()
-    L().debug("Load translations %s", path)
-    with path.open("r") as fp:
+    L().debug("Load translations from %s %s", type, path)
+    with openfunc() as fp:
         d = json.load(fp)
     return Translations(d)
 
 
-def save_translations_json(translations, dir="locale", prefix="", language="") -> Path:
+def save_translations_json(translations, path):
     """Save translations to JSON file.
 
     OVERWRITES existing file!
 
-    ``language`` is taken as-is.
+    In contrast to ``load_translations_json``, we only accept a path here.
     """
-    path = find_json_path(dir, prefix, language, fallback_logic=False)
+    path = Path(path)
     with path.open("w") as fp:
         json.dump(translations, fp, indent=2)
     L().info("Saved translations to %s", path)
@@ -97,7 +134,7 @@ def _os_locale():
         raise RuntimeError("Cannot guess language on %s platform" % sys.platform)
 
 
-def find_json_path(dir="locale", prefix="", language="", fallback_logic=True) -> Path:
+def find_json_path(dir, prefix="", language=None) -> Path:
     """Find location of translations file.
 
     ``dir`` gives the directory to search in, absolute or relative.
@@ -105,11 +142,6 @@ def find_json_path(dir="locale", prefix="", language="", fallback_logic=True) ->
     Filename is formed by the rule "<prefix>.<language>.json" (first dot is
     ommited if one of both is empty). If both prefix and language are empty, we look
     for ``default.json``.
-
-    If ``fallback_logic`` is ``False``, path will be formed and returned
-    according to the rule, regardless whether it exists.
-
-    If ``fallback_logic`` is ``True``, the following happens:
 
     If the language is not given, we try to get UI language of the OS.
 
@@ -122,20 +154,28 @@ def find_json_path(dir="locale", prefix="", language="", fallback_logic=True) ->
     If none of these exists, None is returned.
     """
     dir = Path(dir)
-    if not fallback_logic:
-        filename = _join_ne(prefix, language, "json")
-        if filename == "json":
-            filename = "default.json"
-        return dir / filename
-    else:
-        if not language:
-            language = _os_locale()
-            L().debug("OS language: %s", language)
-        for name in [
-            _join_ne(prefix, language, "json"),
-            _join_ne(prefix, language[:2], "json"),
-            _join_ne(prefix or "default", "json"),
-        ]:
-            if (dir / name).exists():
-                return dir / name
-        return None
+    if language is None:
+        language = _os_locale()
+        L().debug("OS language: %s", language)
+    for name in [
+        _join_ne(prefix, language, "json"),
+        _join_ne(prefix, language[:2], "json"),
+        _join_ne(prefix or "default", "json"),
+    ]:
+        if (dir / name).exists():
+            return dir / name
+    return None
+
+
+def find_resource(package, prefix="", language=None):
+    if language is None:
+        language = _os_locale()
+        L().debug("OS language: %s", language)
+    for name in [
+        _join_ne(prefix, language, "json"),
+        _join_ne(prefix, language[:2], "json"),
+        _join_ne(prefix or "default", "json"),
+    ]:
+        if resources.is_resource(package, name):
+            return name
+    return None
