@@ -12,7 +12,10 @@ __all__ = [
 ]
 
 from pathlib import Path, PurePath
-import importlib.resources as resources
+try:
+    import importlib.resources as resources
+except ImportError:
+    resources = None
 import sys
 import os
 import json
@@ -89,6 +92,9 @@ def load_translations_json(package_or_dir="locale", prefix="", language=None):
         type = "file"
     else:
         # resource dir
+        if resources is None:
+            L().error("importlib.resource is not available, translations must be loaded from file instead.")
+            return Translations()
         path = find_resource(package_or_dir, prefix, language)
         openfunc = lambda: resources.open_text(package_or_dir, path)
         type = "resource"
