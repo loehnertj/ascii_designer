@@ -123,12 +123,16 @@ class ListBindingTk(ListBinding):
         self.list.toolkit_parent_id = ""
         self._tv = treeview
         self.sort_asc_icon = None
+        """header icon for ascending column"""
         self.sort_desc_icon = None
+        """header icon for descending column"""
 
     def get(self):
+        """get underlying list"""
         return self.list
 
     def set(self, val):
+        """Set underlying list"""
         self.list = val
 
     def _set_list(self, val):
@@ -170,9 +174,11 @@ class ListBindingTk(ListBinding):
         self._update_sortarrows()
 
     def on_remove(self, iid):
+        """called when item was removed from list"""
         self._tv.delete(iid)
 
     def on_sort(self, sublist, info):
+        """Called when list was sorted, via GUI or list.sort()"""
         super().on_sort(sublist, info)
         tv = self._tv
         _parent_iid = sublist.toolkit_parent_id
@@ -189,6 +195,7 @@ class ListBindingTk(ListBinding):
             tv.heading(self.sort_key or "#0", image=image)
 
     def on_get_selection(self):
+        """called to get the GUI selection as list items"""
         iids = self._tv.selection()
         nodes = []
 
@@ -211,6 +218,7 @@ class ListBindingTk(ListBinding):
         return sublist[idx], sublist
 
     def on_tv_focus(self, function):
+        """call function with focused item"""
         iid = self._tv.focus()
         if not iid:
             return
@@ -218,6 +226,7 @@ class ListBindingTk(ListBinding):
         function(item)
 
     def on_gui_expand(self, stuff):
+        """called when GUI item is expanded"""
         iid = self._tv.focus()
         # retrieve the idx
         sublist, idx = self._list.find_by_toolkit_id(iid)
@@ -225,6 +234,7 @@ class ListBindingTk(ListBinding):
         sublist.load_children(idx)
 
     def on_heading_click(self, key: str):
+        """called when heading is clicked"""
         if self.sort_key is not None and key == self.sort_key:
             ascending = not self.sort_ascending
         else:
