@@ -244,7 +244,6 @@ class ToolkitBase:
                     d['id'] = auto_id(d['id'], d.get('text', ''))
                     if 'text' in d:
                         text = (d['text'] or '').strip()
-                        print(translation_prefix+d["id"])
                         d['text'] = translations.get(translation_prefix+d['id'], text)
                     L().debug('Menuentry %r --> %s %r', item, name, d)
                     if name == 'sub':
@@ -382,7 +381,7 @@ class ListBinding:
         self._sources = {k:k for k in self.keys}
         # set text source always
         self._sources.setdefault('', '')
-        self.sort_key = ''
+        self.sort_key = None
         self.sort_ascending = True
         self.sorted = False
         # Set a dummy list first
@@ -473,15 +472,14 @@ class ListBinding:
         Instead of specifying ``key`` and ``ascending``, you can set
         ``restore=True`` to reuse the last applied sorting, if any.
         '''
-        if restore and key is None:
+        if restore:
             key = self.sort_key
-        if restore and ascending is None:
             ascending = self.sort_ascending
         if isinstance(key, str):
             keyfunc = lambda item: self.retrieve(item, key)
             info = {
-                'sort_ascending': self.sort_ascending,
-                'sort_key': self.sort_key
+                'sort_ascending': ascending,
+                'sort_key': key,
             }
         else:
             # just use passed-in keyfunc, assume that it
@@ -520,7 +518,7 @@ class ListBinding:
             self.sort_ascending = asc
         else:
             self.sorted = False
-            self.sort_key = ''
+            self.sort_key = None
             self.sort_ascending = True
 
     def on_get_selection(self):

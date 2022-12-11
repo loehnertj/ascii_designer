@@ -338,10 +338,10 @@ class RankRow:
             
 class ListDemo(AutoFrame):
     f_body = '''
-    |             |     |         |        |<->          |
+    |             |     |         |        |<->     |        |         |
     |Simple List   List with named~columns~~        
-    I[= Shopping ] [= Players  (Name, Points, Rank)     ]
-                   [Add] [Replace] [Mutate] [Remove] ~                 
+    I[= Shopping ] [= Players  (Name, Points, Rank) ~        ~        ]
+                   [Add] [Replace] [Mutate] [Remove] [resort] [unsort]                 
     '''
     def f_on_build(self):
         print(list(self.f_controls.keys()))
@@ -395,6 +395,13 @@ class ListDemo(AutoFrame):
         nodes = self.players.selection[:]
         for node in nodes:
             self.players.remove(node)
+
+    def resort(self):
+        self.players.sort(restore=True)
+    
+    def unsort(self):
+        """apply a regular python sorting, e.g. by item id"""
+        self.players.sort(key=lambda item: id(item))
 
     def shopping(self, item):
         print('Buy: ', item)
