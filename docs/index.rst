@@ -11,6 +11,9 @@ ASCII Designer
 Changelog
 ---------
 
+   * Can set listvariable.allow_sorting to enable/ disable GUI sorting. Default ``True``.
+   * Fix broken list sorting.
+
  * v0.5.2:
 
    * Add translation support.

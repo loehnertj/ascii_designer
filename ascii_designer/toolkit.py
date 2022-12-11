@@ -381,12 +381,19 @@ class ListBinding:
         self._sources = {k:k for k in self.keys}
         # set text source always
         self._sources.setdefault('', '')
+        self.allow_sorting = True
+        """Enable / disable sorting by clicking on a column header"""
+
         self.sort_key = None
+        """column by which list is currently sorted"""
         self.sort_ascending = True
+        """sorted ascending yes/no"""
         self.sorted = False
+        """List is currently sorted by GUI interaction"""
         # Set a dummy list first
         self._list:list_model.ObsList = None
         self.list = list_model.ObsList(binding=self)
+        """underlying list"""
         
         def no_factory():
             raise RuntimeError('In order to create items, you need to set a factory!')
@@ -471,7 +478,11 @@ class ListBinding:
         
         Instead of specifying ``key`` and ``ascending``, you can set
         ``restore=True`` to reuse the last applied sorting, if any.
+
+        If ``allow_sorting`` is set to ``False``, nothing happens.
         '''
+        if not self.allow_sorting:
+            return
         if restore:
             key = self.sort_key
             ascending = self.sort_ascending
