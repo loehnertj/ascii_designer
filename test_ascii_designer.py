@@ -346,7 +346,10 @@ class ListDemo(AutoFrame):
     def f_on_build(self):
         print(list(self.f_controls.keys()))
         self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse', 'Fish'] * 5
-        self["shopping"].variable.allow_sorting = False
+        if TK != "qt":
+            self["shopping"].variable.allow_sorting = False
+        else:
+            self["shopping"].model().allow_sorting = False
         self._populate_players()
         
     def _populate_players(self):
@@ -365,7 +368,8 @@ class ListDemo(AutoFrame):
         self.players.sources(name='name', points='points', rank='rank')
 
     def on_reorder(self, val):
-        self["shopping"].variable.allow_reorder = val
+        if TK != "qt":
+            self["shopping"].variable.allow_reorder = val
         
     def add(self):
         p = RankRow(
