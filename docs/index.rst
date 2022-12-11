@@ -11,6 +11,10 @@ ASCII Designer
 Changelog
 ---------
 
+ * v0.6.0:
+
+   * Can set listvariable.allow_reorder to enable/disable reordering by dragging items.
+      TBD: cleaner way to expose API?; docs; Qt impl.
    * Can set listvariable.allow_sorting to enable/ disable GUI sorting. Default ``True``.
    * Fix broken list sorting.
 

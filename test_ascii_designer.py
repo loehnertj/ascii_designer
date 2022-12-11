@@ -341,11 +341,12 @@ class ListDemo(AutoFrame):
     |             |     |         |        |<->     |        |         |
     |Simple List   List with named~columns~~        
     I[= Shopping ] [= Players  (Name, Points, Rank) ~        ~        ]
-                   [Add] [Replace] [Mutate] [Remove] [resort] [unsort]                 
+     [ ] reorder   [Add] [Replace] [Mutate] [Remove] [resort] [unsort]                 
     '''
     def f_on_build(self):
         print(list(self.f_controls.keys()))
-        self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
+        self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse', 'Fish'] * 5
+        self["shopping"].variable.allow_sorting = False
         self._populate_players()
         
     def _populate_players(self):
@@ -362,6 +363,9 @@ class ListDemo(AutoFrame):
         # not recommended: mixed item types
         self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
         self.players.sources(name='name', points='points', rank='rank')
+
+    def on_reorder(self, val):
+        self["shopping"].variable.allow_reorder = val
         
     def add(self):
         p = RankRow(

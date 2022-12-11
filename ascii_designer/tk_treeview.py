@@ -4,11 +4,18 @@ __all__ = [
     "make_treelist",
     "ListBindingTk",
 ]
+import logging
+from typing import List
+import dataclasses as dc
 import tkinter as tk
 from tkinter import ttk
 
 from .toolkit import ListBinding
 from .tk_treeedit import TreeEdit
+
+
+def L():
+    return logging.getLogger(__name__)
 
 
 def _unique(parent, id):
@@ -126,6 +133,22 @@ class ListBindingTk(ListBinding):
         """header icon for ascending column"""
         self.sort_desc_icon = None
         """header icon for descending column"""
+        self._reorder_behavior = None
+
+    @property
+    def allow_reorder(self):
+        return self._reorder_behavior is not None
+
+    @allow_reorder.setter
+    def allow_reorder(self, val):
+        if val == self.allow_reorder:
+            return
+        if not val:
+            if self._reorder_behavior:
+                self._reorder_behavior.unbind()
+            self._reorder_behavior = None
+        else:
+            self._reorder_behavior = ReorderBehavior(self._tv)
 
     def get(self):
         """get underlying list"""
@@ -284,3 +307,153 @@ class ListBindingTk(ListBinding):
         item, sublist = self._item(iid)
         sublist.remove(item)
         return False
+
+
+@dc.dataclass
+class GrabbedItem:
+    """The currently grabbed item"""
+
+    tk_id: str = ""
+    """Tkinter treeview item id"""
+    index: int = 0
+    """current position in the list"""
+    grabbed_at_y: int = 0
+    """Where grab started, used to apply start-threshold distance"""
+    move_active = False
+    """Item is being moved - Set to true after mouse was moved by threshold distance"""
+
+
+SORT_THRESHOLD = 10
+SCROLL_EDGES = (60, 30)
+"""height of upper / lower scroll hit target.
+
+Upper target is larger to accomodate heading space."""
+
+
+class ReorderBehavior:
+    """Allows interactive reordering of a ascii designer listview.
+
+    In ``f_on_build()``, just use ``ReorderBehavior(tk_treeview)``. Will bind
+    all necessary event handlers. It is recommended to store the reference away
+    as variable.
+
+    The list is updated immediately while dragging is in progress.
+
+    We generate ``<<ReorderStarted>>`` and ``<<ReorderFinished>>`` virtual events on
+    the Treeview when dragging starts / ends.
+
+    WILL NOT work with a regular listview. Reordering happens by changing the bound list.
+
+    Currently, multilevel lists (a.k.a trees) cannot be reordered.
+
+    Binds:
+
+    * ButtonPress, "grabs" item under mouse.
+    * Motion event, updates item's position in the list.
+    * ButtonRelease, ungrabs item.
+    * Leave event, ungrabs item.
+    """
+
+    def __init__(self, tv):
+        self.tv = tv
+        """Treeview object. Must have ``.variable`` property (ListBindingTk instance)"""
+        self.grabbed: GrabbedItem = None
+        """Currently grabbed item"""
+        self._tk_bind_handles = []
+        self.bind()
+
+    @property
+    def list(self) -> List:
+        """return the list model"""
+        return self.tv.variable.list
+
+    def bind(self):
+        """Bind event handlers, i.e. activate sorting behavior.
+
+        Happens automatically on initialization."""
+        tv = self.tv
+        self.unbind()
+        self._tk_bind_handles = [
+            tv.bind("<ButtonPress-1>", self._grab, add="+"),
+            tv.bind("<Motion>", self._motion, add="+"),
+            tv.bind("<ButtonRelease-1>", self._ungrab, add="+"),
+            tv.bind("<Leave>", self._ungrab, add="+"),
+        ]
+
+    def unbind(self):
+        """Unbind event handlers i.e. deactivate sorting behavior."""
+        tv = self.tv
+        print("unbind")
+        events = ["<ButtonPress-1>", "<Motion>", "<ButtonRelease-1>", "<Leave>"]
+        for event, handle in zip(events, self._tk_bind_handles):
+            print(handle)
+            tv.unbind(event, handle)
+        self._tk_bind_handles = []
+
+    def _grab(self, ev):
+        if self.tv.identify_region(ev.x, ev.y) != "tree":
+            return
+        iid = self.tv.identify_row(ev.y)
+        if not iid:
+            return
+        list, index = self.list.find_by_toolkit_id(iid)
+        assert list is self.list, "Cannot sort subtrees yet"
+        self.grabbed = GrabbedItem(iid, index, grabbed_at_y=ev.y)
+        # L().debug("Grab %s", self.grabbed)
+
+    def _motion(self, ev):
+        if not self.grabbed:
+            return
+        if (
+            not self.grabbed.move_active
+            and abs(self.grabbed.grabbed_at_y - ev.y) > SORT_THRESHOLD
+        ):
+            self.tv.event_generate("<<ReorderStarted>>")
+            self.grabbed.move_active = True
+            self.tv.after(100, self._scroll_timer)
+            self.tv["cursor"] = "sb_v_double_arrow"
+        if not self.grabbed.move_active:
+            return
+        iid = self.tv.identify_row(ev.y)
+        if not iid:
+            return
+        index = self.tv.index(iid)
+        if index != self.grabbed.index:
+            L().debug("Move %d -> %d", self.grabbed.index, index)
+            self._move(self.grabbed.index, index)
+            self.grabbed.index = index
+
+    def _move(self, from_index, to_index):
+        l = self.list
+        if from_index != to_index:
+            l.insert(to_index, l.pop(from_index))
+        self.tv.update_idletasks()
+
+    def _scroll_timer(self):
+        if not self.grabbed:
+            return
+        self.tv.after(200, self._scroll_timer)
+        y = self.tv.winfo_pointery() - self.tv.winfo_rooty()
+        h = self.tv.winfo_height()
+
+        if y < SCROLL_EDGES[0]:
+            # scroll up
+            self.tv.yview_scroll(-1, "units")
+        elif h - y < SCROLL_EDGES[1]:
+            # scroll down
+            self.tv.yview_scroll(1, "units")
+        else:
+            return
+        self.tv.update_idletasks()
+        y_ = y
+
+        class dummy_ev_args:
+            y = y_
+
+        self._motion(dummy_ev_args)
+
+    def _ungrab(self, ev):
+        if self.grabbed and self.grabbed.move_active:
+            self.tv["cursor"] = ""
+            self.tv.event_generate("<<ReorderFinished>>")
+        self.grabbed = None
