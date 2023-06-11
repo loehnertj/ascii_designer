@@ -77,7 +77,7 @@ import sys
 import tkinter as tk
 import tkinter.ttk as ttk
 
-from .event import EventSource
+from .event import event
 
 class TreeEdit(ttk.Treeview):
     '''see module docs'''
@@ -136,11 +136,6 @@ class TreeEdit(ttk.Treeview):
                 handler = getattr(self, handler)
             self._editbox.bind(trigger, handler)
 
-        self.on_add = EventSource()
-        self.on_add_child = EventSource()
-        self.on_remove = EventSource()
-        self.on_cell_edit = EventSource()
-        self.on_cell_modified = EventSource()
         self.allow = allow
         self.autoedit_added = True
 
@@ -172,6 +167,42 @@ class TreeEdit(ttk.Treeview):
     @autoedit_added.setter
     def autoedit_added(self, val: bool):
         self._autoedit_added = bool(val)
+
+    @event(by_name=False)
+    def on_add(self, after_iid:str):
+        """Event: Item is about to be added.
+        
+        ``after_iid`` gives the currently-selected item.
+        
+        A handler may return ``False`` to indicate that it already took care
+        about inserting item in the view.
+        """
+
+    @event(by_name=False)
+    def on_add_child(self, below_iid:str):
+        """Event: Child item is about to be added.
+        
+        ``below_iid`` gives the currently-selected item.
+        
+        A handler may return ``False`` to indicate that it already took care
+        about inserting item in the view.
+        """
+
+    @event(by_name=False)
+    def on_remove(self, iid):
+        """Event: Item is about to be removed.
+
+        A handler may return ``False`` to indicate that it already took care
+        about removing item from the view.
+        """
+
+    @event(by_name=False)
+    def on_cell_edit(self, iid:str, columnname:str, cur_value:str):
+        """Event: cell is about to be edited."""
+
+    @event(by_name=False)
+    def on_cell_modified(self, iid:str, columname:str, new_value:str):
+        """Event: editing is finished"""
     
     def editable(self, column, editable=None):
         '''Query or specify whether the column is editable.
