@@ -9,6 +9,7 @@ from ascii_designer.event import Event, EventSource, event, CancelEvent
 # XXX: how about subclassing, invoke for all subclasses?
 # How should the self parameter work?
 
+
 @pytest.fixture
 def ev1():
     @event
@@ -16,6 +17,7 @@ def ev1():
         """Event 1"""
 
     return ev1
+
 
 @pytest.fixture
 def ev2():
@@ -30,7 +32,7 @@ def ev2():
 def Cls():
     class Cls:
         @event
-        def ev1(a:int):
+        def ev1(a: int):
             pass
 
         @event
@@ -57,7 +59,6 @@ def test_event_legacy():
     m.assert_called_with(1, x=2)
 
 
-
 def test__event_docstring(ev1):
     """Docstring is passed through"""
     assert ev1.__doc__ == "Event 1"
@@ -78,46 +79,50 @@ def test_event_signature():
     assert p.name == "a"
     assert p.annotation is int
 
+
 def test_event_signature_check(ev2):
     """Calling event with bad parameters raises TypeError"""
-    ev=ev2
+    ev = ev2
 
-    with pytest.raises(TypeError): # a is missing
+    with pytest.raises(TypeError):  # a is missing
         ev()
-    with pytest.raises(TypeError): # b is extra
+    with pytest.raises(TypeError):  # b is extra
         ev(1, b=1)
-    with pytest.raises(TypeError): # 2, 3 are extra
+    with pytest.raises(TypeError):  # 2, 3 are extra
         ev(1, 2, 3)
     # This does not constitute an error, since type hints are not enforced.
     ev("not an integer")
     # Can use kwarg syntax as well
     ev(a=1)
 
-@pytest.mark.parametrize("handler,iserror", [
-    (lambda a, b:None, True),
-    (lambda a, b=1:None, False),
-    # By default, kwargs are passed
-    (lambda *args: None, True),
-    (lambda **kwargs:None, False),
-    # a is missing
-    (lambda b, c: None, True),
-])
+
+@pytest.mark.parametrize(
+    "handler,iserror",
+    [
+        (lambda a, b: None, True),
+        (lambda a, b=1: None, False),
+        # By default, kwargs are passed
+        (lambda *args: None, True),
+        (lambda **kwargs: None, False),
+        # a is missing
+        (lambda b, c: None, True),
+    ],
+)
 def test_event_handler_signature(ev2, handler, iserror):
     """Event *handler* signature is not enforced when subscribing.
-    
+
     Handler with wrong signature will raise TypeError when invoked.
 
     Handler may specify additional params with default value, and/or catch
     values in ``**kwargs``.
     """
     # Never fails
-    ev2 += handler 
+    ev2 += handler
     if iserror:
         with pytest.raises(TypeError):
             ev2(1)
     else:
         ev2(1)
-
 
 
 def test_event_str(ev1, Cls):
@@ -207,11 +212,26 @@ def test_class_handler_separation(Cls):
     m1.assert_called_once_with(a=1)
     m2.assert_called_once_with(a=2)
 
+
+def test_event_copy_instance(Cls):
+    """event can be copied from one instance to another (retaining handlers)"""
+    o1 = Cls()
+    o2 = Cls()
+    o1.ev1 += (m1 := Mock())
+    o2.ev1 = o1.ev1
+    assert o2.ev1 is o1.ev1
+    o2.ev1(2)
+    m1.assert_called_once_with(a=2)
+    o1.ev1 -= m1
+    o2.ev1(1)
+    m1.assert_called_once_with(a=2)
+
+
 def test_class_self_handling(Cls):
     """self argument CAN be there but is ignored."""
     o = Cls()
-    Cls.ev2 += (m1:=Mock())
-    o.ev2 += (m2:=Mock())
+    Cls.ev2 += (m1 := Mock())
+    o.ev2 += (m2 := Mock())
 
     Cls.ev2(1)
     o.ev2(2)
@@ -219,10 +239,11 @@ def test_class_self_handling(Cls):
     m1.assert_called_once_with(a=1)
     m2.assert_called_once_with(a=2)
 
+
 # Not yet implemented
 @pytest.mark.xfail
 def test_class_call_with_self(Cls):
-    Cls.ev2 += (m:=Mock())
+    Cls.ev2 += (m := Mock())
     o = Cls()
     Cls.ev2(o, 3)
     # XXX WHat do we expect here!?
