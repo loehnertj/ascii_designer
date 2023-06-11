@@ -419,8 +419,6 @@ class ListEditDemo(AutoFrame):
     f_body = '''
         | -
         I[= Players (Name_, Points_, Is_Cheater_, Rank)]
-         Second view of same model:
-         [= p2:Name_ (Points,)            ]
     '''
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
@@ -461,16 +459,6 @@ class ListEditDemo(AutoFrame):
         # FIXME: flag against infinite recursion, this smells
         self._in_check_recalc = False
 
-        # binds same ObsList instance to second view also.
-        # Views are synchronized (sorting, mutation).
-        # Note that this is not really a supported feature right now. Will crash
-        # and burn instantly if the list has children.
-        self.p2.sources('name')
-        self['p2'].allow = 'add'
-        self['p2'].autoedit_added = False
-        binding = self["p2"].variable if isinstance(self["p2"], TreeEdit) else self["p2"].model()
-        binding.factory = lambda: RankRow('', 0, 0)
-        self.p2 = self.players
 
     def _print_change(self, toolkit_id, item):
         if not self._in_check_recalc:
