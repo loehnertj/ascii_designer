@@ -65,7 +65,6 @@ def test__event_docstring(ev1):
 
 
 # not working yet, since Event is actually a class
-@pytest.mark.xfail
 def test_event_signature():
     """parameter names and annotations are passed"""
 
@@ -73,7 +72,7 @@ def test_event_signature():
     def ev(a: int):
         pass
 
-    sig = inspect.Signature(ev)
+    sig = inspect.signature(ev)
     assert len(sig.parameters) == 1
     p = sig.parameters["a"]
     assert p.name == "a"
@@ -135,7 +134,7 @@ def test_event_str(ev1, Cls):
     assert str(o.ev2) == "<Bound Event Cls.<locals>.Cls.ev2(a)>"
 
 
-def test_event_no_kwargs():
+def test_event_no_kwarg():
     """Cannot define event with kwargs"""
     with pytest.raises(TypeError):
 
@@ -144,7 +143,7 @@ def test_event_no_kwargs():
             pass
 
 
-def test_event_no_kwargs():
+def test_event_no_args():
     """Cannot define event with *args"""
     with pytest.raises(TypeError):
 

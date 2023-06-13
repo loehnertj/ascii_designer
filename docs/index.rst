@@ -13,8 +13,9 @@ Changelog
 
  * v0.6.0:
 
-   * Can set listvariable.allow_reorder to enable/disable reordering by dragging items.
-      TBD: cleaner way to expose API?; docs; Qt impl.
+   * Enhance Event system: Event can now be used as decorator; choose between
+     positional-args and named-args behavior
+   * Can set listvariable.allow_reorder to enable/disable reordering by dragging items. (tk/ttk only)
    * Can set listvariable.allow_sorting to enable/ disable GUI sorting. Default ``True``.
    * Add `Translation.get_prefix`, `Translations.get_exception` and
      `AutoFrame.f_translations_get_prefixed` helpers.

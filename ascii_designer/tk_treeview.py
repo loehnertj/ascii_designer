@@ -122,7 +122,7 @@ class ListBindingTk(ListBinding):
     Use ``get`` to return the ObsList;
     ``set`` to replace the value using a new list.
 
-    All the on_ methods are internal event handlers.
+    All the ``on_*`` methods are internal event handlers.
     """
 
     def __init__(self, treeview, keys, **kwargs):
