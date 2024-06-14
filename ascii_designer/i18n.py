@@ -29,7 +29,7 @@ def L():
 
 
 class Translations(dict):
-    """Mostly off-the shelf python dict, except for two facilities to aid translation.
+    """Mostly off-the shelf python dict, except for some facilities to aid translation.
 
     Translations should be retrieved via ``.get(key, default)`` method.
 
@@ -40,6 +40,8 @@ class Translations(dict):
       all forms once, you can collect all translation keys and default strings.
     * If `mark_missing` is set and `~.Translations.get` finds a missing key, the given default
       value is prefixed with a ``$`` sign.
+
+    Additionally, it sports the convenience methods `get_prefix` and `get_exception`.
     """
 
     recording: bool = False
@@ -53,6 +55,32 @@ class Translations(dict):
                 default = "$" + default
             return super().get(key, default)
 
+    def get_prefix(self, prefix):
+        """Returns a getter function like ``get`` that augments keys with
+        the given prefix.
+
+        I.e.: ``tr.get("prefix.name", "..")`` is equivalent to
+        ``tr.get_prefix("prefix")(".name", "..")``.
+        """
+        return lambda key, default: self.get(prefix + key, default)
+
+    def get_exception(self, exc, prefix="exc."):
+        """Return translation for the given exception.
+
+        Translation is retrieved using they key ``<prefix><exc. class>``.
+        E.g. ``exc.ValueError``.
+
+        The translated string MAY contain placeholders corresponding to
+        attributes of the exception object. Additionally, ``{exc}`` can be
+        used to insert the original string representation of the exception.
+
+        Fallback text is str(exc).
+        """
+        text: str = self.get(f"{prefix}{exc.__class__.__name__}", "")
+        if not text:
+            return str(exc)
+        else:
+            return text.format(str=str(exc), **exc.__dict__)
 
 def load_translations_json(package_or_dir="locale", prefix="", language=None):
     """Locate and load translations from JSON file.
