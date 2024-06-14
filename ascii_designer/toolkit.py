@@ -110,7 +110,7 @@ class ToolkitBase:
     menu_grammar = [
         ('sub', r'%s>'%_re_maybe_id_text, '"text >"'),
         ('command', r'''(?ix)\s*
-                        (?P<id>[a-zA-Z0-9_]+\s*\:)?
+                        ((?P<id>[a-zA-Z0-9_]+\s*)\:)?
                         (?P<text>[^#]+)
                         (?:\#(?P<shortcut>[a-zA-Z0-9-]*))?
                     ''', '"text :C-A-S-x"'),

@@ -3,7 +3,7 @@ ASCII Designer
 
 .. toctree::
    :maxdepth: 3
-   
+
    manual
    translating
    api
@@ -17,6 +17,7 @@ Changelog
       TBD: cleaner way to expose API?; docs; Qt impl.
    * Can set listvariable.allow_sorting to enable/ disable GUI sorting. Default ``True``.
    * Fix broken list sorting.
+   * Fix exception when using "id:text" menu entries.
 
  * v0.5.2:
 
@@ -39,14 +40,14 @@ Changelog
      ``gt0``, ``ge0``  on package-level
 
  * v0.4.4:
- 
+
    * Fix edit-widget placement issues in Tk Treeedit
    * Treeedit subwidgets are now ttk (i.e. stylable)
    * Treeedit ``autoedit_added`` property
    * Fix icon "inheritance" on Windows
 
  * v0.4.3:
-   
+
    * Fix ``f_icon`` not working on Windows (with ``.ico`` files).
    * Tk (choice only) dropdown: fire event immediately on selection, not on
      ``FocusOut`` / ``Return`` press
@@ -56,7 +57,7 @@ Changelog
      typical embedding case.
 
  * v0.4.2:
-   
+
    * Fix 2 issues in ListBindingTk related to editable lists.
 
  * v0.4.1:
@@ -83,12 +84,12 @@ Changelog
      option for Tkinter.
    * Can set window icon by f_icon property
 
- * v0.3.2: 
+ * v0.3.2:
 
    * Add "ttk" toolkit (which is actually :any:`ToolkitTk` with a new option). YMMV.
    * Add :any:`f_on_build` and :any:`f_on_show` hooks
    * Fix several bugs in control parser, esp. concerning labels.
-   
+
  * v0.3.1: Qt Toolkit menu accelerators
  * v0.3.0: menus added (TBD: accelerators for Qt menus); fix Qt List crash
  * v0.2.0: rework of the list model
@@ -98,7 +99,7 @@ Developers
 
 The project is located at https://github.com/loehnertj/ascii_designer
 
-This is a hobby project. If you need something quick, contact me or better, send 
+This is a hobby project. If you need something quick, contact me or better, send
 a pull request.
 
 Indices and tables
@@ -107,4 +108,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
