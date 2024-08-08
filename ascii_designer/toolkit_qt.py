@@ -416,6 +416,14 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
         self._allow_sorting = val
         self._tv.setSortingEnabled(val)
 
+    @property
+    def allow_reorder(self):
+        return False
+
+    @allow_reorder.setter
+    def allow_reorder(self, val):
+        raise NotImplementedError("Drag and drop reordering of Qt Treeview is not implemented.")
+
     def _set_list(self, val):
         '''replace all current items by the new iterable ``val``.'''
         self.modelAboutToBeReset.emit()
