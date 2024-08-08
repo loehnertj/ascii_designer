@@ -566,7 +566,6 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
     # === GUI event handlers ===
     def on_gui_expand(self, mindex):
         sl, idx = self._idx2sl(mindex)
-        print('expand', idx)
         sl.load_children(idx)
 
     # actually not a connected handler

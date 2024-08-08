@@ -383,10 +383,8 @@ class ReorderBehavior:
     def unbind(self):
         """Unbind event handlers i.e. deactivate sorting behavior."""
         tv = self.tv
-        print("unbind")
         events = ["<ButtonPress-1>", "<Motion>", "<ButtonRelease-1>", "<Leave>"]
         for event, handle in zip(events, self._tk_bind_handles):
-            print(handle)
             tv.unbind(event, handle)
         self._tk_bind_handles = []
 
