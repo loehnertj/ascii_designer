@@ -338,14 +338,18 @@ class RankRow:
             
 class ListDemo(AutoFrame):
     f_body = '''
-    |             |     |         |        |<->          |
+    |             |     |         |        |<->     |        |         |
     |Simple List   List with named~columns~~        
-    I[= Shopping ] [= Players  (Name, Points, Rank)     ]
-                   [Add] [Replace] [Mutate] [Remove] ~                 
+    I[= Shopping ] [= Players  (Name, Points, Rank) ~        ~        ]
+     [ ] reorder   [Add] [Replace] [Mutate] [Remove] [resort] [unsort]                 
     '''
     def f_on_build(self):
         print(list(self.f_controls.keys()))
-        self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse']
+        self.shopping = ['Cabbage', 'Spam', 'Salmon Mousse', 'Fish'] * 5
+        if TK != "qt":
+            self["shopping"].variable.allow_sorting = False
+        else:
+            self["shopping"].model().allow_sorting = False
         self._populate_players()
         
     def _populate_players(self):
@@ -362,6 +366,10 @@ class ListDemo(AutoFrame):
         # not recommended: mixed item types
         self.players.append({'name': 'Last', 'points': -1, 'rank': 4})
         self.players.sources(name='name', points='points', rank='rank')
+
+    def on_reorder(self, val):
+        if TK != "qt":
+            self["shopping"].variable.allow_reorder = val
         
     def add(self):
         p = RankRow(
@@ -396,6 +404,13 @@ class ListDemo(AutoFrame):
         for node in nodes:
             self.players.remove(node)
 
+    def resort(self):
+        self.players.sort(restore=True)
+    
+    def unsort(self):
+        """apply a regular python sorting, e.g. by item id"""
+        self.players.sort(key=lambda item: id(item))
+
     def shopping(self, item):
         print('Buy: ', item)
     
@@ -404,8 +419,6 @@ class ListEditDemo(AutoFrame):
     f_body = '''
         | -
         I[= Players (Name_, Points_, Is_Cheater_, Rank)]
-         Second view of same model:
-         [= p2:Name_ (Points,)            ]
     '''
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
@@ -446,16 +459,6 @@ class ListEditDemo(AutoFrame):
         # FIXME: flag against infinite recursion, this smells
         self._in_check_recalc = False
 
-        # binds same ObsList instance to second view also.
-        # Views are synchronized (sorting, mutation).
-        # Note that this is not really a supported feature right now. Will crash
-        # and burn instantly if the list has children.
-        self.p2.sources('name')
-        self['p2'].allow = 'add'
-        self['p2'].autoedit_added = False
-        binding = self["p2"].variable if isinstance(self["p2"], TreeEdit) else self["p2"].model()
-        binding.factory = lambda: RankRow('', 0, 0)
-        self.p2 = self.players
 
     def _print_change(self, toolkit_id, item):
         if not self._in_check_recalc:
@@ -530,7 +533,7 @@ class TreeDemo(AutoFrame):
 class MenuDemo(AutoFrame):
     f_menu = [
         # For "Save" entry, explicitly set (no) shortcut
-        '&File >', ['Open', '&Save #', '&Quit'],
+        '&File >', ['open:Open', '&Save #', '&Quit'],
         '&Nested >', [
             # Subitem 1 and Item 2 to test correct discrimination of Shift key
             'Submenu 1 >', [ 'Subitem 1 #C-S-I'],

@@ -62,6 +62,23 @@ class AutoFrame:
     Currently there is no facility to retranslate after building the form.
     """
 
+    @property
+    def f_translations_get_prefixed(self):
+        """Returns a getter for translations with own form name as prefix.
+
+        I.e. identical to ``self.f_translations.get_prefix(self.__class__.__name__)
+
+        Supports the usual case that you want additional translations keyed with
+        the form name as prefix.
+
+        Example::
+
+            # Somewhere in class MyForm(AutoFrame)
+            tr = self.f_translations_get_prefixed
+            # Retrieves translation key MyForm.msg_wait
+            self.label1 = tr(".msg_wait", "Please wait")
+        """
+
     def __init__(self):
         self.__dict__['f_controls'] = {}
         self.__dict__['f_toolkit'] = get_toolkit()

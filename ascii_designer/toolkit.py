@@ -110,7 +110,7 @@ class ToolkitBase:
     menu_grammar = [
         ('sub', r'%s>'%_re_maybe_id_text, '"text >"'),
         ('command', r'''(?ix)\s*
-                        (?P<id>[a-zA-Z0-9_]+\s*\:)?
+                        ((?P<id>[a-zA-Z0-9_]+\s*)\:)?
                         (?P<text>[^#]+)
                         (?:\#(?P<shortcut>[a-zA-Z0-9-]*))?
                     ''', '"text :C-A-S-x"'),
@@ -244,7 +244,6 @@ class ToolkitBase:
                     d['id'] = auto_id(d['id'], d.get('text', ''))
                     if 'text' in d:
                         text = (d['text'] or '').strip()
-                        print(translation_prefix+d["id"])
                         d['text'] = translations.get(translation_prefix+d['id'], text)
                     L().debug('Menuentry %r --> %s %r', item, name, d)
                     if name == 'sub':
@@ -382,12 +381,19 @@ class ListBinding:
         self._sources = {k:k for k in self.keys}
         # set text source always
         self._sources.setdefault('', '')
-        self.sort_key = ''
+        self.allow_sorting = True
+        """Enable / disable sorting by clicking on a column header"""
+
+        self.sort_key = None
+        """column by which list is currently sorted"""
         self.sort_ascending = True
+        """sorted ascending yes/no"""
         self.sorted = False
+        """List is currently sorted by GUI interaction"""
         # Set a dummy list first
         self._list:list_model.ObsList = None
         self.list = list_model.ObsList(binding=self)
+        """underlying list"""
         
         def no_factory():
             raise RuntimeError('In order to create items, you need to set a factory!')
@@ -472,16 +478,19 @@ class ListBinding:
         
         Instead of specifying ``key`` and ``ascending``, you can set
         ``restore=True`` to reuse the last applied sorting, if any.
+
+        If ``allow_sorting`` is set to ``False``, nothing happens.
         '''
-        if restore and key is None:
+        if not self.allow_sorting:
+            return
+        if restore:
             key = self.sort_key
-        if restore and ascending is None:
             ascending = self.sort_ascending
         if isinstance(key, str):
             keyfunc = lambda item: self.retrieve(item, key)
             info = {
-                'sort_ascending': self.sort_ascending,
-                'sort_key': self.sort_key
+                'sort_ascending': ascending,
+                'sort_key': key,
             }
         else:
             # just use passed-in keyfunc, assume that it
@@ -520,7 +529,7 @@ class ListBinding:
             self.sort_ascending = asc
         else:
             self.sorted = False
-            self.sort_key = ''
+            self.sort_key = None
             self.sort_ascending = True
 
     def on_get_selection(self):

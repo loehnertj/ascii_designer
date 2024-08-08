@@ -21,14 +21,19 @@ Package overview:
 '''
 from .autoframe import AutoFrame
 from .toolkit import set_toolkit
-from .event import EventSource, CancelEvent
+# EventSource kept to support legacy code.
+from .event import event, Event, EventSource, CancelEvent
 from .i18n import Translations, load_translations_json, save_translations_json
 from .tk_generic_var import Invalid, nullable, gt0, ge0
 
+__version__ = "0.6.0"
+
 __all__ = [
+    '__version__',
     'AutoFrame',
     'set_toolkit',
-    'EventSource',
+    'event',
+    'Event',
     'CancelEvent',
     'Invalid',
     'nullable',

@@ -17,7 +17,7 @@ The general concept for Lists is this:
 import logging
 from collections.abc import MutableSequence
 import weakref
-from .event import EventSource
+from .event import event
 
 __all__ = [
     'ObsList',
@@ -125,14 +125,16 @@ class ObsList(MutableSequence):
 
     Events:
 
-        * ``on_insert(idx, item, toolkit_parent_id) -> toolkit_id``: function to call for each inserted item
-        * ``on_replace(toolkit_id, item)``: function to call for replaced item
-            Replacement of item implies that children are "collapsed" again.
-        * ``on_remove(toolkit_id)``: function to call for each removed item
-        * ``on_load_children(toolkit_parent_id, sublist)``: function when children of a node are retrieved.
-        * ``on_get_selection()``: return the items selected in the GUI
-            Must return a List of (original) items.
-        * ``on_sort(sublist, info)``: when list is reordered
+    .. note:: Events are defined with positional args for backwards-compat reasons.
+
+    * ``on_insert(idx, item, toolkit_parent_id) -> toolkit_id``: function to call for each inserted item
+    * ``on_replace(toolkit_id, item)``: function to call for replaced item
+        Replacement of item implies that children are "collapsed" again.
+    * ``on_remove(toolkit_id)``: function to call for each removed item
+    * ``on_load_children(sublist)``: function when children of a node are retrieved.
+    * ``on_get_selection()``: return the items selected in the GUI
+        Must return a List of (original) items.
+    * ``on_sort(sublist, info)``: when list is reordered
 
     For ``on_insert``, the handler should return the toolkit_id. This is an
     unspecified, toolkit-native object identifier. It is used in the other
@@ -164,13 +166,55 @@ class ObsList(MutableSequence):
         # key, reverse, info
         self._sort_info = (None, False, {})
 
-        # Events
-        self.on_insert = EventSource()
-        self.on_replace = EventSource()
-        self.on_remove = EventSource()
-        self.on_sort = EventSource()
-        self.on_load_children = EventSource()
-        self.on_get_selection = EventSource()
+    @event(by_name=False)
+    def on_insert(self, idx:int, item, toolkit_parent_id):
+        """Event: An item was inserted.
+
+        Parameters:
+            idx (int): insertion position
+            item: Inserted item
+            toolkit_parent_id: 
+                In case of tree structure, the toolkit id of the
+                lists's parent in the view.
+
+        The handler must return the "Toolkit ID" of the inserted item, which
+        is is stored in the `.toolkit_id` list. Toolkit ID can be of any type
+        (e.g string or QModelIndex).
+        """
+
+    @event(by_name=False)
+    def on_replace(self, toolkit_id, item):
+        """Event: Item with the associated toolkit ID was replaced by the given one.
+    
+        Replacement of item implies that children are "collapsed" again.
+        """
+
+    @event(by_name=False)
+    def on_remove(self, toolkit_id):
+        """Event: item with the given toolkit_id was removed."""
+
+    @event(by_name=False)
+    def on_load_children(self, sublist:"ObsList"):
+        """Event: children of a node were retrieved."""
+
+    @event(by_name=False)
+    def on_get_selection(self):
+        """Event: .selection property is retrieved
+
+        Meaning that we need the selection from the GUI.
+
+        Handler must return the items selected in the GUI. Must return a List of
+        (original) items.
+        """
+        # FIXME: Code smell here. Instead of misusing the event mechanism, the
+        # ListVariable should rather set a callback on the list object.
+
+    @event(by_name=False)
+    def on_sort(self, sublist:"ObsList", info: dict):
+        """Indicates that the given ``sublist`` was sorted.
+
+        ``info`` is a dictionary of sort settings (key, direction).
+        """
 
     @property
     def binding(self):

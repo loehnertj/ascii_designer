@@ -400,11 +400,29 @@ class ToolkitQt(ToolkitBase):
 class ListBindingQt(QAbstractItemModel, ListBinding):
     def __init__(self, parent, columns, **kwargs):
         keys = [c.id for c in columns]
+        self._allow_sorting = True
+        self._tv = parent
         super().__init__(parent=parent, keys=keys, **kwargs)
         self._captions = [c.text for c in columns]
         self._editable = [c.editable for c in columns]
         self._list.toolkit_parent_id = QModelIndex()
-        self._tv = parent
+
+    @property
+    def allow_sorting(self):
+        return self._allow_sorting
+    @allow_sorting.setter
+    def allow_sorting(self, val):
+        val = bool(val)
+        self._allow_sorting = val
+        self._tv.setSortingEnabled(val)
+
+    @property
+    def allow_reorder(self):
+        return False
+
+    @allow_reorder.setter
+    def allow_reorder(self, val):
+        raise NotImplementedError("Drag and drop reordering of Qt Treeview is not implemented.")
 
     def _set_list(self, val):
         '''replace all current items by the new iterable ``val``.'''
@@ -548,7 +566,6 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
     # === GUI event handlers ===
     def on_gui_expand(self, mindex):
         sl, idx = self._idx2sl(mindex)
-        print('expand', idx)
         sl.load_children(idx)
 
     # actually not a connected handler
