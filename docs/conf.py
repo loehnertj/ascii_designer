@@ -20,26 +20,12 @@ release = u'0.3.1'
 
 import sys
 import os
-import shlex
 
 up = os.path.dirname
 
 sys.path.insert(0, os.path.abspath(up(up(__file__))))
 
-# Mock out PyQt4 for toolkit_qt.py.
-class DeepFakeModule:
-    def __getattr__(self, key):
-        return DeepFakeModule()
-qt = sys.modules['PyQt4'] = DeepFakeModule()
-qc = sys.modules['PyQt4.QtCore'] = DeepFakeModule()
-qg = sys.modules['PyQt4.QtGui'] = DeepFakeModule()
-qt.QtCore = qc
-qt.QtGui = qg
-qc.Qt = None
-qc.QAbstractItemModel = object
-qc.QModelIndex = None
-qg.QApplication = lambda *args, **kwargs: None
-
+autodoc_mock_imports = ["qtpy"]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -89,7 +75,7 @@ author = u'Johannes Löhnert'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:

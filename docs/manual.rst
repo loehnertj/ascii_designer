@@ -52,7 +52,7 @@ structures.
 
 The ``f_icon`` property can be set to the name of an image file to use as window
 icon. Note that the supported formats depend on the toolkit and maybe also
-operating system. I recommend to use ``.ico`` on windows and ``.png`` on *nix.
+operating system. I recommend to use ``.ico`` on windows and ``.png`` on \*nix.
         
 Finally, there is the :any:`f_build()` method, which does the actual form
 generation. It calls the :any:`f_on_build` hook, that you might want to

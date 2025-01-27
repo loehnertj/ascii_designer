@@ -1,3 +1,2 @@
 attrs
-qtpy
 sphinx-rtd-theme

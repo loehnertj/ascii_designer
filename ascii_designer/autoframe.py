@@ -66,7 +66,8 @@ class AutoFrame:
     def f_translations_get_prefixed(self):
         """Returns a getter for translations with own form name as prefix.
 
-        I.e. identical to ``self.f_translations.get_prefix(self.__class__.__name__)
+        I.e. identical to 
+        ``self.f_translations.get_prefix(self.__class__.__name__)``
 
         Supports the usual case that you want additional translations keyed with
         the form name as prefix.
