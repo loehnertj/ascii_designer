@@ -108,6 +108,8 @@ DOCUMENTATION
 
 Please proceed to https://ascii-designer.readthedocs.io/
 
+For some examples, look at `test_ascii_designer.py <test_ascii_designer.py>`_ as well as the `examples <examples>`_ folder.
+
 LICENCSE
 --------
 
