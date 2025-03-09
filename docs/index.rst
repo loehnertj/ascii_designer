@@ -11,6 +11,11 @@ ASCII Designer
 Changelog
 ---------
 
+ * v0.6.1
+
+   * Fix #25: doubleclick-to-edit on tree cell also opens/closes tree
+   * Fix #20: Enter and Escape key press leaking out of tree edit box
+
  * v0.6.0:
 
    * Enhance Event system: Event can now be used as decorator; choose between
