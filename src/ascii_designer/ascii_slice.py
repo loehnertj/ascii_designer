@@ -15,7 +15,7 @@ import dataclasses as dc
 import textwrap
 
 __all__ = [
-    'slice_grid',
+    'slice_grids',
     'SlicedGrid',
     'merged_cells',
     'MCell',
@@ -46,9 +46,42 @@ class SlicedGrid:
     # list of lists, row - column - string
     # each string being the cell text including the PRECEDING separator's column
     body_lines:list[list[str]] = dc.field(default_factory=list)
+    subgrids:dict[str,"SlicedGrid"] = dc.field(default_factory=dict)
 
 
-def slice_grid(grid_text):
+def slice_grids(grid_text) -> SlicedGrid:
+    '''slice grids up by the first (nonempty) row.
+    
+    Before slicing, empty lines before/after are removed,
+    and the text is dedented.
+    
+    The first row is split by | characters.
+    The first column can contain a | character or not.
+
+    A grid can be followed by subgrids. Start of a subgrid is indicated by the
+    text ``:subgridid:`` on a separate line, where ``subgridid`` can be any
+    text. The first ``:`` MUST be on the same indentation level as the first
+    ``|`` (which is required).
+    
+    Returns a SlicedGrid with Properties:
+        * column_heads: the split up parts of the first line (not including the separators).
+        * body_lines: list of following lines; each item is a list of strings, 
+          where each string is the grid "cell" including the preceding separator column.
+          I.e. if you join the cell list without separator, you regain the text line.
+        * subgrid: Dictionary of subgrids, keyed by subgridid.
+    '''
+    grid_text = textwrap.dedent(grid_text)
+    lines = grid_text.splitlines()
+    grid, lines = _slice_grid(lines)
+    while lines:
+        idline = lines.pop(0).strip()
+        if not (idline.startswith(":") and idline.endswith(":")):
+            raise ValueError(f"Subgrid id is invalid: '{idline}'")
+        subgrid_id = idline[1:-1]
+        grid.subgrids[subgrid_id], lines = _slice_grid(lines)
+    return grid
+
+def _slice_grid(lines) -> tuple[SlicedGrid,list[str]]:
     '''slice a grid up by the first (nonempty) row.
     
     Before slicing, empty lines before/after are removed,
@@ -62,16 +95,23 @@ def slice_grid(grid_text):
         * body_lines: list of following lines; each item is a list of strings, 
           where each string is the grid "cell" including the preceding separator column.
           I.e. if you join the cell list without separator, you regain the text line.
+
+    ``remainder`` are the lines following the grid.
     '''
-    grid_text = textwrap.dedent(grid_text)
-    lines = grid_text.splitlines()
+    for n, line in enumerate(lines):
+        if line.startswith(":") and line.endswith(":"):
+            remain = lines[n:]
+            lines = lines[:n]
+            break
+    else:
+        remain = []
     # remove leading and trailing whitespace lines
     while lines and not lines[0].strip():
         lines.pop(0)
     while lines and not lines[-1].strip():
         lines.pop()
     if not lines:
-        return SlicedGrid()
+        return SlicedGrid(), remain
     column_heads = lines.pop(0).split('|')
     if not column_heads[0]:
         # first | is there
@@ -94,7 +134,7 @@ def slice_grid(grid_text):
                 cell = cell + ' '*(w-len(cell))
             body_line.append(cell)
         body_lines.append(body_line)
-    return SlicedGrid(column_heads=column_heads, body_lines=body_lines)
+    return SlicedGrid(column_heads=column_heads, body_lines=body_lines), remain
 
 @dc.dataclass
 class MCell:

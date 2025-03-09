@@ -1,8 +1,8 @@
 import pytest
-from ascii_designer.ascii_slice import slice_grid, SlicedGrid, merged_cells, MCell
+from ascii_designer.ascii_slice import slice_grids, SlicedGrid, merged_cells, MCell
 
 def slice(text):
-    return list(merged_cells(slice_grid(text)))
+    return list(merged_cells(slice_grids(text)))
 
 def test_slice_simple():
     s = """
@@ -11,7 +11,7 @@ def test_slice_simple():
          C   D
 
     """
-    grid = slice_grid(s)
+    grid = slice_grids(s)
     assert grid == SlicedGrid(
         column_heads=[
             "   ",
@@ -68,6 +68,27 @@ def test_slice_overlapping_merge():
          {jk {lm nop
          {rstuvw xyz
     """
-    grid = slice_grid(s)
+    grid = slice_grids(s)
     with pytest.raises(ValueError):
         cells = list(merged_cells(grid))
+
+def test_slice_subgrids():
+    s = """
+        |
+         A
+        
+        :b:
+        |
+         B
+    """
+    grid = slice_grids(s)
+    assert grid == SlicedGrid(
+        column_heads = [""],
+        body_lines=[[" A"]],
+        subgrids = {
+            "b":SlicedGrid(
+                column_heads=[""],
+                body_lines=[[" B"]]
+            )
+        }
+    )

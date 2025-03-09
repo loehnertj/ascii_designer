@@ -1,6 +1,6 @@
 import logging
 
-from .ascii_slice import slice_grid, merged_cells
+from .ascii_slice import slice_grids, merged_cells
 from .toolkit import get_toolkit
 
 __all__ = [
@@ -112,18 +112,26 @@ class AutoFrame:
         
     def f_build(self, parent, body=None):
         body = body or self.f_body
-        sliced_grid = slice_grid(body)
+        sliced_grid = slice_grids(body)
         
-        # init rows / columns
-        for col, head in enumerate(sliced_grid.column_heads):
-            self.f_toolkit.col_stretch(parent, col, head.count('-'))
-        for row, cells in enumerate(sliced_grid.body_lines):
-            # first cell
-            head = cells[0:1]
-            # first char of first cell
-            if head: head = head[0][0:1]
-            self.f_toolkit.row_stretch(parent, row, 1 if head=='I' else 0)
+        def set_stretch(container, grid):
+            # init rows / columns
+            for col, head in enumerate(grid.column_heads):
+                self.f_toolkit.col_stretch(container, col, head.count('-'))
+            for row, cells in enumerate(grid.body_lines):
+                # first cell
+                head = cells[0:1]
+                # first char of first cell
+                if head: head = head[0][0:1]
+                self.f_toolkit.row_stretch(container, row, 1 if head=='I' else 0)
+         
+        set_stretch(parent, sliced_grid)
         self.f_add_widgets(parent, sliced_grid, autoframe=self)
+        for widget_id, subgrid in sliced_grid.subgrids.items():
+            parent = self.f_controls[widget_id]
+            set_stretch(parent, subgrid)
+            self.f_add_widgets(parent, subgrid, autoframe=self)
+
         self.f_on_build()
 
     def f_on_build(self):
@@ -178,7 +186,7 @@ class AutoFrame:
 
     def f_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
         if not sliced_grid:
-            sliced_grid = slice_grid(body)
+            sliced_grid = slice_grids(body)
         toolkit = self.f_toolkit
         if hasattr(toolkit, "autovalidate"):
             toolkit.autovalidate = self.f_option_tk_autovalidate

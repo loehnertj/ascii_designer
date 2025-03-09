@@ -32,6 +32,7 @@ class Main(AutoFrame):
      - ASCII Designer Demo Menu -
      [Autoconnect               ]
      [Boxes and embedding       ]
+     [Subgrids                  ]
      [Bound values              ]
      [Custom subclass           ]
      [Converters                ]
@@ -50,6 +51,9 @@ class Main(AutoFrame):
         
     def boxes_and_embedding(self):
         BoxesDemo().f_show()
+
+    def subgrids(self):
+        SubgridsDemo().f_show()
         
     def bound_values(self):
         BoundCtlDemo().f_show()
@@ -179,6 +183,30 @@ class BoxesDemo(AutoFrame):
         # Nesting
         if self._level:
             self.nest_box = BoxesDemo(self._level-1)
+
+class SubgridsDemo(AutoFrame):
+    """Shows how a nested layout can be defined.
+    
+    Start subgrids by :id: line.
+
+    The subgrid is inserted in the main grid frame
+    with the same id.
+    """
+    f_body = """
+        |  -
+         <normal_frame          >
+        I<gb_frame:In groupbox  >
+
+        :normal_frame:
+        |  -
+         [Top button   ]
+         [Bottom button]
+
+        :gb_frame:
+        |      -      |
+         [Left Button] [Right Button]
+        I<s: V Fill  >
+    """
         
 class AlignmentDemo(AutoFrame):
     '''Row/Column stretch is controlled by "-" in the column head and "I" in row head
