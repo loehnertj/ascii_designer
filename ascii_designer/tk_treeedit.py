@@ -245,10 +245,12 @@ class TreeEdit(ttk.Treeview):
     def _close_edit_refocus(self, ev=None, cancel=False):
         self.close_edit(ev, cancel)
         self.focus_set()
+        return "break"
 
     def _cancel_edit_refocus(self, ev=None):
         self.close_edit(ev, cancel=True)
         self.focus_set()
+        return "break"
 
     def close_edit(self, ev=None, cancel=False):
         '''Close the currently open editor, if any.'''
@@ -279,6 +281,7 @@ class TreeEdit(ttk.Treeview):
         if not iid or not self._editable[colname]:
             return
         self.begin_edit(iid, colname)
+        return "break"
 
     def begin_edit_row(self, ev):
         '''Start editing the first editable column of the focused row.'''
