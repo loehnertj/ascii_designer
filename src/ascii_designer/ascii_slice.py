@@ -1,7 +1,7 @@
 '''
 Functions to slice up a fixed-column-width ASCII grid.
 
-:any:`slice_grid` splits up lines according to a header row with ``|`` separators.
+:any:`slice_grids` splits up lines according to a header row with ``|`` separators.
 
 :any:`merged_cells` iterates over this grid and returns merge areas.
 

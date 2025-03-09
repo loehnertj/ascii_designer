@@ -12,18 +12,18 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-# The short X.Y version.
-version = u'0.3'
-# The full version, including alpha/beta/rc tags.
-release = u'0.3.1'
 
 
 import sys
-import os
+from pathlib import Path
 
-up = os.path.dirname
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+from ascii_designer import __version__
 
-sys.path.insert(0, os.path.abspath(up(up(__file__))))
+# The short X.Y version.
+version = ".".join(__version__.split(".")[:2])
+# The full version, including alpha/beta/rc tags.
+release = __version__
 
 autodoc_mock_imports = ["qtpy"]
 
@@ -63,7 +63,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'ASCII Designer'
-copyright = u'2018, Johannes Löhnert'
+copyright = u'2018-2025, Johannes Löhnert'
 author = u'Johannes Löhnert'
 
 # The version info for the project you're documenting, acts as replacement for
