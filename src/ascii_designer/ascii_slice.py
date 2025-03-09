@@ -11,7 +11,7 @@ the separator in the header row.
 Rows are merged by prefixing the cells with ``{``. The symbols must be in the 
 same text column.
 '''
-import attr
+import dataclasses as dc
 import textwrap
 
 __all__ = [
@@ -38,14 +38,14 @@ _adj_row_merge = '''
      {pqr
      '''
      
-@attr.s
+@dc.dataclass
 class SlicedGrid:
     # text between (not including) | | splitters
-    column_heads = attr.ib(attr.Factory(list))
+    column_heads:list[str] = dc.field(default_factory=list)
     # "dumbly" splitted grid cells:
     # list of lists, row - column - string
     # each string being the cell text including the PRECEDING separator's column
-    body_lines = attr.ib(attr.Factory(list))
+    body_lines:list[list[str]] = dc.field(default_factory=list)
 
 
 def slice_grid(grid_text):
@@ -96,13 +96,18 @@ def slice_grid(grid_text):
         body_lines.append(body_line)
     return SlicedGrid(column_heads=column_heads, body_lines=body_lines)
 
-@attr.s
+@dc.dataclass
 class MCell:
-    row = attr.ib()
-    col = attr.ib()
-    text = attr.ib('')
-    rowspan = attr.ib(1)
-    colspan = attr.ib(1)
+    row:int = 0
+    """Cell's row, counting from 0"""
+    col:int = 0
+    """Cell's column, counting from 0"""
+    text:str = ""
+    """Merged-area text"""
+    rowspan:int = 1
+    """Spanned rows, at least 1"""
+    colspan:int = 1
+    """Spanned columns, at least 1"""
 
 
 def merged_cells(sliced_grid):

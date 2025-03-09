@@ -1,5 +1,8 @@
 '''This is part example collection, part regression test.
 '''
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).with_name("src")))
 
 #import tkinter as tk
 from ascii_designer.list_model import ObsList

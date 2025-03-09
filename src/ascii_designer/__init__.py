@@ -25,8 +25,7 @@ from .toolkit import set_toolkit
 from .event import event, Event, EventSource, CancelEvent
 from .i18n import Translations, load_translations_json, save_translations_json
 from .tk_generic_var import Invalid, nullable, gt0, ge0
-
-__version__ = "0.6.0"
+from .__version__ import __version__
 
 __all__ = [
     '__version__',
