@@ -2,6 +2,7 @@
 '''
 
 #import tkinter as tk
+from ascii_designer.list_model import ObsList
 from ascii_designer.tk_treeedit import TreeEdit
 import logging
 import sys
@@ -486,11 +487,25 @@ class ListEditDemo(AutoFrame):
 
 class TreeDemo(AutoFrame):
     f_body = '''
-    |  <-> Tree        |
+    |  <-> Tree       
      Tree~
-    I[= Files         ]
+    I[= Files:File (Remark_) ]
      [ Test Find ]
     '''
+    files:ObsList
+
+    def __init__(self):
+        super().__init__()
+        self.remarks = {}
+
+    def f_on_build(self):
+        # To test event spillout from tree-edit
+        try:
+            self[""].bind("<Return>", lambda ev: print("Return-press detected"))
+            self[""].bind("<Escape>", lambda ev: self.close())
+        except:
+            pass
+
     def f_on_show(self):
         self._populate_folder()
         
@@ -513,6 +528,12 @@ class TreeDemo(AutoFrame):
             return True
         # set the attribute or method which retrieves the iterable of children
         self.files.children_source(children_of, has_children_source=has_children)
+        def setremark(path, text):
+            self.remarks[path] = text
+        self.files.sources(remark=(
+            lambda path: self.remarks.get(path, ""),
+            setremark
+        ))
         # use a generator to set folder
         self.files = children_of(pathlib.Path.home())
         
