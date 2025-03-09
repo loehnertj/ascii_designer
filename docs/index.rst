@@ -10,6 +10,11 @@ ASCII Designer
 
 Changelog
 ---------
+ 
+ * v1.0.0
+
+   * It is now possible to define nested layouts in ``f_body``.
+   * Finally do the step to v1.0.
 
  * v0.6.1
 
