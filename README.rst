@@ -106,7 +106,7 @@ Requirements: Python >= 3, ``attrs``. To use the Qt toolkit you need ``qtpy``.
 DOCUMENTATION
 -------------
 
-Please proceed to http://ascii_designer.readthedocs.io/en/latest/index.html
+Please proceed to https://ascii_designer.readthedocs.io/
 
 LICENCSE
 --------
