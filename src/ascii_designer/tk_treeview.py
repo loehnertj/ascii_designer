@@ -1,5 +1,5 @@
-"""Functions related to Tk List / Tree View setup and behavior.
-"""
+"""Functions related to Tk List / Tree View setup and behavior."""
+
 __all__ = [
     "make_treelist",
     "ListBindingTk",
@@ -175,7 +175,7 @@ class ListBindingTk(ListBinding):
         # insert placeholder so that "+" icon appears
         if self._list.has_children(item):
             self._tv.insert(iid, 0, text="")
-        self.on_replace(iid, item)
+        self.on_replace(iid, item, update_text=False)
         return iid
 
     def on_load_children(self, children):
@@ -185,10 +185,11 @@ class ListBindingTk(ListBinding):
             iid = self.on_insert(idx, item, children.toolkit_parent_id)
             children.toolkit_ids[idx] = iid
 
-    def on_replace(self, iid, item):
+    def on_replace(self, iid, item, update_text=True):
         """replace visible tree entry"""
         tv = self._tv
-        tv.item(iid, text=self.retrieve(item, ""))
+        if update_text:
+            tv.item(iid, text=self.retrieve(item, ""))
         for column in self.keys:
             if column == "":
                 continue
