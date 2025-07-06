@@ -1,23 +1,28 @@
 import logging
 
+from ascii_designer.i18n import Translations
+
 from .ascii_slice import slice_grids, merged_cells
 from .toolkit import get_toolkit
 
 __all__ = [
-    'AutoFrame',
-    ]
+    "AutoFrame",
+]
+
 
 def L():
     return logging.getLogger(__name__)
 
+
 def _convert_title(classname):
     # insert space before each capital letter
-    title = ''.join(map(lambda x: x if x.islower() else " "+x, classname))
+    title = "".join(map(lambda x: x if x.islower() else " " + x, classname))
     title = title.strip()
     return title
 
+
 class AutoFrame:
-    '''
+    """
     Automatic frame.
 
     class name is converted to title. Override with ``f_title``.
@@ -25,23 +30,23 @@ class AutoFrame:
     Set window icon by giving an icon file's path in ``f_icon``. Supported
     formats are OS-specific; recommended are ``.ico`` on Windows and ``.png`` on
     Unix.
-    
+
     Body definition with ``f_body``, menu definition with ``f_menu``.
-    
+
     To create own widgets or customize the autocreated ones, override :any:`f_on_build`.
 
     To add initialization code, override :any:`f_on_show`.
 
     Get at the created controls using AutoFrame[key].
-    
-    close(), exit(), quit() provided for convenience.
-    
-    Functions with same name as a control are autobound to the default handler (click or changed).
-    
-    Attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
-    '''
 
-    f_option_tk_autovalidate:bool = False
+    close(), exit(), quit() provided for convenience.
+
+    Functions with same name as a control are autobound to the default handler (click or changed).
+
+    Attributes are autobound to the control value (get/set), except if they are explicitly overwritten.
+    """
+
+    f_option_tk_autovalidate: bool = False
     """
     If True, tk/ttk Entry and Combobox are set up for automatic update of widget state when validated.
 
@@ -50,7 +55,7 @@ class AutoFrame:
     Opt-in, because it might interfere with user code if not expected.
     """
 
-    f_translations = {}
+    f_translations: Translations = Translations()
     """Translation dictionary.
     
     This can be set per-form or globally on the AutoFrame class. We only
@@ -66,7 +71,7 @@ class AutoFrame:
     def f_translations_get_prefixed(self):
         """Returns a getter for translations with own form name as prefix.
 
-        I.e. identical to 
+        I.e. identical to
         ``self.f_translations.get_prefix(self.__class__.__name__)``
 
         Supports the usual case that you want additional translations keyed with
@@ -79,10 +84,11 @@ class AutoFrame:
             # Retrieves translation key MyForm.msg_wait
             self.label1 = tr(".msg_wait", "Please wait")
         """
+        return self.f_translations.get_prefix(self.__class__.__qualname__)
 
     def __init__(self):
-        self.__dict__['f_controls'] = {}
-        self.__dict__['f_toolkit'] = get_toolkit()
+        self.__dict__["f_controls"] = {}
+        self.__dict__["f_toolkit"] = get_toolkit()
         try:
             title = self.f_title
         except AttributeError:
@@ -94,37 +100,38 @@ class AutoFrame:
         try:
             icon = self.f_icon
         except AttributeError:
-            self.f_icon = ''
-        
+            self.f_icon = ""
+
     def f_show(self):
-        '''Bring the frame on the screen.'''
+        """Bring the frame on the screen."""
         if not self.f_controls:
             prefix = self.__class__.__qualname__ + "."
-            root = self.f_controls[''] = self.f_toolkit.root(
-                title=self.f_translations.get(prefix+"f_title", self.f_title),
+            root = self.f_controls[""] = self.f_toolkit.root(
+                title=self.f_translations.get(prefix + "f_title", self.f_title),
                 icon=self.f_icon,
-                on_close=self.close
+                on_close=self.close,
             )
             self.f_build(root, self.f_body)
             self.f_build_menu(root, self.f_menu)
         self.f_on_show()
         self.f_toolkit.show(root)
-        
+
     def f_build(self, parent, body=None):
         body = body or self.f_body
         sliced_grid = slice_grids(body)
-        
+
         def set_stretch(container, grid):
             # init rows / columns
             for col, head in enumerate(grid.column_heads):
-                self.f_toolkit.col_stretch(container, col, head.count('-'))
+                self.f_toolkit.col_stretch(container, col, head.count("-"))
             for row, cells in enumerate(grid.body_lines):
                 # first cell
                 head = cells[0:1]
                 # first char of first cell
-                if head: head = head[0][0:1]
-                self.f_toolkit.row_stretch(container, row, 1 if head=='I' else 0)
-         
+                if head:
+                    head = head[0][0:1]
+                self.f_toolkit.row_stretch(container, row, 1 if head == "I" else 0)
+
         set_stretch(parent, sliced_grid)
         self.f_add_widgets(parent, sliced_grid, autoframe=self)
         for widget_id, subgrid in sliced_grid.subgrids.items():
@@ -135,20 +142,20 @@ class AutoFrame:
         self.f_on_build()
 
     def f_on_build(self):
-        '''Hook that is called after form has been built. 
-        
+        """Hook that is called after form has been built.
+
         Override this to add custom initialization of widgets.
-        '''
+        """
 
     def f_on_show(self):
-        '''Hook that is called when form is about to be shown on screen.
+        """Hook that is called when form is about to be shown on screen.
 
         In contrast to f_on_build, this is called again if the form is closed
         and reopened.
-        '''
-        
+        """
+
     def f_build_menu(self, parent, menu=None):
-        '''Builds the menu from the given menu definition.
+        """Builds the menu from the given menu definition.
 
         Menu definition is a list which can (currently) contain actions
         and submenus.
@@ -160,7 +167,7 @@ class AutoFrame:
 
         A submenu is created by a string ending in ">", followed by an item
         which is itself a list (the submenu content).
-        
+
         Example:
 
             >>> menu = [
@@ -168,7 +175,7 @@ class AutoFrame:
                     'Help >', ['About'],
                 ]
             >>> autoframe.f_build_menu(autoframe.f_controls(''), menu)
-        '''
+        """
 
         menudef = menu or self.f_menu
         if not menudef:
@@ -177,14 +184,22 @@ class AutoFrame:
 
         mroot = toolkit.menu_root(parent)
         toolkit.parse_menu(
-            mroot, 
-            menudef, 
+            mroot,
+            menudef,
             self,
             translations=self.f_translations,
-            translation_prefix = self.__class__.__qualname__ + "."
+            translation_prefix=self.__class__.__qualname__ + ".",
         )
 
-    def f_add_widgets(self, parent, sliced_grid=None, body=None, offset_row=0, offset_col=0, autoframe=None):
+    def f_add_widgets(
+        self,
+        parent,
+        sliced_grid=None,
+        body=None,
+        offset_row=0,
+        offset_col=0,
+        autoframe=None,
+    ):
         if not sliced_grid:
             sliced_grid = slice_grids(body)
         toolkit = self.f_toolkit
@@ -192,7 +207,7 @@ class AutoFrame:
             toolkit.autovalidate = self.f_option_tk_autovalidate
         autoframe = autoframe or self
         translation_prefix = self.__class__.__qualname__ + "."
-        
+
         # create controls
         for grid_element in merged_cells(sliced_grid):
             if not grid_element.text.strip():
@@ -201,14 +216,22 @@ class AutoFrame:
                 parent,
                 grid_element.text,
                 translations=self.f_translations,
-                translation_prefix=translation_prefix
+                translation_prefix=translation_prefix,
             )
-                
+
             # place on the grid
             e = grid_element
-            toolkit.place(widget, row=e.row+offset_row, col=e.col+offset_col, rowspan=e.rowspan, colspan=e.colspan)
-            text = e.text.replace('~',' ')
-            toolkit.anchor(widget, left=not text.startswith(' '), right=not text.endswith(' '))
+            toolkit.place(
+                widget,
+                row=e.row + offset_row,
+                col=e.col + offset_col,
+                rowspan=e.rowspan,
+                colspan=e.colspan,
+            )
+            text = e.text.replace("~", " ")
+            toolkit.anchor(
+                widget, left=not text.startswith(" "), right=not text.endswith(" ")
+            )
             # autowire
             try:
                 attr = getattr(autoframe, id)
@@ -217,45 +240,44 @@ class AutoFrame:
             if attr is None or not callable(attr):
                 # try with "on_<attr>"
                 try:
-                    attr = getattr(autoframe, 'on_'+id)
+                    attr = getattr(autoframe, "on_" + id)
                 except AttributeError:
-                    attr = None # not callable
+                    attr = None  # not callable
             if callable(attr):
                 toolkit.connect(widget, attr)
             self.f_controls[id] = widget
-                
-        
+
     def __setattr__(self, name, val):
         if name in self:
             self.f_toolkit.setval(self[name], val)
         else:
             super().__setattr__(name, val)
-    
+
     def __getattr__(self, name):
-        if 'f_controls' not in self.__dict__:
-            raise RuntimeError('You forgot to call super().__init__!')
+        if "f_controls" not in self.__dict__:
+            raise RuntimeError("You forgot to call super().__init__!")
         if name in self.f_controls:
             # use toolkit to extract value from the widget
             return self.f_toolkit.getval(self[name])
         else:
-            raise AttributeError('Attribute %s is not defined'%(name,))
-    
+            raise AttributeError("Attribute %s is not defined" % (name,))
+
     def __getitem__(self, key):
         return self.f_controls[key]
-    
+
     def __contains__(self, key):
         return key in self.f_controls
-    
+
     def close(self):
-        '''Close the window. 
-        
-        This is also called when the window is closed using the x button. Be 
+        """Close the window.
+
+        This is also called when the window is closed using the x button. Be
         sure to call ``super().close()`` or your window won't close.
-        '''
-        self.f_toolkit.close(self[''])
-    
+        """
+        self.f_toolkit.close(self[""])
+
     def quit(self):
         return self.close()
-    
+
     def exit(self):
         return self.close()

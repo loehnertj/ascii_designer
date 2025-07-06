@@ -11,6 +11,9 @@ ASCII Designer
 Changelog
 ---------
 
+Upcoming
+........
+
 BREAKING: Rework event system.
 
 * Events are now strictly-typed. Instanciation events without prototype is
@@ -23,6 +26,13 @@ BREAKING: Rework event system.
 * Better handling of exceptions in event handlers. They can now be logged
   (default), printed or reraised either individiually or as a group.
 
+Other:
+
+* Fix missing implementation of
+  :py:meth:`AutoFrame.f_translations_get_prefixed`. (Issue #28)
+
+Changelog up to v1.0
+--------------------
  
  * v1.0.0
 
