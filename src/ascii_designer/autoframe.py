@@ -1,9 +1,11 @@
 import logging
+from typing import Any, Callable
 
 from ascii_designer.i18n import Translations
+from ascii_designer.toolkit_tk import ToolkitTk
 
 from .ascii_slice import slice_grids, merged_cells
-from .toolkit import get_toolkit
+from .toolkit import ToolkitBase, get_toolkit
 
 __all__ = [
     "AutoFrame",
@@ -67,8 +69,17 @@ class AutoFrame:
     Currently there is no facility to retranslate after building the form.
     """
 
+    f_controls: dict[str, Any]
+    """Dictionary of controls created by the form.
+
+    You can also access the controls by indexing the AutoFrame instance.
+    """
+
+    f_toolkit: ToolkitBase
+    """The toolkit used to create widgets, e.g ToolkitTk or ToolkitQt instance."""
+
     @property
-    def f_translations_get_prefixed(self):
+    def f_translations_get_prefixed(self) -> Callable[[str, str | None], str]:
         """Returns a getter for translations with own form name as prefix.
 
         I.e. identical to
@@ -118,7 +129,7 @@ class AutoFrame:
         self.f_on_show()
         self.f_toolkit.show(root)
 
-    def f_build(self, parent, body=None):
+    def f_build(self, parent, body: str | None = None):
         if parent is not None:
             self.f_controls[""] = parent
         body = body or self.f_body
@@ -207,7 +218,7 @@ class AutoFrame:
         if not sliced_grid:
             sliced_grid = slice_grids(body)
         toolkit = self.f_toolkit
-        if hasattr(toolkit, "autovalidate"):
+        if isinstance(toolkit, ToolkitTk):
             toolkit.autovalidate = self.f_option_tk_autovalidate
         autoframe = autoframe or self
         translation_prefix = self.__class__.__qualname__ + "."
@@ -266,10 +277,10 @@ class AutoFrame:
         else:
             raise AttributeError("Attribute %s is not defined" % (name,))
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         return self.f_controls[key]
 
-    def __contains__(self, key):
+    def __contains__(self, key: str):
         return key in self.f_controls
 
     def close(self):
