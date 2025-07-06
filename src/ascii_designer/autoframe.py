@@ -106,17 +106,21 @@ class AutoFrame:
         """Bring the frame on the screen."""
         if not self.f_controls:
             prefix = self.__class__.__qualname__ + "."
-            root = self.f_controls[""] = self.f_toolkit.root(
+            root = self.f_toolkit.root(
                 title=self.f_translations.get(prefix + "f_title", self.f_title),
                 icon=self.f_icon,
                 on_close=self.close,
             )
             self.f_build(root, self.f_body)
             self.f_build_menu(root, self.f_menu)
+        else:
+            root = self.f_controls[""]
         self.f_on_show()
         self.f_toolkit.show(root)
 
     def f_build(self, parent, body=None):
+        if parent is not None:
+            self.f_controls[""] = parent
         body = body or self.f_body
         sliced_grid = slice_grids(body)
 

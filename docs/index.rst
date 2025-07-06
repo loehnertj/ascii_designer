@@ -30,6 +30,7 @@ Other:
 
 * Fix missing implementation of
   :py:meth:`AutoFrame.f_translations_get_prefixed`. (Issue #28)
+* ``AutoFrame``: Set ``f_controls[""]`` on build if ``parent`` is given.
 
 Changelog up to v1.0
 --------------------
