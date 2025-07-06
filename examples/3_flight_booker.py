@@ -1,14 +1,15 @@
 from datetime import date, datetime
 import tkinter.ttk as ttk
 from tkinter.messagebox import showinfo
+from typing import Literal
 from ascii_designer import set_toolkit, AutoFrame, Invalid
 
 
-def str2date(s):
+def str2date(s: str) -> date:
     return datetime.strptime(s, "%d.%m.%Y").date()
 
 
-def date2str(dt):
+def date2str(dt: date) -> str:
     return dt.strftime("%d.%m.%Y")
 
 
@@ -21,6 +22,10 @@ class FlightBooker(AutoFrame):
           [ Book ]
     """
     f_option_tk_autovalidate = True
+
+    kind: Literal["one-way flight", "return flight"]
+    t1: date
+    t2: date
 
     def f_on_build(self):
         self["kind"]["values"] = ["one-way flight", "return flight"]

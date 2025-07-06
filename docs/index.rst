@@ -26,6 +26,7 @@ BREAKING: Rework event system.
 * Better handling of exceptions in event handlers. They can now be logged
   (default), printed or reraised either individiually or as a group.
 
+Lots of typehinting was done. Stuff might have been broken.
 Other:
 
 * Fix missing implementation of

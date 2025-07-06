@@ -10,7 +10,7 @@ class, but let's keep it together here.
 
 import itertools as it
 import dataclasses as dc
-from ascii_designer import set_toolkit, AutoFrame, Invalid
+from ascii_designer import set_toolkit, AutoFrame, Invalid, ObsListProperty
 
 
 # == Model ========================================
@@ -113,17 +113,20 @@ class CRUD(AutoFrame):
          Filter prefix:  [_   ]
         I[= Persons     ~     ] <editor>
          <actions       ~      ~       >
-    """
-    # Subframes, these are "nonstandard" attributes
-    f_body_editor = """
+
+        :editor:
         |         |      |
          Name:     [_   ]
          Surname:  [_   ]
-    """
-    f_body_actions = """
+
+        :actions:
         |        |        |        |
          [Create] [Update] [Delete]
     """
+    filter_prefix: str
+    name: str
+    surname: str
+    persons: ObsListProperty[Person]
 
     def __init__(self, db_interface: DBInterface):
         super().__init__()
@@ -132,9 +135,6 @@ class CRUD(AutoFrame):
         self._person = Person(0, "", "")
 
     def f_on_build(self):
-        self.f_add_widgets(self.editor, body=self.f_body_editor, autoframe=self)
-        self.f_add_widgets(self.actions, body=self.f_body_actions, autoframe=self)
-
         # Setup widgets
         self["persons"]["selectmode"] = "browse"
         self["name"].variable.convert = nonempty
@@ -168,7 +168,7 @@ class CRUD(AutoFrame):
     def on_surname(self, _):
         self.update_action_ctls()
 
-    def _edited_person(self):
+    def _edited_person(self) -> Person | type[Invalid]:
         """Create Person record with changed fields according to current input.
 
         Returns ``Invalid`` if validation failed.

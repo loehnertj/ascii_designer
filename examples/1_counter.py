@@ -6,6 +6,7 @@ class Counter(AutoFrame):
                     |
         [ Counter_ ] [Count]
     """
+    counter: int
 
     def f_on_build(self):
         self["counter"]["state"] = "readonly"

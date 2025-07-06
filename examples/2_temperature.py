@@ -9,9 +9,12 @@ class TemperatureConverter(AutoFrame):
     # Using value converter also counts as validation
     f_option_tk_autovalidate = True
 
+    celsius: float
+    fahrenheit: float
+
     def f_on_build(self):
-        self.celsius = ""
-        self.fahrenheit = ""
+        self.celsius = 0.0
+        self.fahrenheit = 0.0
         self["celsius"].variable.convert = float
         self["fahrenheit"].variable.convert = float
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-'''Minimalistic but full working example form.'''
+"""Minimalistic but full working example form."""
 
 from ascii_designer import AutoFrame
 
+
 class TextTransformer(AutoFrame):
-    f_body='''
+    f_body = """
                             |              |
         Text to transform:   [ Text_      ]
         
@@ -16,7 +17,9 @@ class TextTransformer(AutoFrame):
         
             [ OK ]            [ Cancel ]~
 
-    '''
+    """
+    text: str
+
     def ok(self):
         text = self.text
         if self.uppercase:
@@ -27,10 +30,10 @@ class TextTransformer(AutoFrame):
             text = text.title()
         print(text)
         self.close()
-        
+
     def cancel(self):
         self.close()
-        
-if __name__ == '__main__':
-    TextTransformer().f_show()
 
+
+if __name__ == "__main__":
+    TextTransformer().f_show()
