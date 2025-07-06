@@ -5,6 +5,7 @@
 Provides the working-data structure `.Translations`, and functions to load and
 save translation files.
 """
+
 __all__ = [
     "Translations",
     "load_translations_json",
@@ -12,6 +13,8 @@ __all__ = [
 ]
 
 from pathlib import Path, PurePath
+from typing import Callable
+
 try:
     import importlib.resources as resources
 except ImportError:
@@ -28,7 +31,7 @@ def L():
     return logging.getLogger(__name__)
 
 
-class Translations(dict):
+class Translations(dict[str, str]):
     """Mostly off-the shelf python dict, except for some facilities to aid translation.
 
     Translations should be retrieved via ``.get(key, default)`` method.
@@ -47,7 +50,8 @@ class Translations(dict):
     recording: bool = False
     mark_missing: bool = False
 
-    def get(self, key, default=None):
+    def get(self, key: str, default=None) -> str:
+        default = default or ""
         if self.recording:
             return self.setdefault(key, default)
         else:
@@ -55,7 +59,7 @@ class Translations(dict):
                 default = "$" + default
             return super().get(key, default)
 
-    def get_prefix(self, prefix):
+    def get_prefix(self, prefix: str) -> Callable[[str, str | None], str]:
         """Returns a getter function like ``get`` that augments keys with
         the given prefix.
 
@@ -64,7 +68,7 @@ class Translations(dict):
         """
         return lambda key, default: self.get(prefix + key, default)
 
-    def get_exception(self, exc, prefix="exc."):
+    def get_exception(self, exc, prefix: str = "exc.") -> str:
         """Return translation for the given exception.
 
         Translation is retrieved using they key ``<prefix><exc. class>``.
@@ -82,7 +86,12 @@ class Translations(dict):
         else:
             return text.format(str=str(exc), **exc.__dict__)
 
-def load_translations_json(package_or_dir="locale", prefix="", language=None):
+
+def load_translations_json(
+    package_or_dir: str | PurePath = "locale",
+    prefix: str = "",
+    language: str | None = None,
+) -> Translations:
     """Locate and load translations from JSON file.
 
     JSON file format is a simple key value store.
@@ -109,6 +118,7 @@ def load_translations_json(package_or_dir="locale", prefix="", language=None):
 
     If none of these exists, empty ``Translations`` object is returned.
     """
+    path = resource = None
     if (
         isinstance(package_or_dir, PurePath)
         or "/" in package_or_dir
@@ -116,27 +126,29 @@ def load_translations_json(package_or_dir="locale", prefix="", language=None):
     ):
         # filesystem path
         path = find_json_path(package_or_dir, prefix, language)
-        openfunc = lambda: path.open("r")
-        type = "file"
     else:
         # resource dir
+        resource = find_resource(package_or_dir, prefix, language)
+    L().debug("Load translations from %s %s", type, path or resource)
+    if path is not None:
+        with path.open("r") as fp:
+            d = json.load(fp)
+    elif resource is not None:
+        assert not isinstance(package_or_dir, PurePath)
         if resources is None:
-            L().error("importlib.resource is not available, translations must be loaded from file instead.")
+            L().error(
+                "importlib.resource is not available, translations must be loaded from file instead."
+            )
             return Translations()
-        path = find_resource(package_or_dir, prefix, language)
-        openfunc = lambda: resources.open_text(package_or_dir, path)
-        type = "resource"
-    # Not found
-    if path is None:
+        with resources.open_text(package_or_dir, resource) as fp:
+            d = json.load(fp)
+    else:
         L().debug("No translations found")
         return Translations()
-    L().debug("Load translations from %s %s", type, path)
-    with openfunc() as fp:
-        d = json.load(fp)
     return Translations(d)
 
 
-def save_translations_json(translations, path):
+def save_translations_json(translations: dict[str, str], path: str | PurePath) -> Path:
     """Save translations to JSON file.
 
     OVERWRITES existing file!
@@ -156,11 +168,11 @@ def _join_ne(*strings):
 
 def _os_locale():
     if sys.platform.startswith("linux"):
-        lang = os.getenv("LANG")
+        lang = os.getenv("LANG") or ""
         # split off charset part
         return lang.partition(".")[0]
     elif sys.platform.startswith("win32"):
-        windll = ctypes.windll.kernel32
+        windll = ctypes.windll.kernel32  # type:ignore
         lang_id = windll.GetUserDefaultUILanguage()
         lang = locale.windows_locale[lang_id]
         return lang.partition(".")[0]
@@ -168,7 +180,9 @@ def _os_locale():
         raise RuntimeError("Cannot guess language on %s platform" % sys.platform)
 
 
-def find_json_path(dir, prefix="", language=None) -> Path:
+def find_json_path(
+    dir: str | PurePath, prefix: str = "", language: str | None = None
+) -> Path | None:
     """Find location of translations file.
 
     ``dir`` gives the directory to search in, absolute or relative.
@@ -201,7 +215,9 @@ def find_json_path(dir, prefix="", language=None) -> Path:
     return None
 
 
-def find_resource(package, prefix="", language=None):
+def find_resource(package: str, prefix: str = "", language: str | None = None):
+    if resources is None:
+        return None
     if language is None:
         language = _os_locale()
         L().debug("OS language: %s", language)
