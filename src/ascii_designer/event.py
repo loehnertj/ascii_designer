@@ -35,6 +35,7 @@ from weakref import WeakValueDictionary
 
 T = TypeVar("T")
 P = ParamSpec("P")
+R = TypeVar("R")  # return type
 
 ExceptionPolicy: TypeAlias = Literal["log", "print", "raise", "group"]
 
@@ -43,7 +44,7 @@ class CancelEvent(Exception):
     """Raise this in an event handler to inhibit all further processing."""
 
 
-class Event(Generic[P]):
+class Event(Generic[P, R]):
     """Notifies a number of "listeners" (functions) when called.
 
     The principle is well-known under many names:
@@ -108,6 +109,13 @@ class Event(Generic[P]):
     Any handler can raise `CancelEvent` to gracefully abort the processing of
     further listeners.
 
+    **Return values**
+
+    At most one listener is expected to return a value. If multiple listeners
+    return a value, an exception is raised.
+
+    The return type must always be Optional.
+
     **Exceptions**
 
     Listeners may raise exceptions that are unexpected for the event's origin
@@ -166,12 +174,12 @@ class Event(Generic[P]):
 
     def __init__(
         self,
-        prototype: Callable[P, None],
+        prototype: Callable[P, R],
         strict: bool | None = None,
         exceptions: ExceptionPolicy = "log",
     ):
         self._prototype = prototype
-        self._listeners: list[Callable[P, None]] = []
+        self._listeners: list[Callable[P, R | None]] = []
         # None as default, so that we can discern from excplicit opt-in.
         # allows to add a warning in the future.
         self._strict: bool = strict or False
@@ -201,7 +209,7 @@ class Event(Generic[P]):
         self._is_bound = False
         self._bound_copies = WeakValueDictionary()
 
-    def __get__(self, instance, owner) -> "Event[P]":
+    def __get__(self, instance, owner) -> "Event[P, R]":
         # Copy the event for each instance, so that that each instance
         # has its private list of listeners.
         if instance is None:
@@ -215,10 +223,13 @@ class Event(Generic[P]):
             self._bound_copies[key] = ev
             return ev
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> None:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R | None:
         epolicy = self._exceptions
+        results = []
         # Call to verify arguments
         r = self._prototype(*args, **kwargs)
+        if r is not None:
+            results.append(r)
         # === Call each listener ===
         excs = []
         for listener in self._listeners:
@@ -235,15 +246,20 @@ class Event(Generic[P]):
                     excs.append(exc)
                 else:
                     raise
+            if r is not None:
+                results.append(r)
         if excs:
             raise ExceptionGroup("One or more listeners raised an error.", excs)
+        if len(results) > 1:
+            raise RuntimeError("Multple return values from event handler")
+        return None if not results else results[0]
 
-    def __iadd__(self, listener: Callable[P, None]) -> Self:
+    def __iadd__(self, listener: Callable[P, R | None]) -> Self:
         # Old handlers are most likely to vanish when new ones are added :-)
         self._listeners.append(listener)
         return self
 
-    def __isub__(self, listener: Callable[P, None]) -> Self:
+    def __isub__(self, listener: Callable[P, R | None]) -> Self:
         if self._listeners is None:
             raise TypeError("Cannot remove listener from unbound event")
         self._listeners = [
@@ -265,11 +281,11 @@ class Event(Generic[P]):
 # Used as @event without parens
 @overload
 def event(
-    prototype: Callable[P, None],
+    prototype: Callable[P, R],
     *,
     strict: bool | None = None,
     exceptions: ExceptionPolicy = "log",
-) -> Event[P]: ...
+) -> Event[P, R]: ...
 
 
 # Used as @event(...)
@@ -279,15 +295,15 @@ def event(
     *,
     strict: bool | None = None,
     exceptions: ExceptionPolicy = "log",
-) -> Callable[[Callable[P, None]], Event[P]]: ...
+) -> Callable[[Callable[P, R]], Event[P, R]]: ...
 
 
 def event(
-    prototype: Callable[P, None] | None = None,
+    prototype: Callable[P, R] | None = None,
     *,
     strict: bool | None = None,
     exceptions: ExceptionPolicy = "log",
-) -> Event[P] | Callable[[Callable[P, None]], Event[P]]:
+) -> Event[P, R] | Callable[[Callable[P, R]], Event[P, R]]:
     """Turn the decorated method into an Event.
 
     See `Event`. The `@event` decorator allows to pass arguments:
