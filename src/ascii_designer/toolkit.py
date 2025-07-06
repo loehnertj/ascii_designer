@@ -2,6 +2,7 @@ import logging
 import re
 from collections import namedtuple
 import itertools as it
+from typing import Any
 from . import list_model
 
 L = lambda: logging.getLogger(__name__)
@@ -154,7 +155,7 @@ class ToolkitBase:
         ),
     ]
 
-    default_shortcuts = {
+    default_shortcuts: dict[str, str] = {
         "new": "C-N",
         "open": "C-O",
         "save": "C-S",
@@ -167,7 +168,7 @@ class ToolkitBase:
         "refresh": "F5",
     }
 
-    widget_classes = {
+    widget_classes: dict[str, Any] = {
         "label": None,
         "box": None,
         "box_labeled": None,

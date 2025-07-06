@@ -1,7 +1,7 @@
-'''
+"""
 ASCII Designer: Library to generate Forms from ASCII Art... and then some.
 
-:any:`AutoFrame` is the main workhorse class. Subclass it and set the ``f_body`` 
+:any:`AutoFrame` is the main workhorse class. Subclass it and set the ``f_body``
 and maybe further attributes.
 
 Package overview:
@@ -18,27 +18,31 @@ Package overview:
  * :any:`list_model` contains the list-like value class for list view / tree
    view. The :any:`ObsList` is toolkit-agnostic and has has lots of hooks where
    the GUI bindings (in the ``toolkit_`` modules) connect to.
-'''
+"""
+
 from .autoframe import AutoFrame
 from .toolkit import set_toolkit
+
 # EventSource kept to support legacy code.
-from .event import event, Event, EventSource, CancelEvent
+from .event import event, CancelEvent
+from .list_model import ObsList, ObsListProperty
 from .i18n import Translations, load_translations_json, save_translations_json
 from .tk_generic_var import Invalid, nullable, gt0, ge0
 from .__version__ import __version__
 
 __all__ = [
-    '__version__',
-    'AutoFrame',
-    'set_toolkit',
-    'event',
-    'Event',
-    'CancelEvent',
-    'Invalid',
-    'nullable',
-    'gt0',
-    'ge0',
-    'Translations',
-    'load_translations_json',
-    'save_translations_json',
-    ]
+    "__version__",
+    "AutoFrame",
+    "set_toolkit",
+    "event",
+    "CancelEvent",
+    "ObsList",
+    "ObsListProperty",
+    "Invalid",
+    "nullable",
+    "gt0",
+    "ge0",
+    "Translations",
+    "load_translations_json",
+    "save_translations_json",
+]

@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).with_name("src")))
 
 # import tkinter as tk
-from ascii_designer import ObsList
+from ascii_designer import ObsListProperty
 from ascii_designer.tk_treeedit import TreeEdit
 import logging
 import sys
@@ -406,6 +406,9 @@ class ListDemo(AutoFrame):
      [ ] reorder   [Add] [Replace] [Mutate] [Remove] [resort] [unsort]                 
     """
 
+    shopping: ObsListProperty[str]
+    players: ObsListProperty[RankRow]
+
     def f_on_build(self):
         print(list(self.f_controls.keys()))
         self.shopping = ["Cabbage", "Spam", "Salmon Mousse", "Fish"] * 5
@@ -474,7 +477,7 @@ class ListDemo(AutoFrame):
         """apply a regular python sorting, e.g. by item id"""
         self.players.sort(key=lambda item: id(item))
 
-    def shopping(self, item):
+    def on_shopping(self, item):
         print("Buy: ", item)
 
 
@@ -483,6 +486,8 @@ class ListEditDemo(AutoFrame):
         | -
         I[= Players (Name_, Points_, Is_Cheater_, Rank)]
     """
+
+    players: ObsListProperty[RankRow]
 
     def f_build(self, parent, body=None):
         super().f_build(parent, body)
@@ -559,11 +564,11 @@ class TreeDemo(AutoFrame):
     I[= Files:File (Remark_) ]
      [ Test Find ]
     """
-    files: ObsList
+    files: ObsListProperty[Path]
 
     def __init__(self):
         super().__init__()
-        self.remarks = {}
+        self.remarks: dict[Path, str] = {}
 
     def f_on_build(self):
         # To test event spillout from tree-edit
@@ -599,7 +604,7 @@ class TreeDemo(AutoFrame):
         # set the attribute or method which retrieves the iterable of children
         self.files.children_source(children_of, has_children_source=has_children)
 
-        def setremark(path, text):
+        def setremark(path: Path, text: str):
             self.remarks[path] = text
 
         self.files.sources(remark=(lambda path: self.remarks.get(path, ""), setremark))

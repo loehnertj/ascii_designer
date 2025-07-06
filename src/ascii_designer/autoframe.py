@@ -7,9 +7,7 @@ from ascii_designer.toolkit_tk import ToolkitTk
 from .ascii_slice import slice_grids, merged_cells
 from .toolkit import ToolkitBase, get_toolkit
 
-__all__ = [
-    "AutoFrame",
-]
+__all__ = ["AutoFrame"]
 
 
 def L():
