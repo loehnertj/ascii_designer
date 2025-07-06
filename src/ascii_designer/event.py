@@ -1,6 +1,5 @@
 """
-``Event`` object and ``@event`` decorator for methods, to make them into
-"subscribable" events.
+``@event`` decorator for methods, to make them into subscribable events.
 
 .. default-role:: py:obj
 """
@@ -11,51 +10,81 @@ __all__ = [
     "CancelEvent",
 ]
 
+import logging
+import traceback
 import inspect
-from functools import wraps, update_wrapper
-
-try:
-    from typing import Self
-except ImportError:
-    Self = None
+from functools import update_wrapper
+from typing import (
+    Callable,
+    Literal,
+    ParamSpec,
+    Generic,
+    Self,
+    TypeAlias,
+    TypeVar,
+    overload,
+    get_args,
+)
 
 from weakref import WeakValueDictionary
-# FIXME: Use weakref for listeners as well
+
+# For keeping bound copies. I also tried to make listeners weak-referenced.
+# Turns out that weak-referencing listeners is not that great after all, because
+# it breaks using lambda or inner functions as handlers. They are immediately
+# lost when the defining scope exits.
+
+T = TypeVar("T")
+P = ParamSpec("P")
+
+ExceptionPolicy: TypeAlias = Literal["log", "print", "raise", "group"]
 
 
 class CancelEvent(Exception):
     """Raise this in an event handler to inhibit all further processing."""
 
 
-class Event:
+class Event(Generic[P]):
     """Notifies a number of "listeners" (functions) when called.
 
     The principle is well-known under many names:
 
-    * Define the ``Event`` as member of a class that wants to tell the world
+    * Define the event as member of a class that wants to tell the world
       about changes.
     * Arbitrary listeners can subscribe the event.
-    * In the class's implementation, the ``Event`` is called when the trigger
+    * In the class's implementation, the event is called when the trigger
       condition occurs. Listeners will be called in the order they subscribed.
 
     **Defining events**
 
-    In contrast to many adhoc event systems, this one encourages well-defined
-    signatures and documentation. The recommended way to create an event is by
-    decorating a method (the so-called "prototype") with ``@event``.
+    In contrast to other adhoc event systems, this one enforces well-defined
+    signatures and documentation. An event is created by decorating a method
+    (the so-called "prototype") with ``@event``.
 
-    The ``Event`` will take over the method's signature, annotations and
+    The ``event`` will take over the method's signature, annotations and
     docstring. IDE tools and Sphinx documentation should (mostly) "see" the
     Event like any other method.
 
     The prototype method is executed every time the event is triggered. Usually
     it does not need any code except for a docstring or ``pass`` statement.
 
-    Arguments with default values are forbidden, since their meaning would be
-    ambiguous for the user of the class.
+    Restrictions apply:
 
-    That said, you can also create an "untyped" event by assigning ``Event()``
-    to a variable.
+    * In ``strict`` mode, only positional-only and/or keyword-only
+      args are allowed. This is to make clear to the user how the arguments
+      will be given (by position or by name).
+
+      * Yes: ``prototype(a: int, b: str, /)``
+      * Yes: ``prototype(*, a: int, b: str)``
+      * No: ``prototype(a:int, b:str)`` (but allowed in non-strict mode)
+
+      ``strict`` mode is disabled for backwards compatibility, but will become
+      the default in the future.
+
+    * Arguments with default values are forbidden, since their meaning would be
+      ambiguous for the user of the class.
+    * The prototype does not get an automatic ``self`` argument. I.e. it works
+      like a ``staticmethod``. You *can* define a ``self`` argument, but it must
+      be given explicitly upon calling.
 
     **Listeners**
 
@@ -63,52 +92,40 @@ class Event:
     Event listeners can be subscribed/unsubscribed using the ``+=`` and ``-=``
     operators. Listener signature is *not* checked at the time of subscription.
 
-    ``by_name`` controls whether arguments are passed to the listeners as
-    positional arguments (args) or as named arguments (kwargs). The latter is
-    recommended.
-
-    * ``by_name=True``: Listeners must provide the same argument *names* as in
-      the signature
-    * ``by_name=False``: Listeners must provide the same argument *order* as in
-      the signature.
-
     There is some freedom in listener signature. E.g. you can have extra
     parameters with default values, or you can catch the event data via
-    ``*args`` or ``**kwargs``.
+    ``*args`` / ``**kwargs``.
 
     **Triggering the event**
 
-    The event is triggered by calling the ``Event``. Usually this happens within
-    the class containing the Event.
+    The event is triggered by calling the ``event`` instance. Usually this
+    happens within the class containing the Event.
 
     First, the wrapped protoype is executed, in order to verify correct arguments.
     Note that adherence to annotated types is *not* checked, in line with
     standard Python behavior.
 
-    Then, arguments are normalized to be all-positional or all-named args,
-    depending on the ``by_name`` setting. Listeners are then called with these
-    args in order of subscription.
-
-    At most one handler is allowed to return a non-``None`` result, wich will
-    be returned as result of the event trigger call. If multiple handlers return
-    something, ``ValueError`` is raised.
-
     Any handler can raise `CancelEvent` to gracefully abort the processing of
     further listeners.
 
-    If the event was defined without prototype using ``Event()``, there will be
-    no check of arguments and no "normalization" to args-only / kwargs-only.
+    **Exceptions**
 
-    .. note::
-        Any exception raised by a listener will stop processing and is
-        raised at the call (Trigger) site. Event-triggering function must be
-        prepared to handle any exceptions thrown at it.
+    Listeners may raise exceptions that are unexpected for the event's origin
+    site. `Event` has the "exceptions" parameter to control how they are
+    handled:
 
-    **``self`` argument**
+    * ``"log"`` (default) emits a ``logging.error`` message with the traceback.
+    * ``"print"`` prints the exception (using ``traceback.print_exception``).
+    * ``"raise"`` raises any exception immediately. No subsequent listeners are
+      called.
+    * ``"group"`` calls all listeners, then raises an ``ExceptionGroup`` if any
+      failed. The error is always an ``ExceptionGroup``, even in case of a single
+      error.
 
-    The wrapped method *can* have a ``self`` argument, which will simply be
-    filtered out. From the purist standpoint, it doesn't make sense to have it;
-    however its absence confuses tools, so I advise to include it.
+    When using ``raise``, code that triggers an event must be prepared for any
+    exception being thrown at it.
+
+    `CancelEvent` is obviously exempt from this exception handling.
 
     **Unbound/Bound distinction**
 
@@ -134,10 +151,7 @@ class Event:
 
             def my_timer_function(self):
                 # ...
-                try:
-                    self.counter_changed(123)
-                except:
-                    logging.error("Error in event listener", exc_info=True)
+                self.counter_changed(123)
                 # ...
 
         # User code
@@ -150,32 +164,44 @@ class Event:
                 self.update_display(new_value)
     """
 
-    def __init__(self, prototype=None, by_name=True):
+    def __init__(
+        self,
+        prototype: Callable[P, None],
+        strict: bool | None = None,
+        exceptions: ExceptionPolicy = "log",
+    ):
         self._prototype = prototype
-        self._by_name = by_name
-        self._listeners = []
-        if self._prototype:
-            sig: inspect.Signature = inspect.signature(self._prototype)
-            P = inspect.Parameter
-            if any(p.default is not P.empty for p in sig.parameters.values()):
-                raise TypeError("Default values are forbidden for events")
-            if any(
-                p.kind in (P.VAR_POSITIONAL, P.VAR_KEYWORD)
-                for p in sig.parameters.values()
-            ):
-                raise TypeError("*args and **kwargs are forbidden for events")
-            self._self_arg = "self" in sig.parameters
-            self._argnames = [
-                p.name for p in sig.parameters.values() if p.name != "self"
-            ]
-            update_wrapper(self, prototype)
-        else:
-            self._self_arg = False
-            self._argnames = []
+        self._listeners: list[Callable[P, None]] = []
+        # None as default, so that we can discern from excplicit opt-in.
+        # allows to add a warning in the future.
+        self._strict: bool = strict or False
+        if exceptions not in (policies := get_args(ExceptionPolicy)):
+            raise ValueError(f"exceptions must be one of {policies}")
+        self._exceptions = exceptions
+
+        sig: inspect.Signature = inspect.signature(self._prototype)
+        iP = inspect.Parameter
+        if any(p.default is not iP.empty for p in sig.parameters.values()):
+            raise TypeError("Default values are forbidden for events")
+        if any(
+            p.kind in (iP.VAR_POSITIONAL, iP.VAR_KEYWORD)
+            for p in sig.parameters.values()
+        ):
+            raise TypeError("*args and **kwargs are forbidden for events")
+        if self._strict and any(
+            p.kind == iP.POSITIONAL_OR_KEYWORD for p in sig.parameters.values()
+        ):
+            raise TypeError(
+                "Event arguments must be marked positional-only or keyword-only!"
+            )
+        self._self_arg = "self" in sig.parameters
+        self._argnames = [p.name for p in sig.parameters.values() if p.name != "self"]
+        update_wrapper(self, self._prototype)
+
         self._is_bound = False
         self._bound_copies = WeakValueDictionary()
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner) -> "Event[P]":
         # Copy the event for each instance, so that that each instance
         # has its private list of listeners.
         if instance is None:
@@ -184,85 +210,96 @@ class Event:
         try:
             return self._bound_copies[key]
         except KeyError:
-            ev = Event(self._prototype, self._by_name)
+            ev = Event(self._prototype, strict=self._strict)
             ev._is_bound = True
             self._bound_copies[key] = ev
             return ev
 
-    def __call__(self, *args, **kwargs):
-        results = []
-        if self._prototype:
-            # Checks args/kwargs against specificed signature
-            # If the self arg is there, supply it.
-            if self._self_arg:
-                r = self._prototype(None, *args, **kwargs)
-            else:
-                r = self._prototype(*args, **kwargs)
-            if r is not None:
-                results.append((r, self._prototype))
-            # Hide internal call semantics (by-position or by-name) from called
-            # listeners, by normalizing to the specified behavior.
-            if self._by_name:
-                # convert args to kwargs
-                kwargs1 = {name: val for name, val in zip(self._argnames, args)}
-                kwargs = kwargs.copy()
-                kwargs.update(kwargs1)
-                args = []
-            else:
-                # convert kwargs to args
-                args = list(args)
-                for name in self._argnames[len(args) :]:
-                    args.append(kwargs[name])
-                kwargs = {}
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> None:
+        epolicy = self._exceptions
+        # Call to verify arguments
+        r = self._prototype(*args, **kwargs)
         # === Call each listener ===
+        excs = []
         for listener in self._listeners:
             try:
                 r = listener(*args, **kwargs)
-                if r is not None:
-                    results.append((r, listener))
             except CancelEvent:
                 break
-        if len(results) > 1:
-            raise ValueError("Got more than one event result: %r" % (results,))
-        elif len(results) == 1:
-            return results[0][0]
-        else:
-            return None
+            except Exception as exc:
+                if epolicy == "log":
+                    logging.exception(exc)
+                elif epolicy == "print":
+                    traceback.print_exception(exc)
+                elif epolicy == "group":
+                    excs.append(exc)
+                else:
+                    raise
+        if excs:
+            raise ExceptionGroup("One or more listeners raised an error.", excs)
 
-    # TODO: Signature of listener
-    def __iadd__(self, listener) -> Self:
-        if self._listeners is None:
-            raise TypeError("Cannot add listener to unbound event")
+    def __iadd__(self, listener: Callable[P, None]) -> Self:
+        # Old handlers are most likely to vanish when new ones are added :-)
         self._listeners.append(listener)
         return self
 
-    def __isub__(self, listener) -> Self:
+    def __isub__(self, listener: Callable[P, None]) -> Self:
         if self._listeners is None:
             raise TypeError("Cannot remove listener from unbound event")
-        self._listeners.remove(listener)
+        self._listeners = [
+            r_listener for r_listener in self._listeners if r_listener is not listener
+        ]
         return self
 
     def __str__(self):
-        if not self._prototype:
-            return "<Event>"
         names = ", ".join(self._argnames)
         prefix = "Bound" if self._is_bound else "Unbound"
-        return f"<{prefix} Event {self._prototype.__qualname__}({names})>"
+        return f"<{prefix} event {self._prototype.__qualname__}({names})>"
 
     __repr__ = __str__
 
 
-# legacy alias
-EventSource = Event
+# Decorator: Allow both @event and @event(params=...) syntax.
 
 
-def event(prototype=None, by_name=True):
-    """Decorator that turns a function or method into an `Event`.
+# Used as @event without parens
+@overload
+def event(
+    prototype: Callable[P, None],
+    *,
+    strict: bool | None = None,
+    exceptions: ExceptionPolicy = "log",
+) -> Event[P]: ...
 
-    See `Event`. The decorated function is used as prototype; special constraints apply.
+
+# Used as @event(...)
+@overload
+def event(
+    prototype: None = None,
+    *,
+    strict: bool | None = None,
+    exceptions: ExceptionPolicy = "log",
+) -> Callable[[Callable[P, None]], Event[P]]: ...
+
+
+def event(
+    prototype: Callable[P, None] | None = None,
+    *,
+    strict: bool | None = None,
+    exceptions: ExceptionPolicy = "log",
+) -> Event[P] | Callable[[Callable[P, None]], Event[P]]:
+    """Turn the decorated method into an Event.
+
+    See `Event`. The `@event` decorator allows to pass arguments:
+
+        @event(strict=False, exeptions="print")
+        def some_event(arg1: bool, /): ...
     """
-    if not prototype:
-        # when called as @decorator(...)
-        return lambda prototype: event(prototype=prototype, by_name=by_name)
+    if prototype is None:
 
-    return Event(prototype, by_name=by_name)
+        def wrap(prototype):
+            return Event(prototype, strict=strict, exceptions=exceptions)
+
+        return wrap
+    else:
+        return Event(prototype, strict=strict, exceptions=exceptions)

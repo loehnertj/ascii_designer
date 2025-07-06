@@ -10,6 +10,19 @@ ASCII Designer
 
 Changelog
 ---------
+
+BREAKING: Rework event system.
+
+* Events are now strictly-typed. Instanciation events without prototype is
+  not allowed anymore. 
+* Do away with positional-/named conversion. I.e. ``by_name`` parameter is
+  gone. Instead, ``*`` or ``/`` marker should be used in the prototype to
+  make arguments keyword-only or positional-only. Not enforced yet for
+  compatibility.
+* Add-handler, remove-handler, trigger operations are now fully type-hinted.
+* Better handling of exceptions in event handlers. They can now be logged
+  (default), printed or reraised either individiually or as a group.
+
  
  * v1.0.0
 
