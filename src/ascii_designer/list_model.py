@@ -63,7 +63,7 @@ IndexTuple: TypeAlias = tuple[int | None, ...] | int | None
 ItemType = TypeVar("ItemType")
 
 
-def retrieve(obj, source: SourceDef):
+def retrieve(obj, source: SourceDef) -> Any:
     """Automagic retrieval of object properties.
 
     If ``source`` is empty string, return ``str(obj)``.
@@ -122,6 +122,8 @@ def store(obj, val, source: SourceDef):
         value for the second parameter.
     """
     if isinstance(source, tuple) and len(source) == 2:
+        if not isinstance(source[1], str):
+            raise TypeError("Second item of 2-tuple source must be a string")
         store(obj, val, source[1])
     elif isinstance(source, str):
         if source == "":
@@ -336,12 +338,9 @@ class ObsList(MutableSequence, Generic[ItemType]):
             raise ValueError("Last index must not be None when loading children")
         item = lst._nodes[idx]
         maybe_childlist = retrieve(item, source)
-        if not isinstance(maybe_childlist, ObsList):
-            raise TypeError(
-                f"Children source {source} did not return an ObsList, but {type(maybe_childlist)}"
-            )
-        childlist: ObsList[ItemType] = maybe_childlist
-        childlist = ObsList(childlist, toolkit_parent_id=self.toolkit_ids[idx])
+        childlist: ObsList[ItemType] = ObsList(
+            maybe_childlist, toolkit_parent_id=self.toolkit_ids[idx]
+        )
         # Child SHARES event handlers and child source
         childlist._children_source = self._children_source
         childlist._has_children_source = self._has_children_source
