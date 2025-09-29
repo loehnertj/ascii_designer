@@ -1,7 +1,7 @@
 import pytest
 import inspect
 from unittest.mock import Mock
-from ascii_designer.event import Event, EventSource, event, CancelEvent
+from ascii_designer.event import Event, event, CancelEvent
 
 # TBD:
 # binding to class event:
@@ -21,7 +21,7 @@ def ev1():
 
 @pytest.fixture
 def ev2():
-    @event
+    @event(exceptions="raise")
     def ev2(a: int):
         """Event 2"""
 
@@ -40,23 +40,6 @@ def Cls():
             pass
 
     return Cls
-
-
-def test_event_source_legacy_alias():
-    assert EventSource is Event
-
-
-def test_event_legacy():
-    """Can define and use Event() without prototype (legacy behavior)
-
-    Will accept and pass on any arguments as given.
-    """
-    ev = Event()
-    ev += (m := Mock())
-    ev()
-    m.assert_called_with()
-    ev(1, x=2)
-    m.assert_called_with(1, x=2)
 
 
 def test__event_docstring(ev1):
@@ -100,9 +83,9 @@ def test_event_signature_check(ev2):
     [
         (lambda a, b: None, True),
         (lambda a, b=1: None, False),
-        # By default, kwargs are passed
-        (lambda *args: None, True),
-        (lambda **kwargs: None, False),
+        # args are passed as given. Use *, / in signature to make clear what is passed.
+        (lambda *args: None, False),
+        (lambda **kwargs: None, True),
         # a is missing
         (lambda b, c: None, True),
     ],
@@ -126,7 +109,6 @@ def test_event_handler_signature(ev2, handler, iserror):
 
 def test_event_str(ev1, Cls):
     o = Cls()
-    assert str(Event()) == "<Event>"
     assert str(ev1) == "<Unbound Event ev1.<locals>.ev1()>"
     assert str(Cls.ev1) == "<Unbound Event Cls.<locals>.Cls.ev1(a)>"
     assert str(Cls.ev2) == "<Unbound Event Cls.<locals>.Cls.ev2(a)>"
@@ -168,26 +150,36 @@ def test_module_event_fire(ev1):
     m.assert_called_with()
 
 
-def test_event_namedargs():
-    """By default, args are passed as named args"""
+def test_event_force_namedargs():
+    """If signature forces named args, ev cannot be called with positional args.
+
+    Handlers get indeed passed named args.
+    """
 
     @event
-    def ev(a, b):
+    def ev(*, a, b):
         pass
 
     ev += (m := Mock())
-    ev(1, 2)
+    with pytest.raises(TypeError):
+        ev(1, 2)
+    ev(a=1, b=2)
     m.assert_called_with(a=1, b=2)
 
 
 def test_event_posargs():
-    """If configured so, args are passed positional"""
+    """If signature forces positional args, ev cannot be called with named args.
 
-    @event(by_name=False)
-    def ev(a, b):
+    Handlers get indeed passed positional args.
+    """
+
+    @event
+    def ev(a, b, /):
         pass
 
     ev += (m := Mock())
+    with pytest.raises(TypeError):
+        ev(a=1, b=2)
     ev(1, 2)
     m.assert_called_with(1, 2)
 
@@ -196,7 +188,7 @@ def test_class_event_fire(Cls):
     """Object-level event notification works in principle"""
     o = Cls()
     o.ev1 += (m := Mock())
-    o.ev1(1)
+    o.ev1(a=1)
     m.assert_called_with(a=1)
 
 
@@ -206,8 +198,8 @@ def test_class_handler_separation(Cls):
     o2 = Cls()
     o1.ev1 += (m1 := Mock())
     o2.ev1 += (m2 := Mock())
-    o1.ev1(1)
-    o2.ev1(2)
+    o1.ev1(a=1)
+    o2.ev1(a=2)
     m1.assert_called_once_with(a=1)
     m2.assert_called_once_with(a=2)
 
@@ -219,30 +211,18 @@ def test_event_copy_instance(Cls):
     o1.ev1 += (m1 := Mock())
     o2.ev1 = o1.ev1
     assert o2.ev1 is o1.ev1
-    o2.ev1(2)
+    o2.ev1(a=2)
     m1.assert_called_once_with(a=2)
     o1.ev1 -= m1
-    o2.ev1(1)
+    o2.ev1(a=1)
     m1.assert_called_once_with(a=2)
 
 
 def test_class_self_handling(Cls):
-    """self argument CAN be there but is ignored."""
+    """self argument is not allowed"""
     o = Cls()
-    Cls.ev2 += (m1 := Mock())
-    o.ev2 += (m2 := Mock())
 
-    Cls.ev2(1)
-    o.ev2(2)
-
-    m1.assert_called_once_with(a=1)
-    m2.assert_called_once_with(a=2)
-
-
-# Not yet implemented
-@pytest.mark.xfail
-def test_class_call_with_self(Cls):
-    Cls.ev2 += (m := Mock())
-    o = Cls()
-    Cls.ev2(o, 3)
-    # XXX WHat do we expect here!?
+    with pytest.raises(TypeError):
+        Cls.ev2(a=1)
+    with pytest.raises(TypeError):
+        o.ev2(a=2)

@@ -270,7 +270,7 @@ class Event(Generic[P, R]):
     def __str__(self):
         names = ", ".join(self._argnames)
         prefix = "Bound" if self._is_bound else "Unbound"
-        return f"<{prefix} event {self._prototype.__qualname__}({names})>"
+        return f"<{prefix} Event {self._prototype.__qualname__}({names})>"
 
     __repr__ = __str__
 
