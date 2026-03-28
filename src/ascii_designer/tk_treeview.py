@@ -27,6 +27,19 @@ def _unique(parent, id):
         # id exists
         return ""
 
+def special_str(obj):
+    """str() with some special rules:
+    
+    * None -> empty string
+    * False -> empty string, True -> "✓" (checkmark)
+    """
+    if obj is None or obj is False:
+        return ""
+    elif obj is True:
+        return "✓"
+    else:
+        return str(obj)
+
 
 def make_treelist(
     parent,
@@ -45,8 +58,9 @@ def make_treelist(
     .place, .grid, .pack methods of the returned tv are replaced by that of
     the frame.
 
-    Columns can be marked editable by appending "_" to the name.
-    If any column is editable, a :any:`TreeEdit` is generated instead of the TreeView.
+    Columns can be marked editable by appending "_" or "?" to the name: "_" for
+    text editing, "?" for checkbox.  If any column is editable, a
+    :any:`TreeEdit` is generated instead of the TreeView.
 
     Returns the treeview widget (within the frame).
     """
@@ -104,7 +118,12 @@ def make_treelist(
             command=lambda key=column.id: tv.variable.on_heading_click(key),
         )
         if column.editable:
-            tv.editable(column.id, True)
+            mode = ""
+            if column.editable is True or column.editable == "_":
+                mode = "text"
+            elif column.editable == "?":
+                mode = "checkbox"
+            tv.editable(column.id, mode)
     if is_editable:
         tv.on_cell_modified += tv.variable.on_cell_modified
         tv.on_add += tv.variable.on_add_cmd
@@ -189,11 +208,11 @@ class ListBindingTk(ListBinding):
         """replace visible tree entry"""
         tv = self._tv
         if update_text:
-            tv.item(iid, text=self.retrieve(item, ""))
+            tv.item(iid, text=special_str(self.retrieve(item, "")))
         for column in self.keys:
             if column == "":
                 continue
-            txt = str(self.retrieve(item, column))
+            txt = special_str(self.retrieve(item, column))
             tv.set(iid, column, txt)
         self._update_sortarrows()
 

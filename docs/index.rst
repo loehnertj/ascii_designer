@@ -11,6 +11,11 @@ ASCII Designer
 Changelog
 ---------
 
+Unreleased
+..........
+
+* TK Tree/List widget: Boolean edit mode (checkboxes) can now be enabled by appending ``?`` to the column caption: ``[= my_list: (text_, flag?)]``. This is a Tk-specific feature, since Qt's `QTreeView` has builtin differentiation based on the data type.
+
 Version 2.0.0
 .............
 

@@ -462,7 +462,8 @@ class ToolkitTk(ToolkitBase):
         .place, .grid, .pack methods of the returned tv are replaced by that of 
         the frame.
 
-        Columns can be marked editable by appending "_" to the name.
+        Columns can be marked editable by appending "_" or "?" to the name. ("_" for text editing, "?" for checkbox).
+
         If any column is editable, a :any:`TreeEdit` is generated instead of the TreeView.
         
         Returns the treeview widget (within the frame).

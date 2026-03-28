@@ -82,8 +82,9 @@ def _split_columns(columns, translations, translation_prefix):
     columns = [txt.strip() for txt in columns.split(",") if txt.strip()]
 
     def make_column(txt):
-        editable = txt.endswith("_")
+        editable = txt.endswith(("_", "?"))
         if editable:
+            editable = txt[-1]
             txt = txt[:-1]
         id = auto_id("", txt)
         txt = translations.get(translation_prefix + id, txt)
@@ -251,9 +252,12 @@ class ToolkitBase:
                 # Special treatment for treelist
                 if name == "treelist":
                     text = d.get("text", "").strip()
-                    editable = d["first_column_editable"] = text.endswith("_")
+                    editable = text.endswith(("_", "?"))
                     if editable:
+                        d["first_column_editable"] = text[-1]
                         d["text"] = text[:-1]
+                    else:
+                        d["first_column_editable"] = ""
                     prefix = translation_prefix + d["id"] + "."
                     d["columns"] = _split_columns(
                         d.get("columns", ""), translations, prefix

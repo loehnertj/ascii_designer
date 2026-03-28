@@ -484,7 +484,7 @@ class ListDemo(AutoFrame):
 class ListEditDemo(AutoFrame):
     f_body = """
         | -
-        I[= Players (Name_, Points_, Is_Cheater_, Rank)]
+        I[= Players (Name_, Points_, Is_Cheater?, Rank)]
     """
 
     players: ObsListProperty[RankRow]
@@ -504,7 +504,9 @@ class ListEditDemo(AutoFrame):
                 obj.points = int(val)
 
             def set_ic(obj, val):
-                obj.is_cheater = val.lower() in ("true", "1", "y", "yes", "on")
+                # ? suffix makes bool column 
+                assert isinstance(val, bool)
+                obj.is_cheater = val #val.lower() in ("true", "1", "y", "yes", "on")
 
             binding.sources(
                 points=("points", setpoints), is_cheater=("is_cheater", set_ic)

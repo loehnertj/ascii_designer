@@ -62,13 +62,13 @@ def tlc(id):
     ('[Test_ v]', {'': 'combo', 'id': 'test', 'text': 'Test', 'values': None}),
     ('[Test v]', {'': 'dropdown', 'id': 'test', 'text': 'Test', 'values':None}),
     ('[Test (a, b, c) v]', {'': 'dropdown', 'id': 'test', 'text': 'Test', 'values':'a, b, c'}),
-    ('[= Test]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':[], 'first_column_editable': False}),
+    ('[= Test]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':[], 'first_column_editable': ''}),
     ('[= Test (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': 'Test', 'columns':[
         tlc('a'), tlc('b'), tlc('c')
-    ], 'first_column_editable': False}),
+    ], 'first_column_editable': ''}),
     ('[= test: (a, b, c)]', {'': 'treelist', 'id': 'test', 'text': '', 'columns':[
         tlc('a'), tlc('b'), tlc('c')
-    ], 'first_column_editable': False}),
+    ], 'first_column_editable': ''}),
     ('[Test]', {'': 'button', 'id': 'test', 'text': 'Test'}),
 ]
 )

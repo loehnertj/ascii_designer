@@ -477,8 +477,12 @@ view, the underlying `ObsList` changes order. In case of doubt, make a copy.
 Editing
 .......
 
-As of v0.4, a list column can be made editable by appending ``_`` (underscore)
-to the column caption. Some default shortcuts (``F2``, ``Return``, etc.) apply.
+As of v0.4, a list column can be made editable by appending ``_`` (underscore) or ``?`` (Question mark) to the column caption. Some default shortcuts (``F2``, ``Return``, etc.) apply.
+
+* In Tk, Underscore means text-input column;
+* also in Tk, Question mark means checkbox (boolean) column;
+* In Qt, both are treated equally, since the `QTreeView` has builtin
+  differentiation based on the data type.
 
 The `ListBinding.sources` setting for the column also determines how edits are processed.
 
@@ -498,8 +502,9 @@ reads the value of ``my_column`` by taking ``my_property``, but upon edit,
 converts the value to float.
 
 If you use the Tk toolkit, instead of ``ttk.Treeview`` you will get a
-`tk_treeedit.TreeEdit` instance. This is a custom Tk widget providing the edit
-functionality as well as some more. Please refer to its documentation for details.
+`tk_treeedit.TreeEdit` instance. This is a custom Tk widget shipped with Ascii
+Designer, which provides the edit functionality as well as some more. Please
+refer to its documentation for details.
 
 The ``add``, ``adchild`` and ``remove`` actions, if permitted, are handled by
 the binding. `ListBindingTk` has a ``factory`` property which provides new items

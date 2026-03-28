@@ -72,15 +72,31 @@ Use ``treeedit.<property> += handler``to bind a handler, ``-=`` to unbind it.
 
 __all__ = [
     "TreeEdit",
+    "ColumnEditMode",
 ]
 
+from enum import Enum
 import sys
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 from .event import CancelEvent, event
+
+
+class ColumnEditMode(Enum):
+    """What widget to display for editing a column.
+
+    Also controls what data type is returned by the editor.
+    """
+
+    readonly = ""
+    """Column is readonly"""
+    text = "text"
+    """Entry box. Returns string value."""
+    checkbox = "checkbox"
+    """Checkbutton. Returns boolean value."""
 
 
 class TreeEdit(ttk.Treeview):
@@ -98,6 +114,7 @@ class TreeEdit(ttk.Treeview):
         ("<Control-minus>", "del_item"),
         ("<Delete>", "del_item"),
     ]
+    # Common bindings for all types of edit widget
     editbox_bindings = [
         ("<FocusOut>", "close_edit"),
         ("<Return>", "_close_edit_refocus"),
@@ -121,16 +138,23 @@ class TreeEdit(ttk.Treeview):
             ("<Shift-ISO_Left_Tab>", "advance_left"),
         ]
     )
+    # Textbox: Escape key discards the value
+    textbox_bindings = editbox_bindings 
+    # Textbox: Escape key discards the value
+    checkbox_bindings = editbox_bindings 
 
     def __init__(self, master, allow=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self._editvar = tk.StringVar(self, "")
-        self._editbox = ttk.Entry(self, textvariable=self._editvar)
+        self._textvar = tk.StringVar(self, "")
+        self._textbox = ttk.Entry(self, textvariable=self._textvar)
+        self._checkvar = tk.BooleanVar(self, False)
+        self._checkbox = ttk.Checkbutton(self, variable=self._checkvar)
+        self._editvar = None
         self._edit_cell = None
-        self._editable = {}
+        self._editable: dict[str, ColumnEditMode] = {}
         self._all_columns = ["#0"] + list(kwargs.get("columns", []))
         for name in self._all_columns:
-            self._editable[name] = False
+            self._editable[name] = ColumnEditMode.readonly
 
         self.bind("<Configure>", self._on_configure)
         for trigger, handler in self.list_bindings:
@@ -140,7 +164,11 @@ class TreeEdit(ttk.Treeview):
         for trigger, handler in self.editbox_bindings:
             if isinstance(handler, str):
                 handler = getattr(self, handler)
-            self._editbox.bind(trigger, handler)
+            self._textbox.bind(trigger, handler)
+        for trigger, handler in self.checkbox_bindings:
+            if isinstance(handler, str):
+                handler = getattr(self, handler)
+            self._checkbox.bind(trigger, handler)
 
         self.allow = allow
         self.autoedit_added = True
@@ -207,49 +235,97 @@ class TreeEdit(ttk.Treeview):
         """
 
     @event
-    def on_cell_edit(iid: str, columnname: str, cur_value: str, /):  # type:ignore
+    def on_cell_edit( iid: str, columnname: str, cur_value: str | bool, /):  # type:ignore
         """Event: cell is about to be edited."""
 
     @event
-    def on_cell_modified(iid: str, columname: str, new_value: str, /):  # type:ignore
-        """Event: editing is finished"""
+    def on_cell_edit_closed(iid: str, columnname: str, /):  # type:ignore
+        """Event: cell edit is closed (value commited or canceled)."""
 
-    def editable(self, column, editable=None):
+    @event
+    def on_cell_modified( iid: str, columname: str, new_value: str | bool, /):  # type:ignore
+        """Event: editing is finished, and value was commited"""
+
+    def editable(
+        self, column, editable: ColumnEditMode | bool | str | None = None
+    ) -> str:
         """Query or specify whether the column is editable.
 
         Only accepts Column Name or ``'#0'``.
+
+        If *editable* is not ``None``, set editability of the column to the given ColumnEditMode.
+
+        * If given as `bool`: ``False`` maps to readonly, ``True`` maps to text. (for backward compatibility)
+        * If given as `str`, it is mapped to the corresponding ColumnEditMode value, case-insensitively. Allowed values are "", "readonly", "text", "checkbox".
+
+        Returns the edit mode of the column as string (one of "", "text", "checkbox").
         """
         if column not in self._editable:
             raise KeyError(column)
         if editable is not None:
-            self._editable[column] = bool(editable)
-        return self._editable[column]
+            if isinstance(editable, bool):
+                self._editable[column] = (
+                    ColumnEditMode.text if editable else ColumnEditMode.readonly
+                )
+            elif isinstance(editable, str):
+                if editable.lower() == "readonly":
+                    editable = ""
+                self._editable[column] = ColumnEditMode[editable.lower()]
+            else:
+                self._editable[column] = editable
+        return self._editable[column].value
 
     @property
-    def _ed_list(self):
-        return [name for name in self._all_columns if self._editable[name]]
+    def _ed_list(self) -> Sequence[str]:
+        """List of editable columns in display order."""
+        return [
+            name
+            for name in self._all_columns
+            if self._editable[name] != ColumnEditMode.readonly
+        ]
 
     def begin_edit(self, iid: str, column: str):
         """Show edit widget for the specified cell."""
         self.close_edit()
+        mode = self._editable[column]
+        if mode == ColumnEditMode.readonly:
+            return
         self.see(iid)
         self.focus(iid)
         self.update_idletasks()
-        try:
-            x, y, w, h = self.bbox(iid, column=column)
-        except ValueError:
+        bbox = self.bbox(iid, column=column)
+        if not bbox:
             # not visible
             return
+        x, y, w, h = bbox
         if column == "#0":
             val = self.item(iid, option="text")
         else:
             # self.set GETS the value!
             val = self.set(iid, column)
-        self._editvar.set(val)
-        self._editbox.place(x=x, y=y, width=w, height=h)
         self._edit_cell = (iid, column)
-        self._editbox.selection_range(0, "end")
-        self._editbox.focus_set()
+        if mode == ColumnEditMode.checkbox:
+            self._checkvar.set(bool(val))
+            self._editvar = self._checkvar
+            # Align checkbox same as text would be.
+            # Checkbox will be squared, i.e. use h as width.
+            anchor = str(self.column(column, option="anchor"))
+            if anchor in ("w", "nw", "sw"): # left
+                x = x + 2 
+            elif anchor in ("e", "ne", "se"): # right
+                x = x + w - h - 2
+            else: # n, s, center
+                x = x + (w - h) // 2    
+            self._checkbox.place(x=x, y=y, width=h, height=h)
+            self._checkbox.focus_set()
+        elif mode == ColumnEditMode.text:
+            self._textvar.set(val)
+            self._editvar = self._textvar
+            self._textbox.place(x=x, y=y, width=w, height=h)
+            self._textbox.selection_range(0, "end")
+            self._textbox.focus_set()
+        else:
+            assert False, "invalid edit mode %s" % mode
         self.on_cell_edit(iid, column, self._editvar.get())
 
     def _close_edit_refocus(self, ev=None, cancel=False):
@@ -264,17 +340,43 @@ class TreeEdit(ttk.Treeview):
 
     def close_edit(self, ev: Any = None, cancel: bool = False):
         """Close the currently open editor, if any."""
+        if ev is not None and ev.type == tk.EventType.FocusOut:
+            try:
+                new_focus = self.focus_get()
+            except KeyError:
+                new_focus = None
+            if new_focus in (self._textbox, self._checkbox):
+                # Focus is still within the editor, ignore.
+                return
+
         if not cancel and self._edit_cell is not None:
             iid, column = self._edit_cell
             result = self.on_cell_modified(iid, column, self._editvar.get())
             if result is None or result:
                 # Modify content
+                val = self._editvar.get()
+                if isinstance(val, bool):
+                    val = "\N{CHECK MARK}" if val else ""
                 if column == "#0":
-                    self.item(iid, text=self._editvar.get())
+                    self.item(iid, text=val)
                 else:
-                    self.set(iid, column, self._editvar.get())
+                    self.set(iid, column, val)
+        if self._edit_cell is not None:
+            self.on_cell_edit_closed(*self._edit_cell)
         self._edit_cell = None
-        self._editbox.place_forget()
+        self._editvar = None
+        self._textbox.place_forget()
+        self._checkbox.place_forget()
+    
+    def _toggle_bool(self, iid, colname):
+        if self._editable[colname] != ColumnEditMode.checkbox:
+            return
+        # Contrary to the name, this GETs the value.
+        val = self.set(iid, colname)
+        new_val = not bool(val)
+        result = self.on_cell_modified(iid, colname, new_val)
+        if result is None or result:
+            self.set(iid, colname, "\N{CHECK MARK}" if new_val else "")
 
     def _dblclick(self, ev):
         iid = self.identify_row(ev.y)
@@ -288,10 +390,18 @@ class TreeEdit(ttk.Treeview):
         else:
             colname = "#0"
 
-        if not iid or not self._editable[colname]:
+        # passthrough dblclick on empty area or noneditable column.
+        # If we handled it, we return "break" to prevent default behavior (e.g. collapsing/expanding item).
+        if not iid:
             return
-        self.begin_edit(iid, colname)
-        return "break"
+        if (mode:=self._editable[colname]) == ColumnEditMode.readonly:
+            return
+        elif mode == ColumnEditMode.checkbox:
+            self._toggle_bool(iid, colname)
+            return "break"
+        else: # text
+            self.begin_edit(iid, colname)
+            return "break"
 
     def begin_edit_row(self, ev: Any = None):
         """Start editing the first editable column of the focused row."""
