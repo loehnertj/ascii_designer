@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name="ascii_designer"
@@ -30,5 +30,8 @@ Repository="http://github.com/loehnertj/ascii_designer"
 Documentation="https://ascii-designer.readthedocs.io/"
 Issues="http://github.com/loehnertj/ascii_designer/issues"
 
-[tool.setuptools.dynamic]
-version = {attr = "ascii_designer.__version__"}
+[tool.hatch.version]
+path = "src/ascii_designer/__version__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ascii_designer"]
