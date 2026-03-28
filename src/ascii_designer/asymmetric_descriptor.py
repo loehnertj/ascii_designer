@@ -4,7 +4,12 @@ __all__ = [
     "AsymmetricDescriptor",
 ]
 
-from typing import Protocol, Self, TypeVar, overload
+from typing import Protocol, TypeVar, overload
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 _GT = TypeVar("_GT", covariant=True)
 _ST = TypeVar("_ST", contravariant=True)

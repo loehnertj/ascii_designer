@@ -23,8 +23,7 @@ Package overview:
 from .autoframe import AutoFrame
 from .toolkit import set_toolkit
 
-# EventSource kept to support legacy code.
-from .event import event, CancelEvent
+from typed_event import event, CancelEvent
 from .list_model import ObsList, ObsListProperty
 from .i18n import Translations, load_translations_json, save_translations_json
 from .tk_generic_var import Invalid, nullable, gt0, ge0

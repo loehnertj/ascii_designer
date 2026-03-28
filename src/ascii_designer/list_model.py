@@ -32,7 +32,7 @@ from typing import (
 import weakref
 
 from .asymmetric_descriptor import AsymmetricDescriptor
-from .event import event
+from typed_event import event
 
 __all__ = ["ObsList", "retrieve", "store", "SourceDef", "ObsListProperty"]
 

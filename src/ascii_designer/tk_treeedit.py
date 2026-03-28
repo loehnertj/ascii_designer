@@ -82,7 +82,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from typing import Any, Literal, Sequence
 
-from .event import CancelEvent, event
+from typed_event import CancelEvent, event
 
 
 class ColumnEditMode(Enum):

@@ -5,8 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name="ascii_designer"
 dynamic = ["version"]
-dependencies = []
-requires-python=">3.7"
+dependencies = [
+    "typed-event>=1.1.0",
+    "typing-extensions>=4.0.0; python_version<'3.11'",
+]
+requires-python=">3.10"
 authors=[
     { name="Johannes Loehnert", email="loehnert.kde@gmx.de" },
 ]
@@ -35,3 +38,8 @@ path = "src/ascii_designer/__version__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ascii_designer"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
