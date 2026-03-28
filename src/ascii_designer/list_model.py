@@ -122,8 +122,6 @@ def store(obj, val, source: SourceDef):
         value for the second parameter.
     """
     if isinstance(source, tuple) and len(source) == 2:
-        if not isinstance(source[1], str):
-            raise TypeError("Second item of 2-tuple source must be a string")
         store(obj, val, source[1])
     elif isinstance(source, str):
         if source == "":

@@ -14,7 +14,13 @@ Changelog
 Unreleased
 ..........
 
-* TK Tree/List widget: Boolean edit mode (checkboxes) can now be enabled by appending ``?`` to the column caption: ``[= my_list: (text_, flag?)]``. This is a Tk-specific feature, since Qt's `QTreeView` has builtin differentiation based on the data type.
+* TK Tree/List widget: Boolean edit mode (checkboxes) can now be enabled by
+  appending ``?`` to the column caption: ``[= my_list: (text_, flag?)]``. This
+  is a Tk-specific feature, since Qt's `QTreeView` has builtin differentiation
+  based on the data type.
+* Fix regression in list model introduced in v2.0.0: Second item of 2-tuple
+  source was forced to be a string, which means that callbacks would be
+  rejected.
 
 Version 2.0.0
 .............
