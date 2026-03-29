@@ -41,5 +41,6 @@ packages = ["src/ascii_designer"]
 
 [dependency-groups]
 dev = [
+    "pyside6>=6.11.0",
     "pytest>=9.0.2",
 ]
