@@ -426,10 +426,16 @@ class ListBindingQt(QAbstractItemModel, ListBinding):
 
     def _set_list(self, val):
         '''replace all current items by the new iterable ``val``.'''
-        self.modelAboutToBeReset.emit()
-        super()._set_list(val)
+        emitted_about_to_reset = False
+        try:
+            self.modelAboutToBeReset.emit()
+            emitted_about_to_reset = True
+        except RuntimeError:
+            pass
+        ListBinding._set_list(self, val)
         self._list.toolkit_parent_id = QModelIndex()
-        self.modelReset.emit()
+        if emitted_about_to_reset:
+            self.modelReset.emit()
 
     def columnCount(self, parent):
         return len(self.keys)

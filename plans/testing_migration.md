@@ -1,21 +1,20 @@
 # AutoFrame GUI Test Migration - Implementation Summary
 
 **Date:** 29. März 2026  
-**Status:** Main migration pass complete + synthetic-interaction enhancement pass complete + P0 and P1 gap-closure pass complete
+**Status:** Main migration pass complete + synthetic-interaction enhancement pass complete + P0 and P1 gap-closure pass complete + Qt treelist/model fix applied
 
 ## Overview
 
 The manual `test_ascii_designer.py` demos have been migrated into automated pytest modules under `tests/`, with shared backend-parametrized infrastructure in `tests/conftest.py`.
 
-The current setup runs both Tk and Qt paths where supported, keeps Tk-only demos explicit, and documents known Qt issues as `xfail` rather than patching library code.
+The current setup runs both Tk and Qt paths where supported, keeps Tk-only demos explicit, and currently has no expected-failure markers in the demo-derived modules.
 
 ## Current Test Results
 
 Full suite run:
 
-- `135 passed`
+- `141 passed`
 - `7 skipped`
-- `6 xfailed`
 
 Command used:
 
@@ -23,7 +22,7 @@ Command used:
 
 Delta vs earlier baseline:
 
-- `+2 xfailed` comes from newly added `TreeDemo` P1 assertions on Qt (`test_remark_edit_persists_in_remarks_mapping`, `test_reexpand_uses_cached_children_without_reload`) that intentionally follow the existing Qt treelist known-failure policy.
+- Former Qt treelist/list-edit `xfail` cases now pass after a `ListBindingQt` initialization/reset-signal robustness fix in `src/ascii_designer/toolkit_qt.py`.
 
 ## Implemented Test Modules
 
@@ -56,22 +55,21 @@ One scenario-focused test file now exists for each requested area:
   - `test_custom_subclass_demo.py`
   - `test_converters_demo.py`
 - Cross-toolkit modules run on both Tk and Qt where behavior is currently stable.
-- Divergent/unstable Qt treelist/edit paths are `xfail`-documented, not force-fixed.
+- Previous Qt treelist/edit instability in test setup was resolved in library code (`ListBindingQt` construction/reset handling).
 
 ## Qt Status
 
 Qt is now active in the environment and tests execute under Qt.
 
-### Known Qt failures (documented, not fixed in library)
+### Qt treelist/list-edit status
 
-Marked as `xfail` in tests due to current toolkit behavior:
+Resolved in this pass:
 
-- `tests/test_list_edit_demo.py` (Qt cases)
-- `tests/test_tree_demo.py` (Qt cases)
+- Root cause was a Qt model-reset signal emission timing issue during `ListBindingQt` initialization.
+- Fix was applied in `src/ascii_designer/toolkit_qt.py` by making `_set_list()` resilient when reset signals are unavailable during early initialization.
+- `xfail` guards for these Qt paths were removed from `tests/test_list_edit_demo.py` and `tests/test_tree_demo.py`.
 
-Reason: runtime failure from Qt treelist/editable model path (`RuntimeError: Signal source has been deleted`) during treelist setup.
-
-This is intentionally tracked as known failure per migration plan (“do not fix library code in this pass”).
+Current status: Qt paths in those modules are passing.
 
 ## Synthetic Interaction Coverage Added
 
@@ -97,7 +95,7 @@ Alignment-specific additions from this pass:
 - Tree tests use mock data in test copy (no real filesystem traversal delays).
 - Keep backend interaction strategy explicit: prefer native synthetic events where wiring is under test, and use direct model/signal calls for backend-divergent controls.
 - Preserve toolkit scope boundaries: `CustomSubclassDemo` and `ConvertersDemo` remain Tk-only unless production code is generalized.
-- Keep migration policy: test-layer adaptation only; no source-library fixes in this track (document known failures instead).
+- Library code changes are now allowed for validated root-cause fixes (as done for Qt `ListBindingQt` initialization/reset handling).
 - Continue local-first verification with `uv run pytest`; CI/headless hardening remains a separate follow-up stream.
 
 ## Behavior-Assertion Coverage Audit (follow-up)
@@ -153,8 +151,8 @@ Follow-up review compared verbal behavior assertions in `test_ascii_designer.py`
   - [x] `test_qt_controls_expand_vertically_and_horizontally`
 
 - **TreeDemo behavior claims not yet asserted** (`tests/test_tree_demo.py`)
-  - [x] `test_remark_edit_persists_in_remarks_mapping` (Qt path currently expected `xfail`)
-  - [x] `test_reexpand_uses_cached_children_without_reload` (Qt path currently expected `xfail`)
+  - [x] `test_remark_edit_persists_in_remarks_mapping`
+  - [x] `test_reexpand_uses_cached_children_without_reload`
 
 - **Menu keyboard/quit contract** (`tests/test_menu_demo.py`)
   - [x] `test_shortcuts_trigger_expected_menu_actions`
@@ -173,6 +171,6 @@ Follow-up review compared verbal behavior assertions in `test_ascii_designer.py`
 
 ## Remaining Follow-up (optional)
 
-1. Replace current `xfail` for Qt treelist/edit with true passing tests once toolkit issue is resolved upstream.
-2. Complete P2 assertions (ListEdit deeper edit UX; ListDemo reorder/selection semantics).
-3. Increase synthetic-event depth further for additional controls where practical.
+1. Complete P2 assertions (ListEdit deeper edit UX; ListDemo reorder/selection semantics).
+2. Increase synthetic-event depth further for additional controls where practical.
+3. Add/expand CI headless hardening for cross-toolkit GUI runs.

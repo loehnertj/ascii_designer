@@ -78,10 +78,6 @@ class ListEditDemo(AutoFrame):
 class TestListEditDemo:
     def test_build_initializes_players(self, frame_builder, toolkit):
         """Tests editable-list initialization by building the frame and asserting the default three player rows are created with expected first entry data."""
-        if toolkit == "qt":
-            pytest.xfail(
-                "Known Qt treelist/edit model issue: Signal source has been deleted"
-            )
         frame = frame_builder(ListEditDemo)
 
         assert len(frame.players) == 3
@@ -89,10 +85,6 @@ class TestListEditDemo:
 
     def test_rank_recalculation(self, frame_builder, toolkit):
         """Tests rank autoupdate logic by changing points and asserting recalculated ranks are assigned as 1/2/3 in descending score order."""
-        if toolkit == "qt":
-            pytest.xfail(
-                "Known Qt treelist/edit model issue: Signal source has been deleted"
-            )
         frame = frame_builder(ListEditDemo)
 
         frame.players[0].points = 10

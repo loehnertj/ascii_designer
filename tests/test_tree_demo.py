@@ -65,10 +65,6 @@ class TreeDemo(AutoFrame):
 class TestTreeDemo:
     def test_tree_initial_population(self, frame_builder, toolkit):
         """Tests initial tree population by loading mock root nodes and asserting two top-level folders are created with expected names."""
-        if toolkit == "qt":
-            pytest.xfail(
-                "Known Qt treelist/edit model issue: Signal source has been deleted"
-            )
         frame = frame_builder(TreeDemo)
         frame._populate_folder()
 
@@ -78,10 +74,6 @@ class TestTreeDemo:
 
     def test_lazy_load_children_and_find2(self, frame_builder, toolkit):
         """Tests lazy child access and lookup by retrieving children for the first node and asserting `find2` resolves that child to index `(0, 0)`."""
-        if toolkit == "qt":
-            pytest.xfail(
-                "Known Qt treelist/edit model issue: Signal source has been deleted"
-            )
         frame = frame_builder(TreeDemo)
         frame._populate_folder()
 
@@ -120,11 +112,6 @@ class TestTreeDemo:
 
     def test_remark_edit_persists_in_remarks_mapping(self, frame_builder, toolkit):
         """Tests remark persistence by storing a remark through the list-binding source and asserting the frame's remarks mapping and retrieval source reflect the new text."""
-        if toolkit == "qt":
-            pytest.xfail(
-                "Known Qt treelist/edit model issue: Signal source has been deleted"
-            )
-
         frame = frame_builder(TreeDemo)
         frame._populate_folder()
 
@@ -136,11 +123,6 @@ class TestTreeDemo:
 
     def test_reexpand_uses_cached_children_without_reload(self, frame_builder, toolkit):
         """Tests tree child caching by loading the same node's children twice and asserting the second access reuses cached children without another source call."""
-        if toolkit == "qt":
-            pytest.xfail(
-                "Known Qt treelist/edit model issue: Signal source has been deleted"
-            )
-
         frame = frame_builder(TreeDemo)
         frame._populate_folder()
 
