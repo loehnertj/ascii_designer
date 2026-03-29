@@ -32,6 +32,11 @@ toolbar = """
 
 
 class Main(AutoFrame):
+    """Main demonstration menu for Ascii Designer examples.
+    
+    Click the buttons to launch different demo windows. Each button click opens
+    a new frame with specific feature demonstrations.
+    """
     f_title = "Ascii Designer Demo Menu"
     f_body = """
     |    <->                     |
@@ -93,6 +98,23 @@ class Main(AutoFrame):
 
 
 class AutoconnectDemo(AutoFrame):
+    """Demonstrates automatic widget connection and event handling.
+    
+    Shows all basic widget types (labels, buttons, text fields, dropdowns, options,
+    checkboxes, sliders) with automatic data binding. The user can:
+
+    - Enter text in text fields;
+    - Select options from dropdowns and combo boxes;
+    - Toggle checkbox and radio buttons;
+    - Drag sliders;
+    - Click the "Press me" button;
+    - Type in the dynamically added text field.
+
+    In each case, the respective method of the class is called, and the current
+    value of the control is printed to the console.
+
+    The "Press Me" button demonstrates dynamic UI modification by adding a new text field when clicked. The new field is automatically connected to the on_write_here handler.
+    """
     f_body = """
                        |      <->
         Label:          This is a label
@@ -170,6 +192,21 @@ class AutoconnectDemo(AutoFrame):
 
 
 class BoxesDemo(AutoFrame):
+    """Demonstrates boxes, group boxes, and widget embedding.
+    
+    Shows how to use placeholder elements and replace them with custom widgets
+    or nested AutoFrame instances. 
+    
+    ``<box>`` and ``<groupbox: Test >`` are placeholders that can be filled with
+    any widget. ``<box>`` (without label) is replaced entirely by a button in
+    code, and ``<groupbox: Test >`` is filled with another button. 
+
+    ``<nest_box:...>`` is used to embed another autoframe (in the example,
+    BoxesDemo itself) recursively. Note that the ``AutoFrame`` is built
+    automatically when assigned to the placeholder.
+    
+    Also note that the buttons are not bound to a handler automatically.
+    """
     f_body = """
         |               |  <->
          Use the source code to understand what is demonstrated here.
@@ -200,14 +237,25 @@ class BoxesDemo(AutoFrame):
         if self._level:
             self.nest_box = BoxesDemo(self._level - 1)
 
+    # This is illegal and causes TypeError when building. You cannot have a
+    # handler for a placeholder. If you create the widgets yourself, you must
+    # also do the event binding yourself.
+    #def on_box(self): ...
+
 
 class SubgridsDemo(AutoFrame):
-    """Shows how a nested layout can be defined.
+    """Demonstrates nested sub-layouts with subgrids.
+    
+    Shows how to define complex layouts by organizing widgets into separate
+    subgrid sections defined with :id: markers. 
 
     Start subgrids by :id: line.
 
-    The subgrid is inserted in the main grid frame
+    The subgrid is built into the placeholder in the main grid frame
     with the same id.
+
+    The buttons do nothing. Their purpose is only to visually outline the
+    created layout.
     """
 
     f_body = """
@@ -228,9 +276,26 @@ class SubgridsDemo(AutoFrame):
 
 
 class AlignmentDemo(AutoFrame):
-    """Row/Column stretch is controlled by "-" in the column head and "I" in row head
-    Widget anchoring is controlled by presence of leading/trailing whitespace
-    within the cell.
+    """Demonstrates row/column stretching and widget alignment.
+    
+    Shows how column width and row height stretch, and how widgets align within cells.
+    The user can resize the window. 
+    
+    * Stretching columns (``-`` in header) expand proportionally to fill
+      horizontal space. Proportion is equal to number of ``-`` signs. I.e. first
+      column is not stretched, second column is stretched 1x, third column is
+      stretched 2x.
+    * Stretching rows (``I`` underneath first pipe symbol) expand proportionally
+      to fill vertical space. Proportion is equal for all rows with ``I``.
+    * ``left``, ``center`` and ``right`` buttons have the respective horizontal
+      alignment within their cells.
+    * Widgets are always "fill"-aligned vertically, meaning they will expand to
+      fill the cell height.
+    * The ``colspan_stretch_3x`` textarea spans over second and third grid column.
+    * The ``left_v_2x`` textarea spans over fourth and fifth row of the grid.
+
+    The buttons do nothing. Their purpose is only to visually outline the
+    created layout.
     """
 
     f_body = """
@@ -253,8 +318,22 @@ class AlignmentDemo(AutoFrame):
 
 
 class BoundCtlDemo(AutoFrame):
-    """creates all controls (except Treelist),
-    also test out translations.
+    """Demonstrates data binding and value retrieval for all standard widget types.
+    
+    Shows all widget types (text, multiline text, dropdown, combo box, radio buttons,
+    checkbox, slider) with data binding. The user can:
+
+    - Modify any control, which does not cause any immediate action
+    - Click "Get all" to print all current values to the console
+    - Click "Set all" to programmatically set all values; the UI updates to display
+      the new values:
+         - Textbox is set to "text"
+         - Multiline is set to "more<newline>text"
+         - Dropdown is set to "Green"
+         - Combo box is set to "Shade of grey"
+         - Option B is selected, Option A is deselected
+         - Checkbox is unchecked
+         - Slider is set to 50
     """
 
     f_body = """
@@ -290,6 +369,25 @@ class BoundCtlDemo(AutoFrame):
 
 
 class CustomSubclassDemo(AutoFrame):
+    """Demonstrates custom widget subclasses with specialized properties.
+
+    
+    Shows how to create custom widget classes that extend standard widgets with
+    custom behavior. Here, a custom ``Entry`` subclass is used instead of the
+    standard one.
+    
+    The user can:
+
+    - Enter numeric values in the custom entry field; values are validated and
+      formatted as floats
+    - If input is invalid, the field displays an error state
+    - The converted value is formatted as float with 3 decimals in the UI
+    - Click "reset" to set the field to a predefined value; the display updates
+
+    ``on_custom_entry_field`` and ``on_reset`` handlers show that the widget
+    (``self["custom_entry_field"]``) is indeed an instance of the custom
+    subclass.
+    """
     f_body = """
     |                    |
      Please see the source code to understand what happens here.
@@ -336,6 +434,17 @@ class CustomSubclassDemo(AutoFrame):
 
 
 class ConvertersDemo(AutoFrame):
+    """Demonstrates value conversion and validation for different data types.
+    
+    Shows how converters transform input strings into typed values with validation.
+    The user can:
+    - Enter values in the float, int, and in-list fields; invalid entries are rejected
+    - Click "test" to validate all inputs;  ``label_result`` text indicates if
+      all are valid.
+    - For the ``instant`` field, validation also happens upon press of return and on focus loss.
+    - If all values are valid, output fields display the float value (``a``) in two different
+      formats (scientific notation and fixed-point), to prove that the value was understood as number.
+    """
     f_option_tk_autovalidate = True
     f_body = """
                  |
@@ -399,6 +508,40 @@ class RankRow:
 
 
 class ListDemo(AutoFrame):
+    """Demonstrates list views with simple items and structured data rows.
+    
+    Shows two lists: one with simple strings (`shopping_list`) and one with custom objects displayed
+    in multiple columns (`players`). 
+    
+    In `shopping_list`, the user can:
+
+    - Click items to select them
+    - Toggle "reorder checkbox" to enable/disable drag-and-drop reordering of ``shopping_list``
+    - If reordering is enabled: Drag and drop items in `shopping_list` to
+      reorder them. (Not demonstrated: Drag-and-drop reordering immediately
+      updates the underlying list order, which can be observed by printing the
+      list after reordering.)
+    - Click items of ``shopping_list`` to focus and see selection printed to console
+
+    In `players`, the user can:
+
+    - Click column headings to sort by that column ascending or descending (second click)
+    - Click "Add" to insert a random new player at a random position
+    - Click "Replace" to replace selected players with new ones
+    - Click "Mutate" to change selected player names (mutate the underlying
+      object); changes appear immediately
+    - Click "Remove" to delete selected items from the list
+    - Click "resort" to restore the last sorting (e.g. after adding new items)
+    - Click "unsort" to apply custom sorting by object ID (demonstrating
+      application of the standard python sorting mechanism)
+
+    In the `_populate_players` method, we can see how the columns are attached
+    to object properties in three ways:
+
+    - by callback function ``fn(obj) -> value`` (e.g. for "name" column)
+    - by index access ``["name"]``
+    - by property name ``"name"``
+    """
     f_body = """
     |             |     |         |        |<->     |        |         |
     |Simple List   List with named~columns~~        
@@ -431,8 +574,14 @@ class ListDemo(AutoFrame):
         self.players.sources(
             lambda obj: "ItsLikeMagic", name=["name"], points=["points"], rank=["rank"]
         )
-        # not recommended: mixed item types
+        # not recommended but possible: mixed item types
+        # If you need a heterogenous list, the recommended pattern is to use
+        # items with a common base class, which provides a consistent interface.
+        # If necessary, define wrapper classes for the original data.
         self.players.append({"name": "Last", "points": -1, "rank": 4})
+        # Don't do this: redefining sources differently for the same list. This
+        # will break on items already in the list, if they don't have the
+        # required properties.
         self.players.sources(name="name", points="points", rank="rank")
 
     def on_reorder(self, val):
@@ -482,6 +631,29 @@ class ListDemo(AutoFrame):
 
 
 class ListEditDemo(AutoFrame):
+    """Demonstrates in-place editing of list items with multiple columns.
+    
+    Shows an editable list view with player data where users can modify individual
+    cells. The user can:
+
+    - Doubleclick values in the ``name``, ``value``  columns to edit its value in-place
+    - Doubleclick the ``is_cheater`` column to toggle the boolean value
+    - Enter new values for name, points, or cheater status
+    - Press Enter to confirm the edit; the list updates and console shows the change
+    - Add new rows using the "Add" button included in the list view
+    - Delete rows using the "Remove" button included in the list view
+    - use various key bindings for navigation and editing: `F2` to edit,
+      `Delete` to remove, `Insert` to add new row, `Tab` and `Shift+Arrow-key` to
+      move between editable cells - see `TreeEdit` documentation for all details.
+
+    Whenever an item is changed, a message is printed to the console showing the changed item. 
+    
+    Additionally, changed values trigger automatic rank recalculation, which
+    updates the rank column.
+
+    Note that due to the complexity of the topic, we need some Tk and Qt
+    specific code in the implementation.
+    """
     f_body = """
         | -
         I[= Players (Name_, Points_, Is_Cheater?, Rank)]
@@ -506,7 +678,7 @@ class ListEditDemo(AutoFrame):
             def set_ic(obj, val):
                 # ? suffix makes bool column 
                 assert isinstance(val, bool)
-                obj.is_cheater = val #val.lower() in ("true", "1", "y", "yes", "on")
+                obj.is_cheater = val
 
             binding.sources(
                 points=("points", setpoints), is_cheater=("is_cheater", set_ic)
@@ -560,6 +732,21 @@ class ListEditDemo(AutoFrame):
 
 
 class TreeDemo(AutoFrame):
+    """Demonstrates tree views with lazy-loading file system navigation.
+    
+    Shows a navigable file tree starting from the user's home directory. The user can:
+
+    - Expand folders by clicking the expansion arrow; children are loaded from disk.
+      Loading is delayed by ~1 second per folder to simulate real data retrieval.
+    - Collapse expanded folders; the tree structure is preserved
+    - Reexpanding a previously collapsed folder does not trigger reloading;
+      children are cached
+    - Click items to focus them; selection is printed to console
+    - Edit the "Remark" column for any item; remarks are stored in the remarks dict
+    - Click "Test Find" to locate a selected item in the tree and retrieve it
+      (demonstrate find2 method and index retrieval)
+    - Toggle between expanded/collapsed states multiple times
+    """
     f_body = """
     |  <-> Tree       
      Tree~
@@ -628,6 +815,16 @@ class TreeDemo(AutoFrame):
 
 
 class MenuDemo(AutoFrame):
+    """Demonstrates menu bar handling with nested menus and keyboard shortcuts.
+    
+    Shows a complete menu structure with File, Nested, and Help categories. Look in the code to see how menu items and submenus are defined.
+
+    The user can:
+    - Click menu items to trigger actions; actions are printed to console
+    - Use keyboard shortcuts (e.g., Ctrl+I, Ctrl+Shift+I, F1) to invoke menu items
+    - Navigate nested submenus
+    - Select "Quit" to close the window
+    """
     f_menu = [
         # For "Save" entry, explicitly set (no) shortcut
         "&File >",
