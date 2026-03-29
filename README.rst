@@ -100,7 +100,7 @@ INSTALLATION
 
     pip install ascii_designer
     
-Requirements: Python >= 3, ``attrs``. To use the Qt toolkit you need ``qtpy``.
+Requirements: Python >= 3.10, ``attrs``. To use the Qt toolkit you need ``qtpy``.
     
     
 DOCUMENTATION
@@ -110,16 +110,14 @@ Please proceed to https://ascii-designer.readthedocs.io/
 
 For some examples, look at `test_ascii_designer.py <test_ascii_designer.py>`_ as well as the `examples <examples>`_ folder.
 
-LICENCSE
---------
+LICENSE
+-------
 
 MIT License: https://github.com/loehnertj/ascii_designer/blob/master/LICENSE
     
 TODO
 ----
 
-Alpha-state software, mostly working.
-
-Test coverage is lacking, politely spoken.
+Beta-state software, somewhat battle-tested.
 
 This is a hobby project. If you need something quick, open an issue or send a pull request.

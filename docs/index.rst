@@ -21,6 +21,7 @@ Unreleased
 * Fix regression in list model introduced in v2.0.0: Second item of 2-tuple
   source was forced to be a string, which means that callbacks would be
   rejected.
+* fix error "Signal source has been deleted" raised by ListBinding Qt.
 
 Version 2.0.0
 .............
