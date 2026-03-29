@@ -39,8 +39,12 @@ path = "src/ascii_designer/__version__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ascii_designer"]
 
+[tool.uv.sources]
+ascii-designer = { workspace = true }
+
 [dependency-groups]
 dev = [
+    "ascii-designer[qtsupport]",
     "pyside6>=6.11.0",
     "pytest>=9.0.2",
 ]
