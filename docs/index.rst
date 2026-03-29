@@ -11,8 +11,8 @@ ASCII Designer
 Changelog
 ---------
 
-Unreleased
-..........
+Version 2.1.0 (2026-03-29)
+..........................
 
 * TK Tree/List widget: Boolean edit mode (checkboxes) can now be enabled by
   appending ``?`` to the column caption: ``[= my_list: (text_, flag?)]``. This
